@@ -1,0 +1,19 @@
+{
+  "namePrefix": "track-inspect",
+  "embeddingModel": "multilingual_e5_large_instruct",
+  "defaultLanguage": "en",
+  "additionalLanguages": [],
+  "agents": {
+    "expert": {
+      "displayName": "Track Inspect – Expert",
+      "envVar": "ELEVENLABS_AGENT_ID_EXPERT",
+      "docs": []
+    },
+    "tutor": {
+      "displayName": "Track Inspect – Tutor",
+      "envVar": "ELEVENLABS_AGENT_ID_TUTOR",
+      "cloneFrom": "expert",
+      "docs": []
+    }
+  }
+}

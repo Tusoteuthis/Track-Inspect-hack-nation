@@ -1,1 +1,4 @@
 .env
+
+# WS3 captured expert sessions are data, not source
+knowledge/sessions/
