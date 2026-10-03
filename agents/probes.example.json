@@ -1,0 +1,4 @@
+{
+  "expert": { "envVar": "ELEVENLABS_AGENT_ID_EXPERT", "language": "en", "cases": [] },
+  "tutor": { "envVar": "ELEVENLABS_AGENT_ID_TUTOR", "language": "en", "cases": [] }
+}

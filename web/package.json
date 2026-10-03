@@ -1,0 +1,29 @@
+{
+  "name": "track-inspect-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "sync-agents": "tsx scripts/sync-agents.mts",
+    "probe": "tsx scripts/probe-agents.mts",
+    "tts-roundtrip": "tsx scripts/tts-roundtrip.mts"
+  },
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.70.0",
+    "@elevenlabs/react": "^1.16.0",
+    "next": "^16.1.6",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
