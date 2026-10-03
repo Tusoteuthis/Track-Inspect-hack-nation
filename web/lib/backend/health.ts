@@ -1,8 +1,6 @@
 import { constants, promises as fs } from "node:fs";
+import { SCHEMA_VERSION } from "@/lib/contracts";
 import { getConfig } from "./config";
-
-// Will be imported from @/lib/contracts after the lanes merge.
-const SCHEMA_VERSION = "ws6.v0";
 
 export type HealthReport = {
   ok: boolean;
