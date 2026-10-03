@@ -68,7 +68,7 @@
           ],
           "maxQuestions": 1,
           "forbidPatterns": [
-            "what is (this|that|it)\\b",
+            "\\bwhat('s| is) (this|that|it)\\b(?! about)",
             "what do you see",
             "what are you (looking at|seeing)",
             "what do you recogni[sz]e",
