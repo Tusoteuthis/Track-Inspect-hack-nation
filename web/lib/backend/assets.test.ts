@@ -259,7 +259,14 @@ describe("getAsset / readAssetFile", () => {
     const metaFile = path.join(assetDir(AID), "meta.json");
     const stored = JSON.parse(await fsp.readFile(metaFile, "utf8")) as EvidenceAsset;
     await fsp.writeFile(metaFile, JSON.stringify({ ...stored, original: { ...stored.original, path: "../../secret" } }));
-    await expect(readAssetFile(AID, "original")).rejects.toBeInstanceOf(ApiError);
+    expect((await errorOf(readAssetFile(AID, "original")))?.code).toBe("not_found");
+  });
+
+  it("an identical retry is answered 200 even after the session went off-record", async () => {
+    const first = await putFull();
+    await changeRecordState(sid, { state: "off_record" });
+    const retry = await putFull();
+    expect(retry).toEqual({ status: 200, asset: first.asset });
   });
 
   it("deleted assets are 404", async () => {

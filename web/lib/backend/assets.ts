@@ -91,7 +91,6 @@ export async function putAsset(
     input.highlighted && meta.highlighted ? prepareFile("highlighted", input.highlighted, meta.highlighted, max) : null;
 
   return withSessionLock(sid, async () => {
-    await requireWritableSession(sid, meta.record_state);
     const asset: EvidenceAsset = {
       asset_id: aid,
       session_id: sid,
@@ -109,9 +108,11 @@ export async function putAsset(
     return withLock(`asset:${aid}`, async () => {
       const stored = await loadAssetMeta(aid);
       if (stored) {
+        // An identical retry stores nothing, so it is answered even if the session went off-record since.
         if (canonicalJson(stored) === canonicalJson(asset)) return { status: 200 as const, asset: stored };
         throw new ApiError("conflict_immutable", "A different asset already exists with this ID.", { asset_id: aid });
       }
+      await requireWritableSession(sid, meta.record_state);
       const dir = assetDir(aid);
       for (const f of [original, highlighted]) {
         if (f) await writeFileAtomic(path.join(dir, f.file.path), f.bytes);
@@ -129,7 +130,8 @@ function notFound(aid: string): ApiError {
 
 export async function getAsset(aid: string): Promise<EvidenceAsset> {
   assertSafeId(aid, "asset_id");
-  const asset = await loadAssetMeta(aid);
+  // A corrupt or tampered meta.json is never served; it reads as missing.
+  const asset = await loadAssetMeta(aid).catch(() => null);
   if (!asset || asset.status === "deleted") throw notFound(aid);
   return asset;
 }
