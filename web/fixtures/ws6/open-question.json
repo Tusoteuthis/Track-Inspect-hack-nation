@@ -1,0 +1,8 @@
+{
+  "open_question_id": "fixture-open-question-001",
+  "missing_fact": "FIXTURE missing fact",
+  "why_it_matters": "FIXTURE why it matters",
+  "related_event_ids": ["fixture-event-001"],
+  "related_exchange_ids": ["fixture-exchange-001"],
+  "answered_by_exchange_id": null
+}

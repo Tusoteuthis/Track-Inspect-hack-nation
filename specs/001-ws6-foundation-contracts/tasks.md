@@ -31,15 +31,15 @@ None beyond Phase 1. Lane A defines its own `ErrorCode` union in web/lib/backend
 **Goal**: zod contracts plus labelled fixtures for every resource in data-model.md.
 **Independent test**: `npx vitest run lib/contracts`.
 
-- [ ] T010 [P] [US1] Write failing tests in web/lib/contracts/contracts.test.ts:
+- [X] T010 [P] [US1] Write failing tests in web/lib/contracts/contracts.test.ts:
   - every fixture in web/fixtures/ws6 parses with its mapped schema and has `source: "fixture"` where the record has a source field
   - every session-scoped fixture has `session_id: "fixture-session-001"`
   - rejections: missing ID, bad enum, region x<0, x>1, x+width>1, width 0, IDs `../x`, `A-B`, `a/b`, `-a`, BusEvent with an extra `text` field, empty-string `trace_id`
   - the asset fixture's sha256 and width/height match the PNG files
   - `toConfirmation` maps the WS3 ExpertConfirmation
-- [ ] T011 [P] [US1] Create web/lib/contracts/version.ts (`SCHEMA_VERSION = "ws6.v0"`), web/lib/contracts/parse.ts (`ParseResult`, `makeParser(schema)` turning zod issues into `{path, message}`), and web/lib/contracts/common.ts (`IdSchema`, `UtcSchema`, `SourceSchema`, `Ws3SourceSchema`, `RecordStateSchema`, `RegionSchema`, `SignalIntervalSchema`).
-- [ ] T012 [US1] Create web/lib/contracts/expert.ts. It re-exports the WS3 types from `@/lib/expert/contracts` and wraps them in zod schemas: PointingEvent (+ `asset_id?`), AnswerLine, ExpertExchange (+ `rev?`), CoverageItem, OpenQuestion, DraftStep, DraftRevision, ExpertConfirmation, TimingMark, RecordingSegment. A compile-time check asserts that each schema's output type equals the WS3 type.
-- [ ] T013 [P] [US1] Create the WS6 record files:
+- [X] T011 [P] [US1] Create web/lib/contracts/version.ts (`SCHEMA_VERSION = "ws6.v0"`), web/lib/contracts/parse.ts (`ParseResult`, `makeParser(schema)` turning zod issues into `{path, message}`), and web/lib/contracts/common.ts (`IdSchema`, `UtcSchema`, `SourceSchema`, `Ws3SourceSchema`, `RecordStateSchema`, `RegionSchema`, `SignalIntervalSchema`).
+- [X] T012 [US1] Create web/lib/contracts/expert.ts. It re-exports the WS3 types from `@/lib/expert/contracts` and wraps them in zod schemas: PointingEvent (+ `asset_id?`), AnswerLine, ExpertExchange (+ `rev?`), CoverageItem, OpenQuestion, DraftStep, DraftRevision, ExpertConfirmation, TimingMark, RecordingSegment. A compile-time check asserts that each schema's output type equals the WS3 type.
+- [X] T013 [P] [US1] Create the WS6 record files:
   - web/lib/contracts/session.ts (Session)
   - asset.ts (EvidenceAsset, AssetFile)
   - knowledge.ts (KnowledgeEntry, KnowledgeRevision, EntryStatus, Confirmation, `toConfirmation`)
@@ -47,16 +47,16 @@ None beyond Phase 1. Lane A defines its own `ErrorCode` union in web/lib/backend
   - assessment.ts (Assessment)
   - bus.ts (strict BusEvent)
   - errors.ts (`ErrorCode`, `ERROR_STATUS` map, ApiErrorBody)
-- [ ] T014 [US1] Create web/lib/contracts/index.ts re-exporting everything, with a `parseX` for each record.
-- [ ] T015 [US1] Create web/scripts/make-fixture-pngs.mts, which uses node zlib to write 2 small labelled PNGs (gray frame, "FIXTURE" block pattern; highlighted version with a red rectangle). Run it once to produce web/fixtures/ws6/fixture-frame.png and fixture-frame-highlighted.png.
-- [ ] T016 [US1] Create web/fixtures/ws6/*.json, one per record:
+- [X] T014 [US1] Create web/lib/contracts/index.ts re-exporting everything, with a `parseX` for each record.
+- [X] T015 [US1] Create web/scripts/make-fixture-pngs.mts, which uses node zlib to write 2 small labelled PNGs (gray frame, "FIXTURE" block pattern; highlighted version with a red rectangle). Run it once to produce web/fixtures/ws6/fixture-frame.png and fixture-frame-highlighted.png.
+- [X] T016 [US1] Create web/fixtures/ws6/*.json, one per record:
   - session, session-newcomer, evidence-asset, pointing-event, expert-exchange, draft-revision, expert-confirmation
   - knowledge-entry, knowledge-revision (+ knowledge-revision.md with JSON frontmatter in a `---` block), confirmation
   - learner-draft, evaluation, commit, assessment
   - bus-event, api-error, recording-segment, timing-mark, coverage-item, open-question
 
   Also add a README.md stating these are fixtures. All text is neutral, e.g. "FIXTURE expert answer line 1".
-- [ ] T017 [US1] Make T010 pass, then run typecheck and commit.
+- [X] T017 [US1] Make T010 pass, then run typecheck and commit.
 
 ## Phase 4: User Story 2 — Idempotent, atomic storage (P1) · Lane A
 

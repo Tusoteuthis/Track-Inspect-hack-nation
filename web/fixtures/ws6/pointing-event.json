@@ -1,0 +1,27 @@
+{
+  "schema_version": "ws3.v0",
+  "session_id": "fixture-session-001",
+  "event_id": "fixture-event-001",
+  "source": "fixture",
+  "captured_at_utc": "2026-10-03T10:00:05.000Z",
+  "session_time_ms": 5000,
+  "frame_id": "fixture-frame-001",
+  "image_ref": "/api/assets/fixture-asset-001/original",
+  "highlighted_image_ref": "/api/assets/fixture-asset-001/highlighted",
+  "region": {
+    "x": 0.25,
+    "y": 0.3,
+    "width": 0.25,
+    "height": 0.4,
+    "coordinate_space": "original_frame_normalized",
+    "frame_width_px": 320,
+    "frame_height_px": 180
+  },
+  "mapping_status": "resolved",
+  "trace_id": "fixture-trace-001",
+  "channel_id": "FIXTURE-CH1",
+  "signal_interval": null,
+  "record_state": "on_record",
+  "label": "FIXTURE pointing event 1",
+  "asset_id": "fixture-asset-001"
+}

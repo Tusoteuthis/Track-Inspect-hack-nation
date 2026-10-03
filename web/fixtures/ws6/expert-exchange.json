@@ -1,0 +1,27 @@
+{
+  "exchange_id": "fixture-exchange-001",
+  "session_id": "fixture-session-001",
+  "event_id": "fixture-event-001",
+  "phase": "live",
+  "kind": "explain",
+  "question": "FIXTURE question 1",
+  "answer_lines": [
+    {
+      "text": "FIXTURE expert answer line 1",
+      "at_utc": "2026-10-03T10:00:12.000Z",
+      "transcript_line_id": "fixture-line-001"
+    },
+    {
+      "text": "FIXTURE expert answer line 2",
+      "at_utc": "2026-10-03T10:00:15.000Z",
+      "transcript_line_id": "fixture-line-002"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:00:08.000Z",
+  "answer_started_at_utc": "2026-10-03T10:00:12.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:00:18.000Z",
+  "audio_offset_secs": 12.0,
+  "record_state": "on_record",
+  "source": "fixture",
+  "rev": 1
+}
