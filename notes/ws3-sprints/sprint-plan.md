@@ -1,6 +1,6 @@
 # WS3 Sprint Plan: ElevenLabs Expert Interaction
 
-**Derived from:** [03-elevenlabs-expert-interaction.md](03-elevenlabs-expert-interaction.md)  
+**Derived from:** [03-elevenlabs-expert-interaction.md](../03-elevenlabs-expert-interaction.md)  
 **Updated:** 3 October 2026  
 **Execution:** coding agents (spec-kit feature per sprint, parallel lanes in worktrees), with human live-voice gates.
 
@@ -53,7 +53,7 @@ Feature classification:
 Each sprint = one spec-kit feature (`/speckit-specify → plan → tasks → implement`), executed in a worktree, ending with a code review and a human live-voice gate. Within a sprint, lanes A/B/C run as parallel subagents once contracts are fixed.
 
 ### Sprint 0 — Spike & contracts (agent ~1–1.5h, human ~15 min)
-- **Research agent** verifies against current ElevenLabs docs/SDK (`@elevenlabs/react` 1.16, `elevenlabs-js` 2.70): client tools in `simulateConversation`; `sendContextualUpdate` semantics (does it ever trigger a turn?); turn-taking settings (turn eagerness/timeout); whether client-tool calls carry timestamps; conversation transcript time offsets; data-retention / zero-retention options. Output: `notes/ws3-elevenlabs-capabilities.md` with sourced findings.
+- **Research agent** verifies against current ElevenLabs docs/SDK (`@elevenlabs/react` 1.16, `elevenlabs-js` 2.70): client tools in `simulateConversation`; `sendContextualUpdate` semantics (does it ever trigger a turn?); turn-taking settings (turn eagerness/timeout); whether client-tool calls carry timestamps; conversation transcript time offsets; data-retention / zero-retention options. Output: `notes/ws3-sprints/docs/elevenlabs-capabilities.md` with sourced findings.
 - Fill `.specify/memory/constitution.md` (fixtures labeled, expert words never synthesized, session time ≠ signal time, no answer key in agent).
 - Add vitest to `web/`; define v0 types in `web/lib/expert/contracts.ts` (PointingEvent, ExpertExchange, OpenQuestion, DraftRevision, ExpertConfirmation, SessionCompletion) + fixtures in `web/fixtures/` (3–4 pointing events incl. one ambiguous, one repeat).
 - **Human gate:** approve capability findings and share contracts with WS2/WS5/WS6.
@@ -79,7 +79,7 @@ Each sprint = one spec-kit feature (`/speckit-specify → plan → tasks → imp
 ### Sprint 4 — Trust, completion, handoff (agent ~1.5–2h, human ~20 min)
 - Off-record: voice command + UI toggle; exclude lines/exchanges locally; apply retention setting found in Sprint 0 or document the limit explicitly (V1 + EXT).
 - Incomplete session handling + SessionCompletion record; demo transcript + timing export (V1).
-- `notes/ws3-voice-interface.md` for WS5 tutor reuse.
+- `notes/ws3-sprints/docs/voice-interface.md` for WS5 tutor reuse.
 - **Done when:** off-record segment absent from all persisted files; exported demo evidence shows required counts.
 
 ## Totals
@@ -100,4 +100,4 @@ Each sprint = one spec-kit feature (`/speckit-specify → plan → tasks → imp
 
 ## Paste-ready agent prompts
 
-One self-contained prompt per sprint lives in [`ws3-sprints/`](ws3-sprints/README.md). Run them in order, with a human gate and a merge into `voice` between sprints.
+One self-contained prompt per sprint lives in [this folder](README.md). Run them in order, with a human gate and a merge into `voice` between sprints.

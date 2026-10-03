@@ -14,17 +14,17 @@ This is the highest-risk design piece of WS3 (the event ↔ question ↔ answer 
 
 - Sprint number `N` = **1**
 - Slug = **golden-path**
-- Branch = **`ws3/sprint-1-golden-path`**
-- Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-1`**
+- Branch = **`worktree-ws03-sprint-1`**
+- Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-1`**
 - Dev-server port = **3101**
 
-**First action:** follow section A6 at the bottom of this prompt to create your worktree. Do not edit anything in the main checkout.
+**First action:** run the A6 location check at the bottom of this prompt. It confirms you are in your worktree, or creates it if you were started in the main checkout. Do not edit anything in the main checkout.
 
 ## Read first
 
 - `notes/ws3-sprints/handoff-sprint-0.md` (what Sprint 0 delivered and decided)
-- `notes/ws3-elevenlabs-capabilities.md`, **especially "Recommended mechanisms"**. Where this prompt's suggested mechanism conflicts with a verified finding there, follow the finding and record the deviation in your handoff note.
-- `notes/ws3-contracts-v0.md`, `web/lib/expert/contracts.ts`, `web/fixtures/pointing-events/`
+- `notes/ws3-sprints/docs/elevenlabs-capabilities.md`, **especially "Recommended mechanisms"**. Where this prompt's suggested mechanism conflicts with a verified finding there, follow the finding and record the deviation in your handoff note.
+- `notes/ws3-sprints/docs/contracts-v0.md`, `web/lib/expert/contracts.ts`, `web/fixtures/pointing-events/`
 - `.specify/memory/constitution.md`
 - `notes/03-elevenlabs-expert-interaction.md` §3–6
 - Existing code: `web/components/voice/VoiceSession.tsx`, `web/lib/voice/transcript.ts`, `web/app/page.tsx`, `web/app/api/conversation-token/route.ts`, `web/scripts/sync-agents.mts`, `web/scripts/probe-agents.mts`, `agents/*.example.json`
@@ -136,7 +136,7 @@ Keep `VoiceSession` generic (WS5 reuses it for the tutor). Add only optional pro
 2. Click fixture evt-001, talk about it for ~20 s, and pause. **Check:** the agent waits, then asks one grounded question without interpreting.
 3. Answer it. While still answering, click evt-002. **Check:** your answer stays linked to evt-001.
 4. Stop. Open `<worktree>/knowledge/sessions/<id>/exchanges.md`. **Check:** the question and your words are verbatim, under the right event, with timing marks.
-5. If satisfied, merge the branch into `voice`, from the main checkout once it's clean and no other agent is mid-commit: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation merge --no-ff ws3/sprint-1-golden-path`. Then remove the worktree: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-1`.
+5. If satisfied, merge the branch into `voice`, from the main checkout once it's clean and no other agent is mid-commit: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation merge --no-ff worktree-ws03-sprint-1`. Then remove the worktree: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-1`.
 
 ---
 
@@ -186,7 +186,7 @@ Useful question patterns (patterns, not a script): "What do you recognize in thi
 | WS6 | Shared backend (does not exist yet) | Will take over our local-file persistence later; keep it behind a small interface |
 | WS7 | Web frontend | Will build the polished UI; our UI is a functional dev/companion page |
 
-Full briefs, if you need more detail: `notes/project-brief.md`, `notes/03-elevenlabs-expert-interaction.md` (our brief), `notes/02-glasses-iphone-visual-processing.md` (PointingEvent contract, §5), `notes/05-knowledge-newcomer-tutor.md` (knowledge entry structure, §3–5), `notes/06-backend-integration.md`. The overall WS3 sprint plan is `notes/03a-ws3-sprint-plan.md`.
+Full briefs, if you need more detail: `notes/project-brief.md`, `notes/03-elevenlabs-expert-interaction.md` (our brief), `notes/02-glasses-iphone-visual-processing.md` (PointingEvent contract, §5), `notes/05-knowledge-newcomer-tutor.md` (knowledge entry structure, §3–5), `notes/06-backend-integration.md`. The overall WS3 sprint plan is `notes/ws3-sprints/sprint-plan.md`.
 
 ### A5. Repository state you start from
 
@@ -215,7 +215,7 @@ web/                          Next.js 16 / React 19 / TypeScript app (path alias
 
 Packages: `@elevenlabs/react` ^1.16, `@elevenlabs/elevenlabs-js` ^2.70, `next` ^16.1, `react` ^19.2, `tsx`, `typescript`. Code style: small focused modules, comments only where the "why" is non-obvious, strict TypeScript, no `any`. Match the existing style in `VoiceSession.tsx` and `transcript.ts`.
 
-**Never invent ElevenLabs API surface.** Check the installed SDK typings in `web/node_modules/@elevenlabs/...` and the official ElevenLabs docs, plus `notes/ws3-elevenlabs-capabilities.md` once Sprint 0 has produced it. If something you need does not exist, say so and choose a documented fallback.
+**Never invent ElevenLabs API surface.** Check the installed SDK typings in `web/node_modules/@elevenlabs/...` and the official ElevenLabs docs, plus `notes/ws3-sprints/docs/elevenlabs-capabilities.md` once Sprint 0 has produced it. If something you need does not exist, say so and choose a documented fallback.
 
 ### A6. Git worktree isolation (MANDATORY — other agents work in this repo in parallel)
 
@@ -227,25 +227,43 @@ Several agents work on this repository **at the same time**. The main checkout (
 - All file edits, commands, tests, dev servers and commits happen **inside your worktree directory**.
 - Only push config to the **expert** ElevenLabs agent (`npm run sync-agents -- --agent expert`). Never touch the tutor agent or any other agent.
 
-**Setup (run once at the start; replace `N` and `<slug>` with the sprint number and slug from the title of this prompt)**
+**Recommended start: the human launches you inside your worktree.** The human may already have created your worktree and started you in it. That is the safest setup, because your whole session (shell, file paths, spec-kit scripts) then lives in the worktree. You may also have been started in the main checkout. Either way, run this **before doing anything else** (replace `N` and `<slug>` with the values from "Worktree identity"):
 
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
-WT_ROOT=/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees
-WT=$WT_ROOT/ws3-sprint-N
-BR=ws3/sprint-N-<slug>
+WT_ROOT=$REPO/.claude/worktrees
+WT=$WT_ROOT/ws03-sprint-N
+BR=worktree-ws03-sprint-N
+HERE=$(git rev-parse --show-toplevel)
+CUR=$(git branch --show-current)
 
-mkdir -p "$WT_ROOT"
-git -C "$REPO" worktree list                    # check that $WT and $BR don't already exist
-git -C "$REPO" fetch origin 2>/dev/null || true # read-only for the main checkout; ignore if offline
-git -C "$REPO" worktree add -b "$BR" "$WT" voice   # new branch from the local voice tip
+if [ "$HERE" = "$WT" ] && [ "$CUR" = "$BR" ]; then
+  echo "OK: already in my worktree ($WT on $BR); skip creation"
+elif [ "$HERE" = "$REPO" ]; then
+  echo "Started in the MAIN checkout; creating/using my worktree"
+  if git -C "$REPO" worktree list | grep -q " $WT "; then
+    echo "worktree exists already"
+  else
+    mkdir -p "$WT_ROOT"
+    git -C "$REPO" worktree add -b "$BR" "$WT" voice
+  fi
+else
+  echo "STOP: unexpected location $HERE on branch $CUR; ask the human"
+fi
+```
+
+- **If it printed STOP:** stop and ask the human.
+- **If the worktree exists but is on a different branch than `$BR`,** or `$BR` already exists elsewhere: stop and ask the human. Never force, reset or delete anything.
+- **If you were started in the main checkout:** from now on, **every** shell command starts with `cd "$WT" && …`, and **every** file path you read, edit or write must start with `$WT/`, never with `$REPO/`. Run spec-kit commands (`/speckit-*`) only after `cd "$WT"`. Before each commit, check that `git -C "$REPO" status --short` shows none of your files.
+
+Then, in the worktree, set up what git does not carry over:
+
+```bash
 cd "$WT"
-
-# Things git does not carry into a worktree:
-cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the human"
+[ -f web/.env ] || cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the human"
 [ -f agents/manifest.json ] || { [ -f "$REPO/agents/manifest.json" ] && cp "$REPO/agents/manifest.json" agents/; }
 [ -f agents/probes.json ]   || { [ -f "$REPO/agents/probes.json" ]   && cp "$REPO/agents/probes.json" agents/; }
-(cd web && npm ci)
+[ -d web/node_modules ] || (cd web && npm ci)
 ```
 
 **Checks after setup.** If any check fails, stop and ask the human; don't copy files from the main checkout to work around it.
@@ -257,7 +275,7 @@ cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the huma
 
 **Spec-kit inside the worktree.** Spec-kit 1.0.4 here does not create git branches; it creates `specs/NNN-name/` and a local `.specify/feature.json`. Your branch is already `$BR`. Other agents also create specs in parallel, so sequential numbers would collide on merge. When `/speckit-specify` runs `create-new-feature.sh`, pass `--timestamp --short-name ws3-sprint-N-<slug>`. If the skill doesn't let you pass flags, rename the created directory afterwards to `specs/<timestamp>-ws3-sprint-N-<slug>/` and update `.specify/feature.json` to match.
 
-**Subagents for lanes.** Subagents work inside **your** worktree: run them sequentially if they touch the same files. For true parallelism, give each lane its own nested worktree under `$WT_ROOT/ws3-sprint-N-lane-X`, branched from `$BR`, and merge the lanes into `$BR` yourself. These lane worktrees and branches are yours to create and remove.
+**Subagents for lanes.** Subagents work inside **your** worktree: run them sequentially if they touch the same files. For true parallelism, give each lane its own nested worktree under `$WT_ROOT/ws03-sprint-N-lane-X`, branched from `$BR`, and merge the lanes into `$BR` yourself. These lane worktrees and branches are yours to create and remove.
 
 ### A6b. How every WS3 sprint is executed
 
@@ -272,6 +290,23 @@ cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the huma
    - the branch name
    - the dev-server port
    - exactly what they must do for the **human gate**, including running the gate from the worktree (`cd $WT/web && npm run dev -- -p 310N`)
+
+### A6c. Where WS3 documents live (all inside `notes/ws3-sprints/`)
+
+```
+notes/ws3-sprints/
+  README.md                         how to run the sprints (for the human)
+  sprint-plan.md                    overview, estimates, verification modes
+  sprint-0-…md … sprint-4-…md       these paste-ready prompts
+  handoff-sprint-N.md               written by each sprint agent at the end
+  docs/                             WS3 reference docs produced by the sprints:
+    elevenlabs-capabilities.md        Sprint 0: verified ElevenLabs capabilities + recommended mechanisms
+    contracts-v0.md                   Sprint 0: data contracts for WS2/WS5/WS6 (updated in Sprint 4)
+    voice-interface.md                Sprint 4: how WS5 reuses the voice component and consumes our output
+    trust.md                          Sprint 4: off-record semantics and retention facts
+```
+
+Put every WS3 note you create in this folder (or `docs/`). Don't add WS3 files elsewhere in `notes/`.
 
 ### A7. Standard verification commands
 
@@ -292,7 +327,7 @@ Probe results are nondeterministic. A behavior counts as "passing" only if it ho
 
 ```markdown
 # WS3 Sprint N handoff — <title>
-Branch: ws3/sprint-N-<slug>   Worktree: <path>   Dev port: 310N   Spec: specs/<timestamp>-ws3-sprint-N-<slug>/   Date: <date>
+Branch: worktree-ws03-sprint-N   Worktree: <path>   Dev port: 310N   Spec: specs/<timestamp>-ws3-sprint-N-<slug>/   Date: <date>
 ## Delivered (files + one line each)
 ## Verification evidence (pasted command output: typecheck, vitest summary, probe pass counts)
 ## Decisions made (and why) — especially anything that deviates from the sprint prompt
