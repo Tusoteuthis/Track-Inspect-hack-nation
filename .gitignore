@@ -1,1 +1,4 @@
 .env
+
+# Claude Code agent worktrees: nested git worktrees, never commit (see notes/WORKTREES.md)
+.claude/worktrees/

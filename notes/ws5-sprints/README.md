@@ -21,6 +21,8 @@ Everything for WS5 (knowledge & newcomer tutor) lives in this folder. The source
 
 ## Worktrees, branches, ports
 
+Shared rules for all workstreams (integration branch, port registry, `.env`, stash): [`../WORKTREES.md`](../WORKTREES.md).
+
 Every sprint agent works in **its own git worktree**, never in the shared main checkout. The worktrees sit in the shared `<repo>/.claude/worktrees/` folder next to the other workstreams' (`ws03-…`, `ws06-…`, `ws07-…`), with the same naming: folder `ws05-sprint-N`, branch `worktree-ws05-sprint-N`. `<repo>` = `/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation`. The human creates the worktree and launches the agent inside it (see the guide). Section A6 of each prompt has the exact setup commands and hard rules: no checkout, reset, stash or merge in the main checkout; only WS5 paths; spec-kit `--timestamp` naming.
 
 | Sprint | Branch | Worktree | Dev port |
