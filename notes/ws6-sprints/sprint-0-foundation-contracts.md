@@ -18,7 +18,7 @@ No endpoints are implemented in this sprint except `GET /api/health`. Correct, a
 - `notes/06-backend-integration.md` (all of it, our brief), `notes/06a-ws6-sprint-plan.md`
 - `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent fields)
 - `notes/ws3-sprints/sprint-0-spike-contracts.md` "Lane C" (WS3's v0 types: PointingEvent, ExpertExchange, DraftRevision, ExpertConfirmation, TimingMark, RecordingSegment) and `notes/ws3-sprints/sprint-1-golden-path.md` "Persistence"
-- `notes/05-knowledge-newcomer-tutor.md` §3–5 and `notes/05-sprint-plan.md` (entry/revision statuses `draft / confirmed / unresolved / revoked`, generic newcomer task "draft decision + reason → review → commit")
+- `notes/05-knowledge-newcomer-tutor.md` §3–5 and `notes/ws5-sprints/sprint-plan.md` (entry/revision statuses `draft / confirmed / unresolved / revoked`, generic newcomer task "draft decision + reason → review → commit")
 - `notes/04-prototype-data-scenarios.md` (learner-visible vs evaluator-only material), `notes/07-frontend-user-experience.md` §4 (UI state needs)
 - Check whether these already exist on `voice`: `web/lib/expert/contracts.ts`, vitest config, `web/fixtures/`, `.specify/memory/constitution.md` (filled or template?)
 
@@ -143,7 +143,7 @@ Core loop: *expert points → app identifies the visual reference → voice agen
 | WS6 (**us**) | APIs, storage, revisions, live updates, commit enforcement, off-record/deletion propagation, diagnostics, run setup | — |
 | WS7 | Web UI (expert companion, Work Map, newcomer practice) | **Consumes** our API and SSE |
 
-Full briefs: `notes/project-brief.md`, `notes/06-backend-integration.md` (**our brief**), `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent), `notes/03-elevenlabs-expert-interaction.md`, `notes/ws3-sprints/` (WS3 contracts and persistence plan), `notes/05-knowledge-newcomer-tutor.md` and `notes/05-sprint-plan.md` (WS5 modules and statuses), `notes/04-prototype-data-scenarios.md`, `notes/07-frontend-user-experience.md`. Overall WS6 plan: `notes/06a-ws6-sprint-plan.md`.
+Full briefs: `notes/project-brief.md`, `notes/06-backend-integration.md` (**our brief**), `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent), `notes/03-elevenlabs-expert-interaction.md`, `notes/ws3-sprints/` (WS3 contracts and persistence plan), `notes/05-knowledge-newcomer-tutor.md` and `notes/ws5-sprints/sprint-plan.md` (WS5 modules and statuses), `notes/04-prototype-data-scenarios.md`, `notes/07-frontend-user-experience.md`. Overall WS6 plan: `notes/06a-ws6-sprint-plan.md`.
 
 ### A5. Repository state you start from
 

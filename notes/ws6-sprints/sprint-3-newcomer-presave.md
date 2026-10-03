@@ -17,7 +17,7 @@ This is the challenge-critical sprint: the tutor must catch a wrong decision **b
 
 - `notes/ws6-sprints/handoff-sprint-2.md`, `notes/ws6-api-v0.md`, `web/lib/backend/` (modules, knowledge, jobs)
 - `notes/06-backend-integration.md` §3 (steps 6–8), §5 (all bullets), §7 (evaluator separation)
-- WS5: `notes/05-knowledge-newcomer-tutor.md` (tutor evaluation outcomes, uncertainty, assessment), `notes/05-sprint-plan.md` S3, and any merged WS5 evaluator/retrieval/assessment code
+- WS5: `notes/05-knowledge-newcomer-tutor.md` (tutor evaluation outcomes, uncertainty, assessment), `notes/ws5-sprints/sprint-plan.md` S3, and any merged WS5 evaluator/retrieval/assessment code
 - WS4: `notes/04-prototype-data-scenarios.md` (learner-visible cases vs evaluator-only answers) and any merged case fixtures
 - `notes/07-frontend-user-experience.md` §4 (draft review states the UI needs)
 
@@ -148,7 +148,7 @@ Core loop: *expert points → app identifies the visual reference → voice agen
 | WS6 (**us**) | APIs, storage, revisions, live updates, commit enforcement, off-record/deletion propagation, diagnostics, run setup | — |
 | WS7 | Web UI (expert companion, Work Map, newcomer practice) | **Consumes** our API and SSE |
 
-Full briefs: `notes/project-brief.md`, `notes/06-backend-integration.md` (**our brief**), `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent), `notes/03-elevenlabs-expert-interaction.md`, `notes/ws3-sprints/` (WS3 contracts and persistence plan), `notes/05-knowledge-newcomer-tutor.md` and `notes/05-sprint-plan.md` (WS5 modules and statuses), `notes/04-prototype-data-scenarios.md`, `notes/07-frontend-user-experience.md`. Overall WS6 plan: `notes/06a-ws6-sprint-plan.md`.
+Full briefs: `notes/project-brief.md`, `notes/06-backend-integration.md` (**our brief**), `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent), `notes/03-elevenlabs-expert-interaction.md`, `notes/ws3-sprints/` (WS3 contracts and persistence plan), `notes/05-knowledge-newcomer-tutor.md` and `notes/ws5-sprints/sprint-plan.md` (WS5 modules and statuses), `notes/04-prototype-data-scenarios.md`, `notes/07-frontend-user-experience.md`. Overall WS6 plan: `notes/06a-ws6-sprint-plan.md`.
 
 ### A5. Repository state you start from
 

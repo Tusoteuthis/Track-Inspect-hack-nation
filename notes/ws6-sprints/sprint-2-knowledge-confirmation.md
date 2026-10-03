@@ -17,7 +17,7 @@ Revision integrity is the point of this sprint: a confirmation can never verify 
 
 - `notes/ws6-sprints/handoff-sprint-1.md`, `notes/ws6-api-v0.md`, `web/lib/contracts/`, `web/lib/backend/`
 - `notes/06-backend-integration.md` §3 (steps 4–5), §5, §6
-- WS5: `notes/05-knowledge-newcomer-tutor.md` §3–5, `notes/05-sprint-plan.md` (S1 knowledge contract, S2 synthesis/gaps/confirmation), and any WS5 code merged on `voice` (look for a synthesis module, entry schema and Work Map payload type)
+- WS5: `notes/05-knowledge-newcomer-tutor.md` §3–5, `notes/ws5-sprints/sprint-plan.md` (S1 knowledge contract, S2 synthesis/gaps/confirmation), and any WS5 code merged on `voice` (look for a synthesis module, entry schema and Work Map payload type)
 - WS3: `DraftRevision` / `ExpertConfirmation` in their contracts, and how their debrief consumes gaps (`notes/ws3-sprints/sprint-3-debrief-confirmation.md`)
 
 ## Prerequisites
@@ -137,7 +137,7 @@ Core loop: *expert points → app identifies the visual reference → voice agen
 | WS6 (**us**) | APIs, storage, revisions, live updates, commit enforcement, off-record/deletion propagation, diagnostics, run setup | — |
 | WS7 | Web UI (expert companion, Work Map, newcomer practice) | **Consumes** our API and SSE |
 
-Full briefs: `notes/project-brief.md`, `notes/06-backend-integration.md` (**our brief**), `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent), `notes/03-elevenlabs-expert-interaction.md`, `notes/ws3-sprints/` (WS3 contracts and persistence plan), `notes/05-knowledge-newcomer-tutor.md` and `notes/05-sprint-plan.md` (WS5 modules and statuses), `notes/04-prototype-data-scenarios.md`, `notes/07-frontend-user-experience.md`. Overall WS6 plan: `notes/06a-ws6-sprint-plan.md`.
+Full briefs: `notes/project-brief.md`, `notes/06-backend-integration.md` (**our brief**), `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent), `notes/03-elevenlabs-expert-interaction.md`, `notes/ws3-sprints/` (WS3 contracts and persistence plan), `notes/05-knowledge-newcomer-tutor.md` and `notes/ws5-sprints/sprint-plan.md` (WS5 modules and statuses), `notes/04-prototype-data-scenarios.md`, `notes/07-frontend-user-experience.md`. Overall WS6 plan: `notes/06a-ws6-sprint-plan.md`.
 
 ### A5. Repository state you start from
 

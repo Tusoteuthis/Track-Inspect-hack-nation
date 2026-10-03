@@ -85,11 +85,11 @@ Every sprint prompt is self-contained. These are the files the agent reads for c
 |---|---|
 | 0: Foundation & contracts | `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent), `notes/ws3-sprints/sprint-0-spike-contracts.md` "Lane C" + `sprint-1-golden-path.md` "Persistence", `notes/05-knowledge-newcomer-tutor.md` §3–5, `notes/04-prototype-data-scenarios.md`, `notes/07-frontend-user-experience.md` §4 |
 | 1: Expert capture | `web/app/api/conversation-token/route.ts`, `web/lib/voice/flows.ts`, WS3 code if merged (`web/lib/expert/`), `notes/ws3-sprints/handoff-sprint-*.md` |
-| 2: Knowledge & confirmation | `notes/05-knowledge-newcomer-tutor.md`, `notes/05-sprint-plan.md`, any merged WS5 modules, `notes/ws3-sprints/sprint-3-debrief-confirmation.md` |
+| 2: Knowledge & confirmation | `notes/05-knowledge-newcomer-tutor.md`, `notes/ws5-sprints/sprint-plan.md`, any merged WS5 modules, `notes/ws3-sprints/sprint-3-debrief-confirmation.md` |
 | 3: Newcomer & pre-save | `notes/05-knowledge-newcomer-tutor.md` (evaluation outcomes, assessment), `notes/04-prototype-data-scenarios.md` (evaluator-only material), `notes/07-frontend-user-experience.md` §4 |
 | 4: Trust & demo | `notes/ws3-sprints/sprint-4-trust-completion.md`, WS5 eligibility/revocation rules, `notes/02-glasses-iphone-visual-processing.md` (off-record capture), all earlier WS6 handoffs |
 
-**Partner notes not yet merged** (for example `notes/05-sprint-plan.md`, which currently lives only in the WS5 worktree) may be read, **read-only**, from the main checkout's `notes/` or from the partner's worktree `…/.claude/worktrees/ws05-*/notes/`. They are never copied into the WS6 branch.
+**Partner notes not yet merged** (for example `notes/ws5-sprints/` with WS5's sprint plan and prompts, which currently lives only on branch `worktree-ws05-knowledge-tutor`) may be read, **read-only**, from the main checkout's `notes/` or from the partner's worktree `…/.claude/worktrees/ws05-*/notes/`. They are never copied into the WS6 branch.
 
 ## 5. How the agent stays in the worktree
 
