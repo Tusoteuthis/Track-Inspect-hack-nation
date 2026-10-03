@@ -1,0 +1,26 @@
+{
+  "exchange_id": "sx-002",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-001",
+  "phase": "live",
+  "kind": "reasoning",
+  "question": "FIXTURE question: why decision A?",
+  "answer_lines": [
+    {
+      "text": "Because FIXTURE cue A1 is present.",
+      "at_utc": "2026-10-03T10:02:10.000Z",
+      "transcript_line_id": "sx-002-line-1"
+    },
+    {
+      "text": "And I never save FIXTURE decision A when FIXTURE condition C is visible.",
+      "at_utc": "2026-10-03T10:02:11.000Z",
+      "transcript_line_id": "sx-002-line-2"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:02:05.000Z",
+  "answer_started_at_utc": "2026-10-03T10:02:10.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:02:12.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}

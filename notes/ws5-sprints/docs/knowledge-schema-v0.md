@@ -29,6 +29,7 @@ Conventions:
 | `schema_version` | `"ws5.v0"` | Format version |
 | `entry_id`, `revision_id` | string | Stable identity plus the exact version taught or confirmed. `revision_id` is entry-scoped (`rev-1`, `rev-2`, …) |
 | `parent_revision_id` | string \| null | The revision this one corrects |
+| `change_reason` | string \| null, optional | Sprint 2. Why this revision exists, e.g. `support changed: added sx-010 (correction cnf-sx-001)`. Written only when present, so older files render unchanged |
 | `status` | `draft` \| `confirmed` \| `unresolved` \| `revoked` | See §3 |
 | `kind` | `step` \| `decision` \| `guardrail` \| `exception` \| `escalation` | WS3 `StepKind` plus `escalation` |
 | `workflow_position` | integer \| null | Teaching order in the Work Map. Not the recording order |
@@ -218,7 +219,69 @@ WS6 `Confirmation` maps as `reviewed_revision_id` → `confirmation.revision_id_
 | `DraftRevision.revision_id` (session-scoped) | WS5 revisions are **entry-scoped**. See the open question below |
 | `ExpertConfirmation { revision_id, status, expert_response_exchange_id }` | `confirmation { revision_id_reviewed, result, expert_response_exchange_id }`, applied to each entry whose `step_id` is in `step_ids_reviewed` |
 
-## 8. Open questions per partner
+## 8. Synthesis (Sprint 2) and swapping out the stubs
+
+`synthesize({ events, exchanges, confirmations, prior, gap_answers?, resolve_image_ref })` is pure and deterministic. It returns:
+- `entries`: new draft revisions only;
+- `workflow`;
+- `gaps`;
+- `teach_back`;
+- `flagged_for_reconfirmation`.
+
+**Rules**
+- **Off-record material** (exchanges, events, and exchanges about off-record events) and the exact words of revoked entries are removed first.
+- **Teach-back replies** count only when they are the response of a `corrected` confirmation.
+- **Grouping.** There is one entry per (screen moment, role):
+  - Role comes from the exchange kind: explain/context/distinction/reasoning → step or decision, `guardrail`, `exception`.
+  - A line can carry fixed linguistic cues ("never", "stop", "escalate", "unless", "only if" …), which add a guardrail, escalation or exception role.
+  - One exchange can therefore support several entries, and one entry can draw on several exchanges.
+- **Expert words** are whole answer lines, so they are verbatim by construction.
+- **Process text** is a fixed template tagged `[AI synthesis]`; it carries no domain vocabulary.
+- **Qualifiers** ("usually", "only if" …) are kept as written.
+- **Revisions.**
+  - Unchanged content (FNV-1a hash, ignoring ids, status and timestamps) gives no new revision.
+  - Changed support gives `rev-(n+1)` with `parent_revision_id` and `change_reason`.
+  - A spoken correction without a gesture is tied to the single entry in `step_ids_reviewed`; otherwise it becomes a `conflict` gap.
+- **Workflow order** is logical: steps and decisions (in pointing order), then exceptions, guardrails, escalations. The recording timeline is secondary metadata.
+- **Gaps** (`findGaps`) cover only what is not answered: `missing_reason`, `unclear_guardrail`, `conflict`, `unqualified_exception`, `missing_evidence`, `ambiguous_reference`.
+  - Priority 1 = guardrail/conflict. Never padded.
+  - A gap is closed by a later answer, or by `gap_answers` (`{ exchange_id, gap_id }` from WS3's `begin_question`).
+- **Teach-back** (`buildTeachBack`) gives one sentence per entry in workflow order and ends with "Is that right, or what should I change?". `reviewed` lists the exact `entry_id@revision_id` a confirmation binds to.
+- **Work Map** (`buildWorkMap`) is per workflow step:
+  - verbatim expert words with their question, AI synthesis, guardrails, visuals and confirmation;
+  - unresolved links go to `broken_links`, a non-verbatim quote is left out and reported, and a missing revision becomes a step that only reports its broken link;
+  - by default only confirmed content is shown, or only `isTeachable` content when an eligibility context is passed; `include_draft` shows everything except revoked; `excluded` says what was left out and why.
+
+**WS3: replace `web/lib/expert/synthesis.ts`**
+
+```ts
+import { ws3Synthesis, type Ws3SynthesisState } from "@/lib/knowledge";
+export const getGaps = (state: Ws3SynthesisState) => ws3Synthesis.getGaps(state);          // OpenQuestion & { kind, priority }
+export const buildDraft = (state: Ws3SynthesisState, parent?: DraftRevision) => ws3Synthesis.buildDraft(state, parent);
+```
+
+- Map your session state onto `Ws3SynthesisState` `{ session_id, events, exchanges, confirmations, prior_entries?, gap_answers? }`.
+- `step_id` is the WS5 `entry_id`; `escalation` maps to your `guardrail`.
+- `buildDraft` returns the parent unchanged when nothing changed.
+- Without `prior_entries`, the session's own uncorrected draft is treated as the prior, so a correction still produces rev-2.
+
+**WS6: replace the stub in `web/lib/backend/modules.ts`**
+
+```ts
+import { createWs6SynthesisModule, parseEntryMarkdown } from "@/lib/knowledge";
+export const synthesis = createWs6SynthesisModule({
+  load_content: rev => parseEntryMarkdown(readBody(rev.content_path)), // your store
+  resolve_image_ref: (ref, entryId) => /* relative from entries/<entryId>/ to knowledge/images/... */ ref,
+});
+```
+
+- `id: "ws5-synthesis"`, with a `version`.
+- `synthesize({ session, events, exchanges, prior, confirmations?, gap_answers? })` returns `{ revisions, workflow_markdown, gaps, teach_back, teach_back_reviewed, flagged_for_reconfirmation }`:
+  - Each revision carries `entry_id`, `revision_no`, the parent mapped to your revision id, `change_reason`, `evidence`, `produced_by.source`, the Markdown body and the parsed content.
+  - Dedupe is built in: unchanged input returns no revisions.
+- `confirmations` and `gap_answers` are additions to your documented input. Without them, corrections cannot produce `rev-(n+1)`.
+
+## 9. Open questions per partner
 
 **WS3**
 1. Your revisions are session-scoped (`DraftRevision.rev-N`) and ours are entry-scoped. Is it fine that confirmation of `DraftRevision rev-N` is recorded per entry, listing the exact entry revision each reviewed step corresponds to? Or should `step_ids_reviewed` carry `entry_id@revision_id`?

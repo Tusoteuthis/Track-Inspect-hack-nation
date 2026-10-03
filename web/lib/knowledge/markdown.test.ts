@@ -16,6 +16,16 @@ describe("Markdown round trip", () => {
     expect(renderEntryMarkdown(parsed)).toBe(md);
   });
 
+  it("carries change_reason in the frontmatter only when present", () => {
+    const base = fixtureEntry("ent-step-a");
+    expect(renderEntryMarkdown(base)).not.toContain("change_reason");
+    for (const change_reason of [null, "support changed: added exc-012"]) {
+      const md = renderEntryMarkdown({ ...base, change_reason });
+      expect(md).toContain(`change_reason: ${JSON.stringify(change_reason)}`);
+      expect(parseEntryMarkdown(md)).toEqual({ ...base, change_reason });
+    }
+  });
+
   it("survives awkward text: quotes, markers, comments, newlines, backslashes, unicode", () => {
     const awkward = [
       'He said "usually" — only if',
