@@ -1,5 +1,7 @@
 # WS7 Sprint 0 — App shell, UI contracts, data layer, evidence viewer
 
+> **Status: DONE (2026-10-04)** on branch `ws7-sprint-0` and re-verified. See [handoff-sprint-0.md](handoff-sprint-0.md). Still open: the human gate and the merge into `voice`. Don't run this prompt again.
+
 > Paste this whole file as the first message to a fresh coding agent started in the repo root.
 
 ## Your role
