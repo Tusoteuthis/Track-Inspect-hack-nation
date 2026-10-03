@@ -2,7 +2,7 @@
 
 Each `sprint-N-*.md` file is a **self-contained prompt**. Start a fresh coding agent **inside its own worktree** (see "Worktree setup" below) and paste the entire file as its first message. Each file has the sprint-specific instructions at the top and the shared project context (sections A1–A8) at the bottom. The shared context is identical in every file, so no agent depends on another agent's conversation.
 
-Overview and estimates: [`sprint-plan.md`](sprint-plan.md). Source brief: [`../03-elevenlabs-expert-interaction.md`](../03-elevenlabs-expert-interaction.md).
+**Starting an agent? Read [`HOW-TO-START-AN-AGENT.md`](HOW-TO-START-AN-AGENT.md) first.** Overview and estimates: [`sprint-plan.md`](sprint-plan.md). Source brief: [`../03-elevenlabs-expert-interaction.md`](../03-elevenlabs-expert-interaction.md).
 
 | Order | File | Delivers | Agent time | Human gate |
 |---|---|---|---|---|
