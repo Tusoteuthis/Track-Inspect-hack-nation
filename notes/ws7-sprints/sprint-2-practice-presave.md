@@ -167,7 +167,7 @@ Code style:
 ### B6. How every WS7 sprint is executed
 
 1. Read this whole prompt, then the "Read first" files.
-2. **Work in your own git worktree.** Other workstream agents are working on this repo in parallel. From the main checkout, run:
+2. **Work in your own git worktree.** Other workstream agents are working on this repo in parallel. First run `git rev-parse --show-toplevel` and `git branch --show-current`. If you are already inside `.claude/worktrees/ws7-sprint-N`, the human created it for you: stay there and skip creation. Otherwise, from the main checkout, run:
    ```bash
    git worktree add -b ws7-sprint-N .claude/worktrees/ws7-sprint-N voice
    ```

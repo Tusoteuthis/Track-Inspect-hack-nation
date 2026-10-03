@@ -5,6 +5,8 @@ Each `sprint-N-*.md` file is a **self-contained prompt**. Start a fresh coding a
 - Each file has the sprint-specific instructions at the top and the shared project context (sections B1–B8) at the bottom.
 - The shared context is identical in every file, so no agent depends on another agent's conversation.
 
+**Starting an agent:** follow [`HOW-TO-START-AN-AGENT.md`](HOW-TO-START-AN-AGENT.md). It covers creating the worktree, the kickoff message, required reading and the merge steps.
+
 Overview and estimates: [`../07a-ws7-sprint-plan.md`](../07a-ws7-sprint-plan.md). Source brief: [`../07-frontend-user-experience.md`](../07-frontend-user-experience.md).
 
 | Order | File | Delivers | Agent time | Human gate |
