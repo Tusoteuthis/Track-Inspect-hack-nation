@@ -1,0 +1,118 @@
+.viewer {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.segmented {
+  display: inline-flex;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.segmented button,
+.inspect,
+.dialogBar button {
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  background: var(--panel);
+  cursor: pointer;
+}
+.segmented button + button { border-left: 2px solid var(--line); }
+/* Pressed state uses weight + underline, not colour alone. */
+.segmented button[aria-pressed="true"] {
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.inspect,
+.dialogBar button {
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.image {
+  position: absolute;
+  display: block;
+  max-width: none;
+  user-select: none;
+}
+
+.outline {
+  position: absolute;
+  border: var(--outline-width) solid var(--region);
+  /* Dark halo keeps the outline visible on light and dark traces. */
+  box-shadow: 0 0 0 2px var(--region-halo), inset 0 0 0 2px var(--region-halo);
+  pointer-events: none;
+}
+.dashed { border-style: dashed; }
+
+.label {
+  position: absolute;
+  bottom: 100%;
+  left: calc(-1 * var(--outline-width));
+  margin-bottom: 2px;
+  padding: 0 var(--space-2);
+  background: var(--region);
+  color: var(--region-halo);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  border: 2px solid var(--region-halo);
+}
+
+.labelInside {
+  bottom: auto;
+  top: 0;
+  left: 0;
+  margin: 0;
+}
+
+.notice {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 2px dashed var(--line);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+.error { border: 2px solid var(--danger); color: var(--danger); }
+
+.caption { color: var(--muted); font-size: var(--font-sm); }
+
+.dialog {
+  width: min(96vw, 120rem);
+  max-height: 96vh;
+  padding: var(--space-4);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+}
+.dialog::backdrop { background: rgb(0 0 0 / 0.75); }
+.dialogBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  font-weight: 600;
+}
