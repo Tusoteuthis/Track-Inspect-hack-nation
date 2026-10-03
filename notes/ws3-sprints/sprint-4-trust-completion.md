@@ -16,16 +16,16 @@ Context sections A1–A8 below apply in full.
 
 - Sprint number `N` = **4**
 - Slug = **trust-completion**
-- Branch = **`ws3/sprint-4-trust-completion`**
-- Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-4`**
+- Branch = **`worktree-ws03-sprint-4`**
+- Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-4`**
 - Dev-server port = **3104**
 
-**First action:** follow section A6 at the bottom of this prompt to create your worktree. Do not edit anything in the main checkout.
+**First action:** run the A6 location check at the bottom of this prompt. It confirms you are in your worktree, or creates it if you were started in the main checkout. Do not edit anything in the main checkout.
 
 ## Read first
 
 - `notes/ws3-sprints/handoff-sprint-3.md` (and the earlier handoffs)
-- `notes/ws3-elevenlabs-capabilities.md`, especially Q6 (history and audio retrieval), Q7 (retention, zero-retention, deletion) and "Recommended mechanisms (f)"
+- `notes/ws3-sprints/docs/elevenlabs-capabilities.md`, especially Q6 (history and audio retrieval), Q7 (retention, zero-retention, deletion) and "Recommended mechanisms (f)"
 - `notes/03-elevenlabs-expert-interaction.md` §3 (off-record), §9 (deliverables) and §11 (acceptance criteria)
 - `notes/project-brief.md` §7 ("Trust" row and demo question 5)
 - `notes/05-knowledge-newcomer-tutor.md` (what WS5 consumes) and `notes/07-frontend-user-experience.md` §5 (WS7 shows off-record from acknowledged state, not a local toggle)
@@ -51,8 +51,8 @@ Sprint 3 merged into `voice`, and the human gate passed.
   - Revisions already created from content that later becomes excluded: if the expert asks to strike something retroactively ("forget what I just said"), support removing the last exchange. Mark dependent revisions as superseded and require a re-confirmation. Simplest correct behavior: invalidate the current confirmation and say so.
 - **ElevenLabs side:** apply what the capabilities doc found:
   - If per-conversation deletion or zero-retention is available on our plan, implement it (for example a server route that deletes the conversation after the session when any off-record segment occurred, or zero-retention configured on the expert agent through sync-agents). Clearly show the result in the console.
-  - If not available, **say so explicitly** in the console and in `notes/ws3-trust.md`. The audio passes through ElevenLabs for the live conversation, and its retention is governed by account settings. Never claim more than is true.
-- Note for the demo: personal data on screen is WS2's concern (capture). Mention the boundary in `notes/ws3-trust.md`.
+  - If not available, **say so explicitly** in the console and in `notes/ws3-sprints/docs/trust.md`. The audio passes through ElevenLabs for the live conversation, and its retention is governed by account settings. Never claim more than is true.
+- Note for the demo: personal data on screen is WS2's concern (capture). Mention the boundary in `notes/ws3-sprints/docs/trust.md`.
 
 ### 2. Session completion and incomplete sessions
 - On Stop, disconnect or error: build `SessionCompletion` with
@@ -75,13 +75,13 @@ Sprint 3 merged into `voice`, and the human gate passed.
 - A console button "Export demo evidence". The content is derived purely from stored records, and it's tested.
 
 ### 4. WS5 / WS6 / WS7 handoff docs
-- `notes/ws3-voice-interface.md`:
+- `notes/ws3-sprints/docs/voice-interface.md`:
   - how WS5 reuses `VoiceSession` (props, client tools pattern, contextual updates, the token route, adding a flow in `flows.ts`, sync-agents/probe usage for the tutor agent)
   - the session folder layout and file semantics WS5 should consume (`knowledge-draft.md`, `revisions/`, `confirmations.json`, `exchanges.json`)
   - eligibility rule: only `confirmed` steps from the latest confirmed revision are teaching material, and off-record content is absent by construction
   - the `synthesis.ts` interface WS5 can replace
-- `notes/ws3-trust.md` — off-record semantics end to end, the ElevenLabs retention facts with sources, the limits, and the answer-key separation.
-- Update `notes/ws3-contracts-v0.md` to the final field set (bump to `ws3.v1` if fields changed since v0, and list the changes).
+- `notes/ws3-sprints/docs/trust.md` — off-record semantics end to end, the ElevenLabs retention facts with sources, the limits, and the answer-key separation.
+- Update `notes/ws3-sprints/docs/contracts-v0.md` to the final field set (bump to `ws3.v1` if fields changed since v0, and list the changes).
 
 ### 5. Probes (≥ 4/5 each)
 - "Off the record — …" → `set_record_state off_record`, a short acknowledgement, no questions about the off-record content afterwards.
@@ -103,7 +103,7 @@ The tutor itself (WS5), the polished UI (WS7), the shared backend (WS6), glasses
   - an incomplete session is never marked confirmed
   - demo-evidence checklist logic
 - Probes pass ≥ 4/5 (counts reported).
-- `notes/ws3-voice-interface.md` and `notes/ws3-trust.md` exist, and the contracts doc is updated.
+- `notes/ws3-sprints/docs/voice-interface.md` and `notes/ws3-sprints/docs/trust.md` exist, and the contracts doc is updated.
 - The ElevenLabs-side retention behavior is implemented or explicitly documented as a limitation.
 - Handoff note `notes/ws3-sprints/handoff-sprint-4.md` written, including a final "WS3 status vs §11 acceptance criteria" table.
 
@@ -111,10 +111,10 @@ The tutor itself (WS5), the polished UI (WS7), the shared backend (WS6), glasses
 
 1. In the sprint worktree, run `cd web && npm run dev -- -p 3104` and open http://localhost:3104. Run a full session. Midway, say "off the record", say a sentinel phrase (for example "pineapple calibration"), then say "back on the record".
 2. After stopping, search the session folder for the phrase: `grep -ri pineapple <worktree>/knowledge/sessions/<id>/` must return nothing.
-3. Check the console and `notes/ws3-trust.md` for the ElevenLabs-side retention status.
+3. Check the console and `notes/ws3-sprints/docs/trust.md` for the ElevenLabs-side retention status.
 4. Stop a second session before the teach-back and confirm that `completion.md` says incomplete.
 5. Open `demo-evidence.md`. All challenge rows should be ✓ for the full session.
-6. If satisfied, merge the branch into `voice`, from the main checkout once it's clean and no other agent is mid-commit: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation merge --no-ff ws3/sprint-4-trust-completion`. Then remove the worktree: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-4`. WS3 is done; hand `notes/ws3-voice-interface.md` to WS5.
+6. If satisfied, merge the branch into `voice`, from the main checkout once it's clean and no other agent is mid-commit: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation merge --no-ff worktree-ws03-sprint-4`. Then remove the worktree: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-4`. WS3 is done; hand `notes/ws3-sprints/docs/voice-interface.md` to WS5.
 
 ---
 
@@ -164,7 +164,7 @@ Useful question patterns (patterns, not a script): "What do you recognize in thi
 | WS6 | Shared backend (does not exist yet) | Will take over our local-file persistence later; keep it behind a small interface |
 | WS7 | Web frontend | Will build the polished UI; our UI is a functional dev/companion page |
 
-Full briefs, if you need more detail: `notes/project-brief.md`, `notes/03-elevenlabs-expert-interaction.md` (our brief), `notes/02-glasses-iphone-visual-processing.md` (PointingEvent contract, §5), `notes/05-knowledge-newcomer-tutor.md` (knowledge entry structure, §3–5), `notes/06-backend-integration.md`. The overall WS3 sprint plan is `notes/03a-ws3-sprint-plan.md`.
+Full briefs, if you need more detail: `notes/project-brief.md`, `notes/03-elevenlabs-expert-interaction.md` (our brief), `notes/02-glasses-iphone-visual-processing.md` (PointingEvent contract, §5), `notes/05-knowledge-newcomer-tutor.md` (knowledge entry structure, §3–5), `notes/06-backend-integration.md`. The overall WS3 sprint plan is `notes/ws3-sprints/sprint-plan.md`.
 
 ### A5. Repository state you start from
 
@@ -193,7 +193,7 @@ web/                          Next.js 16 / React 19 / TypeScript app (path alias
 
 Packages: `@elevenlabs/react` ^1.16, `@elevenlabs/elevenlabs-js` ^2.70, `next` ^16.1, `react` ^19.2, `tsx`, `typescript`. Code style: small focused modules, comments only where the "why" is non-obvious, strict TypeScript, no `any`. Match the existing style in `VoiceSession.tsx` and `transcript.ts`.
 
-**Never invent ElevenLabs API surface.** Check the installed SDK typings in `web/node_modules/@elevenlabs/...` and the official ElevenLabs docs, plus `notes/ws3-elevenlabs-capabilities.md` once Sprint 0 has produced it. If something you need does not exist, say so and choose a documented fallback.
+**Never invent ElevenLabs API surface.** Check the installed SDK typings in `web/node_modules/@elevenlabs/...` and the official ElevenLabs docs, plus `notes/ws3-sprints/docs/elevenlabs-capabilities.md` once Sprint 0 has produced it. If something you need does not exist, say so and choose a documented fallback.
 
 ### A6. Git worktree isolation (MANDATORY — other agents work in this repo in parallel)
 
@@ -205,25 +205,43 @@ Several agents work on this repository **at the same time**. The main checkout (
 - All file edits, commands, tests, dev servers and commits happen **inside your worktree directory**.
 - Only push config to the **expert** ElevenLabs agent (`npm run sync-agents -- --agent expert`). Never touch the tutor agent or any other agent.
 
-**Setup (run once at the start; replace `N` and `<slug>` with the sprint number and slug from the title of this prompt)**
+**Recommended start: the human launches you inside your worktree.** The human may already have created your worktree and started you in it. That is the safest setup, because your whole session (shell, file paths, spec-kit scripts) then lives in the worktree. You may also have been started in the main checkout. Either way, run this **before doing anything else** (replace `N` and `<slug>` with the values from "Worktree identity"):
 
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
-WT_ROOT=/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees
-WT=$WT_ROOT/ws3-sprint-N
-BR=ws3/sprint-N-<slug>
+WT_ROOT=$REPO/.claude/worktrees
+WT=$WT_ROOT/ws03-sprint-N
+BR=worktree-ws03-sprint-N
+HERE=$(git rev-parse --show-toplevel)
+CUR=$(git branch --show-current)
 
-mkdir -p "$WT_ROOT"
-git -C "$REPO" worktree list                    # check that $WT and $BR don't already exist
-git -C "$REPO" fetch origin 2>/dev/null || true # read-only for the main checkout; ignore if offline
-git -C "$REPO" worktree add -b "$BR" "$WT" voice   # new branch from the local voice tip
+if [ "$HERE" = "$WT" ] && [ "$CUR" = "$BR" ]; then
+  echo "OK: already in my worktree ($WT on $BR); skip creation"
+elif [ "$HERE" = "$REPO" ]; then
+  echo "Started in the MAIN checkout; creating/using my worktree"
+  if git -C "$REPO" worktree list | grep -q " $WT "; then
+    echo "worktree exists already"
+  else
+    mkdir -p "$WT_ROOT"
+    git -C "$REPO" worktree add -b "$BR" "$WT" voice
+  fi
+else
+  echo "STOP: unexpected location $HERE on branch $CUR; ask the human"
+fi
+```
+
+- **If it printed STOP:** stop and ask the human.
+- **If the worktree exists but is on a different branch than `$BR`,** or `$BR` already exists elsewhere: stop and ask the human. Never force, reset or delete anything.
+- **If you were started in the main checkout:** from now on, **every** shell command starts with `cd "$WT" && …`, and **every** file path you read, edit or write must start with `$WT/`, never with `$REPO/`. Run spec-kit commands (`/speckit-*`) only after `cd "$WT"`. Before each commit, check that `git -C "$REPO" status --short` shows none of your files.
+
+Then, in the worktree, set up what git does not carry over:
+
+```bash
 cd "$WT"
-
-# Things git does not carry into a worktree:
-cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the human"
+[ -f web/.env ] || cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the human"
 [ -f agents/manifest.json ] || { [ -f "$REPO/agents/manifest.json" ] && cp "$REPO/agents/manifest.json" agents/; }
 [ -f agents/probes.json ]   || { [ -f "$REPO/agents/probes.json" ]   && cp "$REPO/agents/probes.json" agents/; }
-(cd web && npm ci)
+[ -d web/node_modules ] || (cd web && npm ci)
 ```
 
 **Checks after setup.** If any check fails, stop and ask the human; don't copy files from the main checkout to work around it.
@@ -235,7 +253,7 @@ cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the huma
 
 **Spec-kit inside the worktree.** Spec-kit 1.0.4 here does not create git branches; it creates `specs/NNN-name/` and a local `.specify/feature.json`. Your branch is already `$BR`. Other agents also create specs in parallel, so sequential numbers would collide on merge. When `/speckit-specify` runs `create-new-feature.sh`, pass `--timestamp --short-name ws3-sprint-N-<slug>`. If the skill doesn't let you pass flags, rename the created directory afterwards to `specs/<timestamp>-ws3-sprint-N-<slug>/` and update `.specify/feature.json` to match.
 
-**Subagents for lanes.** Subagents work inside **your** worktree: run them sequentially if they touch the same files. For true parallelism, give each lane its own nested worktree under `$WT_ROOT/ws3-sprint-N-lane-X`, branched from `$BR`, and merge the lanes into `$BR` yourself. These lane worktrees and branches are yours to create and remove.
+**Subagents for lanes.** Subagents work inside **your** worktree: run them sequentially if they touch the same files. For true parallelism, give each lane its own nested worktree under `$WT_ROOT/ws03-sprint-N-lane-X`, branched from `$BR`, and merge the lanes into `$BR` yourself. These lane worktrees and branches are yours to create and remove.
 
 ### A6b. How every WS3 sprint is executed
 
@@ -250,6 +268,23 @@ cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the huma
    - the branch name
    - the dev-server port
    - exactly what they must do for the **human gate**, including running the gate from the worktree (`cd $WT/web && npm run dev -- -p 310N`)
+
+### A6c. Where WS3 documents live (all inside `notes/ws3-sprints/`)
+
+```
+notes/ws3-sprints/
+  README.md                         how to run the sprints (for the human)
+  sprint-plan.md                    overview, estimates, verification modes
+  sprint-0-…md … sprint-4-…md       these paste-ready prompts
+  handoff-sprint-N.md               written by each sprint agent at the end
+  docs/                             WS3 reference docs produced by the sprints:
+    elevenlabs-capabilities.md        Sprint 0: verified ElevenLabs capabilities + recommended mechanisms
+    contracts-v0.md                   Sprint 0: data contracts for WS2/WS5/WS6 (updated in Sprint 4)
+    voice-interface.md                Sprint 4: how WS5 reuses the voice component and consumes our output
+    trust.md                          Sprint 4: off-record semantics and retention facts
+```
+
+Put every WS3 note you create in this folder (or `docs/`). Don't add WS3 files elsewhere in `notes/`.
 
 ### A7. Standard verification commands
 
@@ -270,7 +305,7 @@ Probe results are nondeterministic. A behavior counts as "passing" only if it ho
 
 ```markdown
 # WS3 Sprint N handoff — <title>
-Branch: ws3/sprint-N-<slug>   Worktree: <path>   Dev port: 310N   Spec: specs/<timestamp>-ws3-sprint-N-<slug>/   Date: <date>
+Branch: worktree-ws03-sprint-N   Worktree: <path>   Dev port: 310N   Spec: specs/<timestamp>-ws3-sprint-N-<slug>/   Date: <date>
 ## Delivered (files + one line each)
 ## Verification evidence (pasted command output: typecheck, vitest summary, probe pass counts)
 ## Decisions made (and why) — especially anything that deviates from the sprint prompt
