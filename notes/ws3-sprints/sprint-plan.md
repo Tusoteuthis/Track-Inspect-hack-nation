@@ -59,7 +59,8 @@ Each sprint = one spec-kit feature (`/speckit-specify → plan → tasks → imp
 - Add vitest to `web/`; define v0 types in `web/lib/expert/contracts.ts` (PointingEvent, ExpertExchange, OpenQuestion, DraftRevision, ExpertConfirmation, SessionCompletion) + fixtures in `web/fixtures/` (3–4 pointing events incl. one ambiguous, one repeat).
 - **Human gate:** approve capability findings and share contracts with WS2/WS5/WS6.
 
-### Sprint 1 — Golden path: point → question → answer → saved evidence (agent ~2–3h, human ~30 min)
+### Sprint 1 — Golden path: point → question → answer → saved evidence (agent ~2–3h, human ~30 min) — ✅ DONE (2026-10-04)
+- **Status:** agent work complete. 103 tests green; expert agent created and synced (`begin_question` tool, `skip_turn` on); probes 5/5 on all five cases; snapshot route writes all six files. Branched from Sprint 0 (not yet merged into `voice`). Handoff: `notes/ws3-sprints/handoff-sprint-1.md`. Remaining human items: live voice gate, merge into `voice` (brings Sprint 0 along), copy the expert agent id into the main checkout's `web/.env`.
 - Lane A (V1): session store + **exchange linker** reducer (agent calls `begin_question(event_id, question, kind)` tool → subsequent user final lines attach to that exchange until next question; answers keep original event even if new events arrive); persistence routes writing `knowledge/sessions/<id>/{exchanges.json, transcript.md, events/}`; timing log (event received / question ready / speech onset).
 - Lane B (V2): `agents/expert/system-prompt.md`, first message, tool definitions; manifest wiring; probe cases (asks about the event, doesn't lead, one question at a time, calls the tool).
 - Lane C: replace dev `ContextSender` with fixture event injector; wire client tools into `VoiceSession` on the expert flow.

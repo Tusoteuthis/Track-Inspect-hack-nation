@@ -1,6 +1,6 @@
 # WS3 Sprint 1 handoff — Golden path: point → question → answer → saved evidence
 
-Branch: worktree-ws03-sprint-1   Worktree: .claude/worktrees/ws03-sprint-1   Dev port: 3101   Spec: specs/20261004-010622-ws3-sprint-1-golden-path/   Date: 2026-10-04   **Status: ✅ agent work done; awaiting human gate and merge**
+Branch: worktree-ws03-sprint-1   Worktree: .claude/worktrees/ws03-sprint-1   Dev port: 3101   Spec: specs/20261004-010622-ws3-sprint-1-golden-path/   Date: 2026-10-04   **Status: ✅ DONE** (agent work complete; awaiting human gate and merge)
 
 > **Merge note:** this branch is based on `worktree-ws03-sprint-0`, not `voice`, because Sprint 0 was not merged when this sprint started (the human approved this). Merging this branch into `voice` brings Sprint 0 along with it. You can merge Sprint 0 first or merge this branch alone.
 
