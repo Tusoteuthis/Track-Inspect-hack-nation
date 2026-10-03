@@ -1,5 +1,7 @@
 # WS6 Sprint 0 — Foundation & contracts
 
+> **Status: DONE (2026-10-04)** on branch `001-ws6-foundation-contracts`, verified (typecheck, 192/192 tests, `/api/health` 200 on :3006). See [handoff-sprint-0.md](handoff-sprint-0.md). Still open: the human gate and the merge into `worktree-ws06-backend`. Don't run this prompt again.
+
 > Paste this whole file as the first message to a fresh coding agent **started inside the WS6 worktree**:
 > `cd /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws06-backend && claude`
 
