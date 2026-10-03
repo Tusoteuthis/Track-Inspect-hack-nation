@@ -234,7 +234,9 @@ for (const agent of agentNames) {
 
   // merge into the existing config so LLM/voice settings from the dashboard survive
   const current = await client.conversationalAi.agents.get(agentId);
-  const prompt = current.conversationConfig.agent?.prompt ?? {};
+  // The read-back also returns `tools`, an expansion of `toolIds`; sending both
+  // is rejected ("Cannot specify both tools and tool IDs"), so echo toolIds only.
+  const { tools: _expandedTools, ...prompt } = current.conversationConfig.agent?.prompt ?? {};
   const turn = current.conversationConfig.turn ?? {};
   const conversation = current.conversationConfig.conversation ?? {};
   const turnPatch = {
