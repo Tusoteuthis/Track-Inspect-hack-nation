@@ -31,7 +31,7 @@ describe("renderExchangesMd", () => {
     expect(md).toContain("## ex-001 · evt-001 · explain");
     expect(md).toContain("![evt-001 highlighted](../img/fixtures/trace-a-evt-001-highlight.svg)");
     expect(md).toContain("**Question (verbatim):** What do you recognize in this region?");
-    expect(md).toContain("> That's usually the joint.\n> Only if it repeats, though.");
+    expect(md).toContain("> That's usually the joint.\n>\n> Only if it repeats, though.");
   });
 
   it("labels fixture events as FIXTURE and lists the timing marks", () => {

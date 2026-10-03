@@ -127,3 +127,59 @@ button, input { font: inherit; color: inherit; }
 .context-sender button:disabled, .context-sender input:disabled { opacity: 0.5; cursor: not-allowed; }
 
 @keyframes pulse { 50% { opacity: 0.4; } }
+
+/* --- expert dev console (WS3) --- */
+.expert-console {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+.ec-head { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; }
+.ec-k { color: var(--muted); }
+.ec-h { font-size: 0.95rem; font-weight: 600; margin: 0 0 0.5rem; }
+.ec-muted { color: var(--muted); }
+.ec-small { font-size: 0.8rem; }
+.ec-ok { color: var(--accent); }
+.ec-err { color: var(--danger); }
+.ec-fixtures { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 0.5rem; }
+.ec-fixture {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+  text-align: left;
+}
+.ec-fixture:disabled { opacity: 0.45; cursor: not-allowed; }
+.ec-fixture img { width: 100%; height: auto; border-radius: 4px; background: #fff; }
+.ec-badge {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-left: 0.25rem;
+}
+.ec-badge.fixture { background: #f59e0b; color: #111; margin-left: 0; }
+.ec-badge.live { background: var(--accent); color: #111; }
+.ec-badge.warn { background: var(--danger); color: #111; }
+.ec-list { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; }
+.ec-card { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 0.75rem; margin-bottom: 0.5rem; }
+.ec-card.active { border-color: var(--accent); }
+.ec-card.unlinked { border-color: var(--danger); background: rgba(248, 113, 113, 0.08); }
+.ec-q { margin: 0.3rem 0; font-weight: 500; }
+.ec-answer { margin: 0.3rem 0 0; padding-left: 0.75rem; border-left: 3px solid var(--line); }
+.ec-answer p { margin: 0.15rem 0; }
+.ec-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.ec-table th, .ec-table td { text-align: left; padding: 0.15rem 0.4rem; border-bottom: 1px solid var(--line); }
+.ec-raw { border-top: 1px solid var(--line); padding-top: 0.75rem; }

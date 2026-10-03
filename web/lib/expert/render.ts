@@ -16,7 +16,8 @@ function eventLabel(event: PointingEvent | undefined, eventId: string | null): s
   return `${eventId} (${event.source === "fixture" ? "FIXTURE" : "live"})`;
 }
 
-const quote = (text: string) => text.split("\n").map(l => `> ${l}`).join("\n");
+// One paragraph per transcript line, so separate utterances don't run together when rendered.
+const quote = (lines: string[]) => lines.map(l => `> ${l}`).join("\n>\n");
 
 export function renderExchangesMd(snap: SessionSnapshot, options: RenderOptions = {}): string {
   const href = options.imageHref ?? (ref => ref);
@@ -43,13 +44,13 @@ export function renderExchangesMd(snap: SessionSnapshot, options: RenderOptions 
     out.push(`**Question (verbatim):** ${x.question || "_(not spoken yet)_"}`, "");
     if (x.question_planned) out.push(`_Planned (AI, not evidence):_ ${x.question_planned}`, "");
     out.push("**Expert answer (verbatim):**", "");
-    out.push(x.answer_lines.length ? quote(x.answer_lines.map(l => l.text).join("\n")) : "_(no answer)_");
+    out.push(x.answer_lines.length ? quote(x.answer_lines.map(l => l.text)) : "_(no answer)_");
     const marks = snap.timing.filter(m => m.exchange_id === x.exchange_id);
     if (marks.length) out.push("", `Timing: ${marks.map(m => `${m.mark} ${time(m.at_utc)}`).join(" · ")}`);
   }
 
   if (snap.preamble.length) {
-    out.push("", "## Preamble (expert, before any question)", "", quote(snap.preamble.map(l => l.text).join("\n")));
+    out.push("", "## Preamble (expert, before any question)", "", quote(snap.preamble.map(l => l.text)));
   }
   if (snap.unlinked_agent_questions.length) {
     out.push("", "## Unlinked agent questions (asked without begin_question)", "");
