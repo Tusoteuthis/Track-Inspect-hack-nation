@@ -1,13 +1,13 @@
 {
   "session_id": "fixture-session-001",
-  "revision_id": "fixture-rev-1",
-  "revision_label": "Revision 1",
-  "parent_revision_id": null,
-  "change_reason": null,
+  "revision_id": "fixture-rev-2",
+  "revision_label": "Revision 2",
+  "parent_revision_id": "fixture-rev-1",
+  "change_reason": "Correction from the spoken teach-back (fixture).",
   "source": "fixture",
   "steps": [
     {
-      "revision_id": "fixture-rev-1",
+      "revision_id": "fixture-rev-2",
       "ai_summary": "Apprentice summary placeholder (fixture), not captured knowledge.",
       "expert_quotes": [
         {
@@ -63,18 +63,22 @@
       "entry_id": "fixture-entry-001",
       "kind": "step",
       "title": "Workflow step 1 (fixture)",
-      "status": "draft"
+      "status": "confirmed"
     },
     {
-      "revision_id": "fixture-rev-1",
-      "ai_summary": "Apprentice summary placeholder (fixture).",
+      "revision_id": "fixture-rev-2",
+      "ai_summary": "Apprentice summary placeholder (fixture), revised after the expert's correction.",
       "expert_quotes": [
         {
           "exchange_id": "fixture-exchange-002",
           "text": "Expert explanation (fixture): placeholder words."
+        },
+        {
+          "exchange_id": "fixture-exchange-007",
+          "text": "Expert correction (fixture): placeholder words, not spoken by an expert."
         }
       ],
-      "reasoning": null,
+      "reasoning": "Reasoning placeholder (fixture), added from the correction.",
       "guardrails": [],
       "evidence": [
         {
@@ -102,10 +106,10 @@
       "entry_id": "fixture-entry-002",
       "kind": "decision",
       "title": "Decision point (fixture)",
-      "status": "draft"
+      "status": "confirmed"
     },
     {
-      "revision_id": "fixture-rev-1",
+      "revision_id": "fixture-rev-2",
       "ai_summary": null,
       "expert_quotes": [
         {
@@ -143,10 +147,10 @@
       "entry_id": "fixture-entry-003",
       "kind": "guardrail",
       "title": "Guardrail (fixture)",
-      "status": "draft"
+      "status": "confirmed"
     },
     {
-      "revision_id": "fixture-rev-1",
+      "revision_id": "fixture-rev-2",
       "ai_summary": null,
       "expert_quotes": [],
       "reasoning": null,
@@ -159,7 +163,7 @@
       "status": "unresolved"
     },
     {
-      "revision_id": "fixture-rev-1",
+      "revision_id": "fixture-rev-2",
       "ai_summary": "Apprentice summary placeholder (fixture) for withdrawn material.",
       "expert_quotes": [
         {
@@ -200,7 +204,7 @@
       "status": "revoked"
     },
     {
-      "revision_id": "fixture-rev-1",
+      "revision_id": "fixture-rev-2",
       "ai_summary": null,
       "expert_quotes": [],
       "reasoning": null,

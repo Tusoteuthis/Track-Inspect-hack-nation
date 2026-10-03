@@ -4,13 +4,12 @@
 import assessment from "@/fixtures/ui/assessment.json";
 import practiceCase from "@/fixtures/ui/practice-case.json";
 import sessionExpert from "@/fixtures/ui/session-expert.json";
-import workmap from "@/fixtures/ui/workmap.json";
+import { createReviewScript } from "@/lib/data/fixtureReviewScript";
 import type { DataSource } from "@/lib/data/source";
 import type {
   AssessmentView,
   PracticeCaseView,
   SessionView,
-  WorkMapView,
 } from "@/lib/ui/contracts";
 
 export const FIXTURE_IDS = {
@@ -21,7 +20,6 @@ export const FIXTURE_IDS = {
 
 // JSON imports widen literal unions (e.g. "fixture") to string, hence the casts.
 const SESSION = sessionExpert as SessionView;
-const WORKMAP = workmap as WorkMapView;
 const PRACTICE = practiceCase as PracticeCaseView;
 const ASSESSMENT = assessment as AssessmentView;
 
@@ -30,18 +28,25 @@ function found<T>(value: T, id: string, expected: string, what: string): Promise
   return Promise.resolve(structuredClone(value));
 }
 
+// The Work Map and review follow the scripted debrief (rev-1 → correction → rev-2 → confirmed).
+const reviewScript = createReviewScript();
+/** Fixture playback controls for the review screen and tests. Only meaningful with fixtureSource. */
+export const fixtureReviewControls = reviewScript.controls;
+
 const notImplemented = (sprint: number) => () =>
   Promise.reject(new Error(`not implemented: Sprint ${sprint}`));
 
 export const fixtureSource: DataSource = {
   kind: "fixture",
   getSession: id => found(SESSION, id, SESSION.session_id, "session"),
-  getWorkMap: id => found(WORKMAP, id, WORKMAP.session_id, "session"),
+  getWorkMap: reviewScript.getWorkMap,
   getPracticeCase: id => found(PRACTICE, id, PRACTICE.case_id, "case"),
   getAssessment: id => found(ASSESSMENT, id, ASSESSMENT.session_id, "session"),
+  getReview: reviewScript.getReview,
+  submitReviewMark: reviewScript.submitReviewMark,
   requestOffRecord: notImplemented(3),
   submitDraftForReview: notImplemented(2),
   commitDraft: notImplemented(2),
-  // Fixture event replay arrives in Sprint 3.
-  subscribe: () => () => {},
+  // Pushes the scripted review stages; expert-session event replay arrives in Sprint 3.
+  subscribe: reviewScript.subscribe,
 };

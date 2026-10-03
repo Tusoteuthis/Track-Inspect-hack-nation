@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   FIXTURE_IDS,
+  fixtureReviewControls,
   fixtureSource,
 } from "@/lib/data/fixtureSource";
+import type { SourceUpdate } from "@/lib/data/source";
 import type { LearnerDraft, LearnerEvaluation } from "@/lib/ui/contracts";
 
 describe("fixtureSource", () => {
@@ -12,6 +14,7 @@ describe("fixtureSource", () => {
       fixtureSource.getWorkMap(FIXTURE_IDS.expertSession),
       fixtureSource.getPracticeCase(FIXTURE_IDS.practiceCase),
       fixtureSource.getAssessment(FIXTURE_IDS.newcomerSession),
+      fixtureSource.getReview(FIXTURE_IDS.expertSession),
     ]);
     for (const view of views) expect(view.source).toBe("fixture");
   });
@@ -46,9 +49,16 @@ describe("fixtureSource", () => {
     );
   });
 
-  it("subscribe returns an unsubscribe function", () => {
-    const unsubscribe = fixtureSource.subscribe(FIXTURE_IDS.expertSession, () => {});
-    expect(typeof unsubscribe).toBe("function");
+  it("subscribe pushes the scripted review stages until unsubscribed", async () => {
+    const updates: SourceUpdate[] = [];
+    const unsubscribe = fixtureSource.subscribe(FIXTURE_IDS.expertSession, u => updates.push(u));
+    fixtureReviewControls.advance();
+    fixtureReviewControls.advance();
+    expect(updates.map(u => u.type)).toEqual(["workmap", "review", "workmap", "review"]);
+    expect((await fixtureSource.getWorkMap(FIXTURE_IDS.expertSession)).revision_label).toBe("Revision 2");
     unsubscribe();
+    fixtureReviewControls.reset();
+    expect(updates).toHaveLength(4);
+    expect((await fixtureSource.getWorkMap(FIXTURE_IDS.expertSession)).revision_label).toBe("Revision 1");
   });
 });
