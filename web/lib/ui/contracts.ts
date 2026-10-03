@@ -2,6 +2,7 @@
 // These types describe what screens render. They map *from* WS3/WS5/WS6 records
 // and must not redefine those records' meaning. Field names are snake_case to
 // match the briefs and the JSON on disk. See notes/ws7-ui-contracts-v0.md.
+import type { DraftRevision, ExpertConfirmation, OpenQuestion } from "@/lib/expert/contracts";
 
 export const UI_CONTRACT_VERSION = "ws7.ui.v0";
 
@@ -77,8 +78,36 @@ export type WorkMapStep = {
 export type WorkMapView = {
   session_id: string;
   revision_id: string;
+  /** Human-readable name of the revision ("Revision 2"). Ids are never shown as text. */
+  revision_label: string;
+  parent_revision_id: DraftRevision["parent_revision_id"];
+  /** Why this revision exists (e.g. a correction). Not the expert's verbatim words. */
+  change_reason: DraftRevision["change_reason"];
   steps: WorkMapStep[];
   source: DataOrigin;
+};
+
+/** The debrief view: the revision under review, its parent, and WS3 records about it. */
+export type ReviewView = {
+  session_id: string;
+  current: WorkMapView;
+  /** The parent revision, used only to mark what changed. null for the first revision. */
+  previous: WorkMapView | null;
+  open_questions: OpenQuestion[];
+  /** All teach-back confirmations of the session; each names the exact revision it refers to. */
+  confirmations: ExpertConfirmation[];
+  source: DataOrigin;
+};
+
+/**
+ * Supplementary request from the review screen. It never confirms or edits
+ * knowledge; WS3/WS5 decide what happens with it in the spoken review.
+ */
+export type ReviewMark = {
+  session_id: string;
+  entry_id: string;
+  revision_id: string;
+  kind: "correction_requested" | "flag_unresolved";
 };
 
 /** Learner-visible case data only — never expected answers or scoring. */

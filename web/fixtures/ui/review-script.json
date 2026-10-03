@@ -1,0 +1,229 @@
+{
+  "session_id": "fixture-session-001",
+  "source": "fixture",
+  "stages": [
+    {
+      "label": "Revision 1 under review",
+      "current": "rev-1",
+      "previous": null,
+      "open_questions": [
+        {
+          "open_question_id": "fixture-oq-001",
+          "missing_fact": "Open question (fixture): what reason supports the decision point?",
+          "why_it_matters": "Placeholder (fixture): the decision has no stated reason yet.",
+          "related_event_ids": [
+            "fixture-event-002"
+          ],
+          "related_exchange_ids": [
+            "fixture-exchange-002"
+          ],
+          "answered_by_exchange_id": null
+        },
+        {
+          "open_question_id": "fixture-oq-002",
+          "missing_fact": "Open question (fixture): what should happen in the exception case?",
+          "why_it_matters": "Placeholder (fixture): the exception has no agreed handling.",
+          "related_event_ids": [],
+          "related_exchange_ids": [],
+          "answered_by_exchange_id": null
+        },
+        {
+          "open_question_id": "fixture-oq-003",
+          "missing_fact": "Open question (fixture): when should the guardrail stop the process?",
+          "why_it_matters": "Placeholder (fixture): the stop condition was not stated live.",
+          "related_event_ids": [
+            "fixture-event-003"
+          ],
+          "related_exchange_ids": [
+            "fixture-exchange-003"
+          ],
+          "answered_by_exchange_id": "fixture-exchange-003"
+        }
+      ],
+      "confirmations": []
+    },
+    {
+      "label": "Expert correction in the teach-back",
+      "current": "rev-1",
+      "previous": null,
+      "open_questions": [
+        {
+          "open_question_id": "fixture-oq-001",
+          "missing_fact": "Open question (fixture): what reason supports the decision point?",
+          "why_it_matters": "Placeholder (fixture): the decision has no stated reason yet.",
+          "related_event_ids": [
+            "fixture-event-002"
+          ],
+          "related_exchange_ids": [
+            "fixture-exchange-002"
+          ],
+          "answered_by_exchange_id": "fixture-exchange-007"
+        },
+        {
+          "open_question_id": "fixture-oq-002",
+          "missing_fact": "Open question (fixture): what should happen in the exception case?",
+          "why_it_matters": "Placeholder (fixture): the exception has no agreed handling.",
+          "related_event_ids": [],
+          "related_exchange_ids": [],
+          "answered_by_exchange_id": null
+        },
+        {
+          "open_question_id": "fixture-oq-003",
+          "missing_fact": "Open question (fixture): when should the guardrail stop the process?",
+          "why_it_matters": "Placeholder (fixture): the stop condition was not stated live.",
+          "related_event_ids": [
+            "fixture-event-003"
+          ],
+          "related_exchange_ids": [
+            "fixture-exchange-003"
+          ],
+          "answered_by_exchange_id": "fixture-exchange-003"
+        }
+      ],
+      "confirmations": [
+        {
+          "confirmation_id": "fixture-confirmation-001",
+          "revision_id": "fixture-rev-1",
+          "status": "corrected",
+          "step_ids_reviewed": [
+            "fixture-entry-001",
+            "fixture-entry-002",
+            "fixture-entry-003",
+            "fixture-entry-004",
+            "fixture-entry-005",
+            "fixture-entry-006"
+          ],
+          "expert_response_exchange_id": "fixture-exchange-007",
+          "at_utc": "2026-10-04T10:20:00Z"
+        }
+      ]
+    },
+    {
+      "label": "Revision 2 delivered",
+      "current": "rev-2",
+      "previous": "rev-1",
+      "open_questions": [
+        {
+          "open_question_id": "fixture-oq-001",
+          "missing_fact": "Open question (fixture): what reason supports the decision point?",
+          "why_it_matters": "Placeholder (fixture): the decision has no stated reason yet.",
+          "related_event_ids": [
+            "fixture-event-002"
+          ],
+          "related_exchange_ids": [
+            "fixture-exchange-002"
+          ],
+          "answered_by_exchange_id": "fixture-exchange-007"
+        },
+        {
+          "open_question_id": "fixture-oq-002",
+          "missing_fact": "Open question (fixture): what should happen in the exception case?",
+          "why_it_matters": "Placeholder (fixture): the exception has no agreed handling.",
+          "related_event_ids": [],
+          "related_exchange_ids": [],
+          "answered_by_exchange_id": null
+        },
+        {
+          "open_question_id": "fixture-oq-003",
+          "missing_fact": "Open question (fixture): when should the guardrail stop the process?",
+          "why_it_matters": "Placeholder (fixture): the stop condition was not stated live.",
+          "related_event_ids": [
+            "fixture-event-003"
+          ],
+          "related_exchange_ids": [
+            "fixture-exchange-003"
+          ],
+          "answered_by_exchange_id": "fixture-exchange-003"
+        }
+      ],
+      "confirmations": [
+        {
+          "confirmation_id": "fixture-confirmation-001",
+          "revision_id": "fixture-rev-1",
+          "status": "corrected",
+          "step_ids_reviewed": [
+            "fixture-entry-001",
+            "fixture-entry-002",
+            "fixture-entry-003",
+            "fixture-entry-004",
+            "fixture-entry-005",
+            "fixture-entry-006"
+          ],
+          "expert_response_exchange_id": "fixture-exchange-007",
+          "at_utc": "2026-10-04T10:20:00Z"
+        }
+      ]
+    },
+    {
+      "label": "Revision 2 confirmed in the teach-back",
+      "current": "rev-2-confirmed",
+      "previous": "rev-1",
+      "open_questions": [
+        {
+          "open_question_id": "fixture-oq-001",
+          "missing_fact": "Open question (fixture): what reason supports the decision point?",
+          "why_it_matters": "Placeholder (fixture): the decision has no stated reason yet.",
+          "related_event_ids": [
+            "fixture-event-002"
+          ],
+          "related_exchange_ids": [
+            "fixture-exchange-002"
+          ],
+          "answered_by_exchange_id": "fixture-exchange-007"
+        },
+        {
+          "open_question_id": "fixture-oq-002",
+          "missing_fact": "Open question (fixture): what should happen in the exception case?",
+          "why_it_matters": "Placeholder (fixture): the exception has no agreed handling.",
+          "related_event_ids": [],
+          "related_exchange_ids": [],
+          "answered_by_exchange_id": null
+        },
+        {
+          "open_question_id": "fixture-oq-003",
+          "missing_fact": "Open question (fixture): when should the guardrail stop the process?",
+          "why_it_matters": "Placeholder (fixture): the stop condition was not stated live.",
+          "related_event_ids": [
+            "fixture-event-003"
+          ],
+          "related_exchange_ids": [
+            "fixture-exchange-003"
+          ],
+          "answered_by_exchange_id": "fixture-exchange-003"
+        }
+      ],
+      "confirmations": [
+        {
+          "confirmation_id": "fixture-confirmation-001",
+          "revision_id": "fixture-rev-1",
+          "status": "corrected",
+          "step_ids_reviewed": [
+            "fixture-entry-001",
+            "fixture-entry-002",
+            "fixture-entry-003",
+            "fixture-entry-004",
+            "fixture-entry-005",
+            "fixture-entry-006"
+          ],
+          "expert_response_exchange_id": "fixture-exchange-007",
+          "at_utc": "2026-10-04T10:20:00Z"
+        },
+        {
+          "confirmation_id": "fixture-confirmation-002",
+          "revision_id": "fixture-rev-2",
+          "status": "confirmed",
+          "step_ids_reviewed": [
+            "fixture-entry-001",
+            "fixture-entry-002",
+            "fixture-entry-003",
+            "fixture-entry-004",
+            "fixture-entry-005",
+            "fixture-entry-006"
+          ],
+          "expert_response_exchange_id": "fixture-exchange-008",
+          "at_utc": "2026-10-04T10:24:00Z"
+        }
+      ]
+    }
+  ]
+}
