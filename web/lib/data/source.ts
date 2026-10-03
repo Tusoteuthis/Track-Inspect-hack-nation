@@ -5,6 +5,7 @@ import type {
   LearnerDraft,
   LearnerEvaluation,
   PracticeCaseView,
+  ScreenFrameRef,
   SessionView,
   WorkMapView,
 } from "@/lib/ui/contracts";
@@ -30,8 +31,15 @@ export interface DataSource {
   submitDraftForReview(draft: LearnerDraft): Promise<Ack<LearnerEvaluation>>;
   commitDraft(
     draft: LearnerDraft,
-    evaluation: LearnerEvaluation
+    evaluation: LearnerEvaluation,
+    /** One stable key per save intent, so a repeated request commits once. */
+    options?: { idempotency_key: string }
   ): Promise<Ack<{ committed_at_utc: string }>>;
+  submitScreenFrame(
+    caseId: string,
+    frame: Blob,
+    meta: { draft_revision: number; captured_at_utc: string }
+  ): Promise<Ack<ScreenFrameRef>>;
   /** Returns an unsubscribe function. */
   subscribe(sessionId: string, onUpdate: (update: SourceUpdate) => void): () => void;
 }
