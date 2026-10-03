@@ -39,12 +39,20 @@ export function finalLineFrom(event: unknown): { role: TranscriptLine["role"]; t
   return { role: event.source === "ai" ? "agent" : "user", text };
 }
 
-/** Tentative agent text from `onDebug`, or null for any other debug event. */
+/**
+ * Tentative agent text from `onDebug`, or null for any other debug event. The SDK
+ * re-emits the server's internal event as `{ type: "tentative_agent_response", response }`;
+ * the raw internal shape is accepted too.
+ */
 export function tentativeTextFrom(event: unknown): string | null {
-  if (!isRecord(event) || event.type !== "internal_tentative_agent_response") return null;
-  const payload = event.tentative_agent_response_internal_event;
-  if (!isRecord(payload) || typeof payload.tentative_agent_response !== "string") return null;
-  return payload.tentative_agent_response.trim() || null;
+  if (!isRecord(event)) return null;
+  let text: unknown = null;
+  if (event.type === "tentative_agent_response") text = event.response;
+  else if (event.type === "internal_tentative_agent_response") {
+    const payload = event.tentative_agent_response_internal_event;
+    if (isRecord(payload)) text = payload.tentative_agent_response;
+  }
+  return typeof text === "string" ? text.trim() || null : null;
 }
 
 /** Appends a final line, replacing a pending tentative line of the same role and skipping exact repeats. */
