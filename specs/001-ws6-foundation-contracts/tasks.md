@@ -109,8 +109,8 @@ None beyond Phase 1. Lane A defines its own `ErrorCode` union in web/lib/backend
 
 - [X] T050 Merge lane branches A, B and C into `001-ws6-foundation-contracts`, then remove the nested worktrees and lane branches.
 - [X] T051 Re-point web/lib/backend/errors.ts to import `ErrorCode`/`ERROR_STATUS` from `@/lib/contracts` (one source of truth), then run tests.
-- [ ] T052 Run `npm run typecheck`, `npx vitest run`, `npm run dev -- -p 3006` and `curl /api/health`, and capture the output. Stop the server.
-- [ ] T053 Check `git status` for no runtime data. Write notes/ws6-sprints/handoff-sprint-0.md (template A8) and commit.
+- [X] T052 Run `npm run typecheck`, `npx vitest run`, `npm run dev -- -p 3006` and `curl /api/health`, and capture the output. Stop the server.
+- [X] T053 Check `git status` for no runtime data. Write notes/ws6-sprints/handoff-sprint-0.md (template A8) and commit.
 
 ## Dependencies
 
