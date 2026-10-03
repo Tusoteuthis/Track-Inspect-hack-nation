@@ -36,15 +36,35 @@ Capability doc review (T015):
 
 Probe runs: N/A (no agent behavior in this sprint).
 
-## ⚠️ Blocker: the ElevenLabs API key is invalid
+## Live capability spike (run 2026-10-04 after the key was replaced)
 
-The `ELEVENLABS_API_KEY` in `web/.env` is the same file as in the main checkout. The API rejected it with **401 `invalid_api_key`** on `api.elevenlabs.io` and `api.us.elevenlabs.io`, and with 400 on the EU host.
+The old key was rejected (`401 invalid_api_key`). After the human replaced it, the live check ran:
 
-Consequences:
-- No live checks ran.
-- Every **agent-behaviour** statement in the capabilities doc is DOCUMENTED-ONLY. Only the SDK plumbing was VERIFIED, through an offline run of the installed client SDK against a fake connection.
-- No temporary agent was created, so nothing needed cleaning up.
-- Sprints 1+ also need a valid key (sync-agents, probes, live sessions).
+```
+$ cd web && npm run spike:ws3
+done; agentDeleted = true convDeletes = [{"id":"conv_8901…","deleted":true,"getAfterDeleteFails":true},{"id":"conv_7801…","deleted":true,"getAfterDeleteFails":true},{"id":"conv_4701…","deleted":true,"getAfterDeleteFails":true}]
+```
+
+- Raw results are in `notes/ws3-sprints/docs/spike-results.json`.
+- **Cleanup:** the temp tool's plain delete returned `409` (the deleted agent's orphaned branch still counted as a dependent). It was force-deleted by hand (`204`, then `404`), and the script now uses `tools.delete(id, { force: true })`. Nothing from the spike remains in the account.
+
+**Findings (text-only sessions, n = 1 per behaviour):**
+
+| # | Finding | Status |
+|---|---|---|
+| 1 | Contextual updates produce no agent turn. | VERIFIED LIVE, 2 of 2 |
+| 2 | The agent uses a contextual update's content on its next natural turn. | VERIFIED LIVE |
+| 3 | A shared `context_id` marks the earlier update `is_superseded:true`, so use one id per event. | VERIFIED LIVE |
+| 4 | The client tool `mark_question_target` is called before every question, with the most recent `event_id`; the ack round-trip takes about 160 ms. | VERIFIED LIVE, 3 of 3 turns |
+| 5 | `conversations.get` lists tool calls/results and contextual updates (as `system:contextual_update` agent items) with integer `time_in_call_secs`; audio is downloadable. | VERIFIED LIVE |
+| 6 | A prompt override without permission makes the server close the socket with `1008`. With permission, prompt and first-message overrides are applied. | VERIFIED LIVE |
+| 7 | `turn_timeout` accepts `-1` or 1–300 s (the docs say 1–30). | VERIFIED LIVE |
+| 8 | Defaults on a new agent: LLM `qwen35-397b-a17b`; `speculative_turn: true`; `client_events` without `vad_score` / `tentative_user_transcript`; `record_voice: true`; `retention_days: -1`. | VERIFIED LIVE |
+| 9 | `conversations.delete` works, and `get` afterwards returns `404`. | VERIFIED LIVE |
+| 10 | **`skip_turn` is NOT active after `agents.create` with `builtInTools.skipTurn`:** the read-back was empty, and "let me think" got a question back. | Needs Sprint 1 fix and read-back |
+| 11 | In simulation, tool compliance was 1 of 3 (versus 3 of 3 live). An input `contextual_update_info` in `partialConversationHistory` is ignored. | VERIFIED LIVE |
+
+Still DOCUMENTED-ONLY: everything voice-specific (VAD, tentative transcripts, end-of-turn detection, interruptions, mic mute) and the per-agent ZRM toggle.
 
 ## Decisions made
 
@@ -63,7 +83,7 @@ Consequences:
   - Settings: `expects_response: true`, `pre_tool_speech: off`.
   - Managed through `tools.create/update` plus `toolIds` in `sync-agents.mts`.
   - Tested with `simulateConversation` + `toolMockConfig`.
-- **(c) Pause-aware release:** a client gate (agent listening + VAD/volume low + no tentative user transcript + rate limit), then a state contextual update. Agent turn settings: `turn_eagerness: patient`, plus `skip_turn` when nothing is released. Fallback: `sendUserMessage("[CONTROL] …")`, filtered out of the verbatim record.
+- **(c) Pause-aware release:** a client gate (agent listening + VAD/volume low + no tentative user transcript + rate limit), then a state contextual update. Agent turn settings: `turn_eagerness: patient`, plus `skip_turn` when nothing is released. **`skip_turn` is unverified (see finding 10).** Fallback: `sendUserMessage("[CONTROL] …")`, filtered out of the verbatim record.
 - **(d) Phase switching:** one session; switch with a state contextual update (`contextId: "ws3-phase"`).
 - **(e) Timing:** client-side stamps on every callback (server events have no timestamps), cross-checked post-call with `conversations.get` (`time_in_call_secs`, whole seconds).
 - **(f) Off-record:** mute the mic (audio never reaches ElevenLabs), plus a state update, plus periodic `sendUserActivity()`. Afterwards, `conversations.delete`. Also `record_voice: false` and short retention. Zero-retention mode is enterprise-only.
@@ -74,24 +94,18 @@ None beyond v0 as specified in the sprint prompt. Sprint 1 will add `question_pl
 
 ## Known limitations / open issues
 
-1. Invalid API key (blocker above).
+1. Live checks were text-only, n = 1. Voice behaviour is unverified until the Sprint 1/2 live gates.
 2. **Existing bug:** `web/lib/voice/transcript.ts` `tentativeTextFrom()` checks for `internal_tentative_agent_response`, but the SDK emits `{type:"tentative_agent_response", response}`, so tentative agent text never renders. It also ignores `tentative_user_transcript`, which Sprint 2 needs as a "user still speaking" signal. **Fix in Sprint 1.**
 3. `max_duration_seconds` defaults to 600 s, too short for interview plus debrief. Sprint 1 must raise it on the expert agent.
-4. The default LLM is not documented, and the last documented default is discouraged for tools. Sprint 1 must pin `prompt.llm` in sync-agents.
+4. The default LLM is undocumented; live it is `qwen35-397b-a17b`. Sprint 1 must pin `prompt.llm` in sync-agents.
 5. Contextual updates cannot be represented in `simulateConversation` history through the SDK. Probes approximate them with marked user turns; a raw-REST variant is in the spike script.
-6. `skip_turn` may stop the agent re-engaging on silence (Sprint 2 risk).
+6. `skip_turn` was not enabled through `agents.create` (finding 10). Once enabled, it may also stop the agent re-engaging on silence (Sprint 2 risk).
 7. The partner contracts are not yet reviewed by WS2, WS5 or WS6.
 
 ## Human gate checklist (~15 min)
 
-1. **Fix the API key.** Put a valid `ELEVENLABS_API_KEY` in `<repo>/web/.env` and copy it to `.claude/worktrees/ws03-sprint-0/web/.env`.
-2. **Run the live check (optional now, required before Sprint 1 builds on (a)–(c)):**
-   ```bash
-   cd .claude/worktrees/ws03-sprint-0/web && npm run spike:ws3
-   ```
-   - Expect `done; agentDeleted = true`.
-   - Skim `notes/ws3-sprints/docs/spike-results.json`.
-   - Ask an agent to update the DOCUMENTED-ONLY labels in the capabilities doc.
+1. **Update the key in the main checkout (still needed).** The working key is in `<repo>/.env` as `ELEVEN_LABS_KEY`. `<repo>/web/.env` still holds the old, rejected `ELEVENLABS_API_KEY`. Sprint 1+ worktrees copy `web/.env` from the main checkout, so set `ELEVENLABS_API_KEY` there to the new key. (Only this worktree's `web/.env` was updated.)
+2. **Live check:** done (see "Live capability spike" above). Skim the findings table, especially finding 10 (`skip_turn`).
 3. Read "Recommended mechanisms" in `notes/ws3-sprints/docs/elevenlabs-capabilities.md` and accept or adjust them.
 4. Share `notes/ws3-sprints/docs/contracts-v0.md` with the WS2, WS5 and WS6 owners.
 5. Merge, once the main checkout is clean and no other agent is mid-commit:
@@ -103,13 +117,15 @@ None beyond v0 as specified in the sprint prompt. Sprint 1 will add `question_pl
 
 ## Notes for the next sprint (Sprint 1)
 
-- **Before building, read** "Recommended mechanisms" and "Open risks" in the capabilities doc. Every agent-behaviour claim is unverified until `spike:ws3` has run with a valid key.
+- **Before building, read** "Recommended mechanisms" and "Open risks" in the capabilities doc. Labels distinguish VERIFIED LIVE (text-only, n = 1) from DOCUMENTED-ONLY.
 - **Agent setup:**
   - pin the LLM;
   - raise `max_duration_seconds`;
   - set `turn_eagerness: patient`;
-  - enable `skip_turn`;
-  - enable `vad_score` and `tentative_user_transcript` in `client_events`.
+  - enable `skip_turn` via `agents.update`, and confirm it by read-back (`agents.create` did not persist it in the spike);
+  - set `speculative_turn` explicitly (a new agent defaults to `true`);
+  - enable `vad_score`, `tentative_user_transcript` and `agent_chat_response_part` in `client_events` (off by default, verified);
+  - manage `mark_question_target` (or `begin_question`) as a standalone tool via `tools.create/update` plus `toolIds`. To delete a tool, use `{ force: true }`.
 - **Code fixes and contracts:**
   - fix `tentativeTextFrom()`;
   - the contracts and validators are in `web/lib/expert/contracts.ts`; add validators for client-tool params there.
