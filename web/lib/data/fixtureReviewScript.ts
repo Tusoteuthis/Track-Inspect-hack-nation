@@ -46,6 +46,7 @@ export type ReviewScriptControls = {
   stageIndex(): number;
   readonly stageLabels: readonly string[];
   setFailMarks(fail: boolean): void;
+  failMarks(): boolean;
 };
 
 export function createReviewScript({ markLatencyMs = 700 }: { markLatencyMs?: number } = {}) {
@@ -81,6 +82,7 @@ export function createReviewScript({ markLatencyMs = 700 }: { markLatencyMs?: nu
     setFailMarks(fail) {
       failMarks = fail;
     },
+    failMarks: () => failMarks,
   };
 
   return {
