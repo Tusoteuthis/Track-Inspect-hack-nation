@@ -11,6 +11,7 @@ export type CaptureState = {
 };
 
 export type CaptureEvent =
+  | { type: "MARK_UNSUPPORTED" }
   | { type: "START" }
   | { type: "GRANTED" }
   | { type: "DENIED" }
@@ -32,6 +33,9 @@ export function initialCaptureState(supported: boolean): CaptureState {
 export function screenCapture(state: CaptureState, event: CaptureEvent): CaptureState {
   if (state.status === "unsupported") return state;
   switch (event.type) {
+    case "MARK_UNSUPPORTED":
+      // Detected after mount (SSR cannot know), so the first render matches the server.
+      return { ...initialCaptureState(false) };
     case "START":
       if (state.status === "requesting" || state.status === "active") return state;
       return { ...state, status: "requesting", error: null, frame_error: null };

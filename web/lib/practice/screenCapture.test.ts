@@ -26,6 +26,10 @@ describe("screenCapture", () => {
     }
   });
 
+  it("support detected after mount moves idle to unsupported", () => {
+    expect(screenCapture(initialCaptureState(true), { type: "MARK_UNSUPPORTED" }).status).toBe("unsupported");
+  });
+
   it("unsupported ignores everything", () => {
     const s = initialCaptureState(false);
     expect(screenCapture(s, { type: "START" })).toBe(s);
