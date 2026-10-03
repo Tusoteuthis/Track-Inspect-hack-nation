@@ -108,6 +108,8 @@ export type Citation = {
 };
 
 export type LearnerEvaluation = {
+  /** Backend id, required by the WS6 commit; absent in older fixtures. */
+  evaluation_id?: string;
   /** The exact draft and knowledge revisions this evaluation assessed. */
   draft_revision: number;
   knowledge_revision_id: string;
@@ -116,6 +118,30 @@ export type LearnerEvaluation = {
   message: string;
   guiding_question: string | null;
   citations: Citation[];
+};
+
+/** Learner review state on /practice (Sprint 2). Only review_complete permits Save. */
+export type ReviewStatus =
+  | "editing_unreviewed"
+  | "review_pending"
+  | "guidance_needed"
+  | "review_complete"
+  | "saving"
+  | "saved"
+  | "save_failed";
+
+export type PracticeTimelineEntry = {
+  kind: "proposed" | "guidance" | "corrected" | "saved";
+  at_utc: string;
+  draft_revision: number;
+};
+
+/** Acknowledged reference to a still frame of the learner's shared screen. */
+export type ScreenFrameRef = {
+  frame_id: string;
+  captured_at_utc: string;
+  draft_revision: number;
+  source: DataOrigin;
 };
 
 export type AssessmentItem = { description: string; citations: Citation[] };
