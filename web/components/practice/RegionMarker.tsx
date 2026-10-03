@@ -17,7 +17,8 @@ type Props = {
 
 export function RegionMarker({ asset, region, onChange, onDone }: Props) {
   const frame = useRef<HTMLDivElement>(null);
-  const [start, setStart] = useState<Point | null>(null);
+  // A ref, not state: pointer events can arrive before React re-renders.
+  const start = useRef<Point | null>(null);
   const [preview, setPreview] = useState<EvidenceRegion | null>(null);
 
   const point = (e: React.PointerEvent) =>
@@ -39,16 +40,16 @@ export function RegionMarker({ asset, region, onChange, onDone }: Props) {
         data-testid="region-marker"
         onPointerDown={e => {
           e.currentTarget.setPointerCapture?.(e.pointerId);
-          setStart(point(e));
+          start.current = point(e);
           setPreview(null);
         }}
         onPointerMove={e => {
-          if (start) setPreview(pointsToRegion(start, point(e), asset.frame_id));
+          if (start.current) setPreview(pointsToRegion(start.current, point(e), asset.frame_id));
         }}
         onPointerUp={e => {
-          if (!start) return;
-          const next = pointsToRegion(start, point(e), asset.frame_id);
-          setStart(null);
+          if (!start.current) return;
+          const next = pointsToRegion(start.current, point(e), asset.frame_id);
+          start.current = null;
           setPreview(null);
           if (next) onChange(next);
         }}

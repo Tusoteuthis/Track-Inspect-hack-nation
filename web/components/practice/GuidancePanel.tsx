@@ -38,7 +38,11 @@ export function GuidancePanel({ guidance, currentRevision }: Props) {
                 <button type="button" onClick={() => setOpen(c)}>
                   Open expert example {i + 1}
                 </button>
-                {c.quote ? <span className={styles.citeQuote}>“{c.quote.text}”</span> : null}
+                {c.quote ? (
+                  <span className={styles.citeQuote}>
+                    <span className={styles.sourceTag}>Expert</span> “{c.quote.text}”
+                  </span>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -70,16 +74,6 @@ function ExampleDialog({ citation, onClose }: { citation: Citation | null; onClo
             </button>
           </div>
           <p className={styles.hint}>From the expert&apos;s confirmed knowledge, recorded on a different trace.</p>
-          {citation.evidence ? (
-            <EvidenceViewer
-              asset={citation.evidence.asset}
-              region={citation.evidence.region}
-              mode="focus"
-              caption="Expert's evidence"
-            />
-          ) : (
-            <p className={styles.hint}>No image is linked to this example.</p>
-          )}
           {citation.quote ? (
             <figure className={styles.expertQuote}>
               <figcaption>Expert&apos;s words (verbatim)</figcaption>
@@ -88,6 +82,18 @@ function ExampleDialog({ citation, onClose }: { citation: Citation | null; onClo
           ) : (
             <p className={styles.hint}>No expert quote is linked to this example.</p>
           )}
+          <div className={styles.dialogEvidence}>
+            {citation.evidence ? (
+              <EvidenceViewer
+                asset={citation.evidence.asset}
+                region={citation.evidence.region}
+                mode="focus"
+                caption="Expert's evidence"
+              />
+            ) : (
+              <p className={styles.hint}>No image is linked to this example.</p>
+            )}
+          </div>
         </div>
       ) : null}
     </dialog>

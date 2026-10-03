@@ -80,7 +80,12 @@ export function PracticeScreen({ source, caseView, sessionId, renderTutor, rende
               />
             ) : (
               <>
-                <EvidenceViewer asset={caseView.asset} region={loop.fields.region} mode="full" />
+                <EvidenceViewer
+                  asset={caseView.asset}
+                  region={loop.fields.region}
+                  mode="full"
+                  caption={loop.fields.region ? "Outlined: the region you marked (part of your draft)" : undefined}
+                />
                 <div className={styles.row}>
                   <button type="button" onClick={() => setMarking(true)} disabled={locked}>
                     {loop.fields.region ? "Change marked region" : "Mark a region (optional)"}

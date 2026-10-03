@@ -99,6 +99,7 @@
 .dialog {
   width: min(64rem, 95vw);
   max-height: 92vh;
+  overflow: auto;
   padding: 0;
   border: 2px solid var(--line);
   border-radius: var(--radius);
@@ -152,3 +153,4 @@
 }
 .fixtureControls summary { cursor: pointer; font-weight: 600; }
 .fixtureControls .row { margin-top: var(--space-2); }
+.dialogEvidence { width: min(100%, 44rem); justify-self: center; }
