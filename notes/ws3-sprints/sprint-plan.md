@@ -52,7 +52,8 @@ Feature classification:
 
 Each sprint = one spec-kit feature (`/speckit-specify → plan → tasks → implement`), executed in a worktree, ending with a code review and a human live-voice gate. Within a sprint, lanes A/B/C run as parallel subagents once contracts are fixed.
 
-### Sprint 0 — Spike & contracts (agent ~1–1.5h, human ~15 min)
+### Sprint 0 — Spike & contracts (agent ~1–1.5h, human ~15 min) — ✅ DONE (2026-10-04)
+- **Status:** agent work complete, live spike run (text-only), 19 tests green. Handoff: `notes/ws3-sprints/handoff-sprint-0.md`. Remaining human items: approve the mechanisms, share contracts-v0, merge into `voice`.
 - **Research agent** verifies against current ElevenLabs docs/SDK (`@elevenlabs/react` 1.16, `elevenlabs-js` 2.70): client tools in `simulateConversation`; `sendContextualUpdate` semantics (does it ever trigger a turn?); turn-taking settings (turn eagerness/timeout); whether client-tool calls carry timestamps; conversation transcript time offsets; data-retention / zero-retention options. Output: `notes/ws3-sprints/docs/elevenlabs-capabilities.md` with sourced findings.
 - Fill `.specify/memory/constitution.md` (fixtures labeled, expert words never synthesized, session time ≠ signal time, no answer key in agent).
 - Add vitest to `web/`; define v0 types in `web/lib/expert/contracts.ts` (PointingEvent, ExpertExchange, OpenQuestion, DraftRevision, ExpertConfirmation, SessionCompletion) + fixtures in `web/fixtures/` (3–4 pointing events incl. one ambiguous, one repeat).

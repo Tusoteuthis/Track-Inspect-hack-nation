@@ -1,6 +1,6 @@
 # WS3 Sprint 0 handoff — Capability spike, constitution, contracts & test setup
 
-Branch: worktree-ws03-sprint-0   Worktree: .claude/worktrees/ws03-sprint-0   Dev port: 3100 (unused this sprint)   Spec: specs/20261003-235822-ws3-sprint-0-spike-contracts/   Date: 2026-10-04
+Branch: worktree-ws03-sprint-0   Worktree: .claude/worktrees/ws03-sprint-0   Dev port: 3100 (unused this sprint)   Spec: specs/20261003-235822-ws3-sprint-0-spike-contracts/   Date: 2026-10-04   **Status: ✅ DONE** (agent work and live spike complete; awaiting human gate and merge)
 
 ## Delivered
 
