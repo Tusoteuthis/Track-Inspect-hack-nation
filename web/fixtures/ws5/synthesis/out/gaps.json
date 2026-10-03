@@ -1,0 +1,72 @@
+[
+  {
+    "gap_id": "gap-unclear_guardrail-evt-002",
+    "kind": "unclear_guardrail",
+    "description": "The expert's stop condition at evt-002 is hedged (\"Maybe\"); it is not clear when to stop.",
+    "related_event_ids": [
+      "evt-002"
+    ],
+    "related_exchange_ids": [
+      "sx-004"
+    ],
+    "priority": 1
+  },
+  {
+    "gap_id": "gap-missing_reason-evt-002",
+    "kind": "missing_reason",
+    "description": "The expert explained what they see at evt-002 but gave no reason for it.",
+    "related_event_ids": [
+      "evt-002"
+    ],
+    "related_exchange_ids": [
+      "sx-003"
+    ],
+    "priority": 2
+  },
+  {
+    "gap_id": "gap-missing_reason-evt-004",
+    "kind": "missing_reason",
+    "description": "The expert explained what they see at evt-004 but gave no reason for it.",
+    "related_event_ids": [
+      "evt-004"
+    ],
+    "related_exchange_ids": [
+      "sx-005"
+    ],
+    "priority": 2
+  },
+  {
+    "gap_id": "gap-unqualified_exception-evt-002",
+    "kind": "unqualified_exception",
+    "description": "The expert said \"normally\" about evt-002 but did not say when it does not apply.",
+    "related_event_ids": [
+      "evt-002"
+    ],
+    "related_exchange_ids": [
+      "sx-003"
+    ],
+    "priority": 2
+  },
+  {
+    "gap_id": "gap-ambiguous_reference-evt-004",
+    "kind": "ambiguous_reference",
+    "description": "It is not clear which part of the screen evt-004 refers to (mapping ambiguous).",
+    "related_event_ids": [
+      "evt-004"
+    ],
+    "related_exchange_ids": [
+      "sx-005"
+    ],
+    "priority": 3
+  },
+  {
+    "gap_id": "gap-missing_evidence-sx-009",
+    "kind": "missing_evidence",
+    "description": "The expert's answer in sx-009 is not linked to a screen moment.",
+    "related_event_ids": [],
+    "related_exchange_ids": [
+      "sx-009"
+    ],
+    "priority": 3
+  }
+]

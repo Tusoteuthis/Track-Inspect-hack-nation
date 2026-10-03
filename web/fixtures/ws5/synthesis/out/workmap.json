@@ -1,0 +1,437 @@
+{
+  "steps": [
+    {
+      "position": 1,
+      "entry_id": "ent-evt-001-step",
+      "revision_id": "rev-2",
+      "status": "draft",
+      "kind": "decision",
+      "title": "Decision at evt-001",
+      "expert_words": [
+        {
+          "exchange_id": "sx-001",
+          "question": "FIXTURE question: what do you see in this region?",
+          "quote": "FIXTURE: on this region I read FIXTURE pattern A."
+        },
+        {
+          "exchange_id": "sx-001",
+          "question": "FIXTURE question: what do you see in this region?",
+          "quote": "It usually means FIXTURE decision A."
+        },
+        {
+          "exchange_id": "sx-002",
+          "question": "FIXTURE question: why decision A?",
+          "quote": "Because FIXTURE cue A1 is present."
+        },
+        {
+          "exchange_id": "sx-002",
+          "question": "FIXTURE question: why decision A?",
+          "quote": "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+        },
+        {
+          "exchange_id": "sx-010",
+          "question": "FIXTURE question: is that right?",
+          "quote": "No, FIXTURE decision A also needs FIXTURE cue A2."
+        }
+      ],
+      "synthesis": [
+        {
+          "type": "ai_synthesis",
+          "text": "Look at the region the expert pointed to, check it as the expert described, and decide for the reasons the expert gave."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "The expert pointed at a region of trace trace-A, channel SYS1 (event evt-001)."
+        }
+      ],
+      "guardrails": [],
+      "visual": [
+        {
+          "event_id": "evt-001",
+          "asset_id": null,
+          "original_ref": "../../../../../../public/fixtures/trace-a-full.svg",
+          "highlighted_ref": "../../../../../../public/fixtures/trace-a-evt-001-highlight.svg",
+          "region": {
+            "x": 0.2,
+            "y": 0.15,
+            "width": 0.15,
+            "height": 0.25,
+            "coordinate_space": "original_frame_normalized",
+            "frame_width_px": 1600,
+            "frame_height_px": 900
+          }
+        }
+      ],
+      "confirmation": null,
+      "broken_links": []
+    },
+    {
+      "position": 2,
+      "entry_id": "ent-evt-002-step",
+      "revision_id": "rev-1",
+      "status": "draft",
+      "kind": "step",
+      "title": "Step at evt-002",
+      "expert_words": [
+        {
+          "exchange_id": "sx-003",
+          "question": "FIXTURE question: what about this second region?",
+          "quote": "FIXTURE: this second region shows FIXTURE pattern B."
+        },
+        {
+          "exchange_id": "sx-003",
+          "question": "FIXTURE question: what about this second region?",
+          "quote": "It is normally FIXTURE decision B."
+        }
+      ],
+      "synthesis": [
+        {
+          "type": "ai_synthesis",
+          "text": "Look at the region the expert pointed to and check it as the expert described."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "The expert pointed at a region of trace trace-A, channel SYS2 (event evt-002)."
+        }
+      ],
+      "guardrails": [],
+      "visual": [
+        {
+          "event_id": "evt-002",
+          "asset_id": null,
+          "original_ref": "../../../../../../public/fixtures/trace-a-full.svg",
+          "highlighted_ref": "../../../../../../public/fixtures/trace-a-evt-002-highlight.svg",
+          "region": {
+            "x": 0.55,
+            "y": 0.55,
+            "width": 0.15,
+            "height": 0.25,
+            "coordinate_space": "original_frame_normalized",
+            "frame_width_px": 1600,
+            "frame_height_px": 900
+          }
+        }
+      ],
+      "confirmation": null,
+      "broken_links": []
+    },
+    {
+      "position": 3,
+      "entry_id": "ent-evt-004-step",
+      "revision_id": "rev-1",
+      "status": "draft",
+      "kind": "step",
+      "title": "Step at evt-004",
+      "expert_words": [
+        {
+          "exchange_id": "sx-005",
+          "question": "FIXTURE question: what is this one?",
+          "quote": "FIXTURE: this one is FIXTURE pattern D."
+        }
+      ],
+      "synthesis": [
+        {
+          "type": "ai_synthesis",
+          "text": "Look at the region the expert pointed to and check it as the expert described."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "The expert pointed at a region of trace trace-A (event evt-004)."
+        }
+      ],
+      "guardrails": [],
+      "visual": [
+        {
+          "event_id": "evt-004",
+          "asset_id": null,
+          "original_ref": "../../../../../../public/fixtures/trace-a-full.svg",
+          "highlighted_ref": "../../../../../../public/fixtures/trace-a-evt-004-highlight.svg",
+          "region": {
+            "x": 0.4,
+            "y": 0.1,
+            "width": 0.12,
+            "height": 0.75,
+            "coordinate_space": "original_frame_normalized",
+            "frame_width_px": 1600,
+            "frame_height_px": 900
+          }
+        }
+      ],
+      "confirmation": null,
+      "broken_links": []
+    },
+    {
+      "position": 4,
+      "entry_id": "ent-evt-001-exception",
+      "revision_id": "rev-1",
+      "status": "draft",
+      "kind": "exception",
+      "title": "Exception at evt-001",
+      "expert_words": [
+        {
+          "exchange_id": "sx-008",
+          "question": "FIXTURE question: you said usually; when does decision A not apply?",
+          "quote": "Unless FIXTURE condition E is present."
+        }
+      ],
+      "synthesis": [
+        {
+          "type": "ai_synthesis",
+          "text": "Before deciding, check whether the exception the expert stated applies."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "The expert pointed at a region of trace trace-A, channel SYS1 (event evt-001)."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "Apply the exception the expert stated instead of the usual step."
+        }
+      ],
+      "guardrails": [
+        {
+          "trigger": {
+            "type": "expert_quote",
+            "exchange_id": "sx-008",
+            "quote": "Unless FIXTURE condition E is present."
+          },
+          "action": {
+            "type": "ai_synthesis",
+            "text": "Apply the exception the expert stated instead of the usual step."
+          },
+          "expert_words": [
+            {
+              "exchange_id": "sx-008",
+              "question": "FIXTURE question: you said usually; when does decision A not apply?",
+              "quote": "Unless FIXTURE condition E is present."
+            }
+          ]
+        }
+      ],
+      "visual": [
+        {
+          "event_id": "evt-001",
+          "asset_id": null,
+          "original_ref": "../../../../../../public/fixtures/trace-a-full.svg",
+          "highlighted_ref": "../../../../../../public/fixtures/trace-a-evt-001-highlight.svg",
+          "region": {
+            "x": 0.2,
+            "y": 0.15,
+            "width": 0.15,
+            "height": 0.25,
+            "coordinate_space": "original_frame_normalized",
+            "frame_width_px": 1600,
+            "frame_height_px": 900
+          }
+        }
+      ],
+      "confirmation": null,
+      "broken_links": []
+    },
+    {
+      "position": 5,
+      "entry_id": "ent-evt-001-guardrail",
+      "revision_id": "rev-1",
+      "status": "draft",
+      "kind": "guardrail",
+      "title": "Guardrail at evt-001",
+      "expert_words": [
+        {
+          "exchange_id": "sx-002",
+          "question": "FIXTURE question: why decision A?",
+          "quote": "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+        }
+      ],
+      "synthesis": [
+        {
+          "type": "ai_synthesis",
+          "text": "Before saving, check the stop condition the expert stated; if it applies, stop."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "The expert pointed at a region of trace trace-A, channel SYS1 (event evt-001)."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "Stop; do not continue past this point."
+        }
+      ],
+      "guardrails": [
+        {
+          "trigger": {
+            "type": "expert_quote",
+            "exchange_id": "sx-002",
+            "quote": "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+          },
+          "action": {
+            "type": "ai_synthesis",
+            "text": "Stop; do not continue past this point."
+          },
+          "expert_words": [
+            {
+              "exchange_id": "sx-002",
+              "question": "FIXTURE question: why decision A?",
+              "quote": "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+            }
+          ]
+        }
+      ],
+      "visual": [
+        {
+          "event_id": "evt-001",
+          "asset_id": null,
+          "original_ref": "../../../../../../public/fixtures/trace-a-full.svg",
+          "highlighted_ref": "../../../../../../public/fixtures/trace-a-evt-001-highlight.svg",
+          "region": {
+            "x": 0.2,
+            "y": 0.15,
+            "width": 0.15,
+            "height": 0.25,
+            "coordinate_space": "original_frame_normalized",
+            "frame_width_px": 1600,
+            "frame_height_px": 900
+          }
+        }
+      ],
+      "confirmation": null,
+      "broken_links": []
+    },
+    {
+      "position": 6,
+      "entry_id": "ent-evt-002-guardrail",
+      "revision_id": "rev-1",
+      "status": "draft",
+      "kind": "guardrail",
+      "title": "Guardrail at evt-002",
+      "expert_words": [
+        {
+          "exchange_id": "sx-004",
+          "question": "FIXTURE question: when would you stop here?",
+          "quote": "Maybe also when FIXTURE pattern B is faint."
+        }
+      ],
+      "synthesis": [
+        {
+          "type": "ai_synthesis",
+          "text": "Before saving, check the stop condition the expert stated; if it applies, stop."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "The expert pointed at a region of trace trace-A, channel SYS2 (event evt-002)."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "Stop; do not continue past this point."
+        }
+      ],
+      "guardrails": [
+        {
+          "trigger": {
+            "type": "expert_quote",
+            "exchange_id": "sx-004",
+            "quote": "Maybe also when FIXTURE pattern B is faint."
+          },
+          "action": {
+            "type": "ai_synthesis",
+            "text": "Stop; do not continue past this point."
+          },
+          "expert_words": [
+            {
+              "exchange_id": "sx-004",
+              "question": "FIXTURE question: when would you stop here?",
+              "quote": "Maybe also when FIXTURE pattern B is faint."
+            }
+          ]
+        }
+      ],
+      "visual": [
+        {
+          "event_id": "evt-002",
+          "asset_id": null,
+          "original_ref": "../../../../../../public/fixtures/trace-a-full.svg",
+          "highlighted_ref": "../../../../../../public/fixtures/trace-a-evt-002-highlight.svg",
+          "region": {
+            "x": 0.55,
+            "y": 0.55,
+            "width": 0.15,
+            "height": 0.25,
+            "coordinate_space": "original_frame_normalized",
+            "frame_width_px": 1600,
+            "frame_height_px": 900
+          }
+        }
+      ],
+      "confirmation": null,
+      "broken_links": []
+    },
+    {
+      "position": 7,
+      "entry_id": "ent-evt-002-escalation",
+      "revision_id": "rev-1",
+      "status": "draft",
+      "kind": "escalation",
+      "title": "Escalation at evt-002",
+      "expert_words": [
+        {
+          "exchange_id": "sx-004",
+          "question": "FIXTURE question: when would you stop here?",
+          "quote": "Stop and escalate if FIXTURE pattern B looks unclear."
+        }
+      ],
+      "synthesis": [
+        {
+          "type": "ai_synthesis",
+          "text": "If the condition the expert stated applies, stop and escalate instead of deciding."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "The expert pointed at a region of trace trace-A, channel SYS2 (event evt-002)."
+        },
+        {
+          "type": "ai_synthesis",
+          "text": "Stop and escalate."
+        }
+      ],
+      "guardrails": [
+        {
+          "trigger": {
+            "type": "expert_quote",
+            "exchange_id": "sx-004",
+            "quote": "Stop and escalate if FIXTURE pattern B looks unclear."
+          },
+          "action": {
+            "type": "ai_synthesis",
+            "text": "Stop and escalate."
+          },
+          "expert_words": [
+            {
+              "exchange_id": "sx-004",
+              "question": "FIXTURE question: when would you stop here?",
+              "quote": "Stop and escalate if FIXTURE pattern B looks unclear."
+            }
+          ]
+        }
+      ],
+      "visual": [
+        {
+          "event_id": "evt-002",
+          "asset_id": null,
+          "original_ref": "../../../../../../public/fixtures/trace-a-full.svg",
+          "highlighted_ref": "../../../../../../public/fixtures/trace-a-evt-002-highlight.svg",
+          "region": {
+            "x": 0.55,
+            "y": 0.55,
+            "width": 0.15,
+            "height": 0.25,
+            "coordinate_space": "original_frame_normalized",
+            "frame_width_px": 1600,
+            "frame_height_px": 900
+          }
+        }
+      ],
+      "confirmation": null,
+      "broken_links": []
+    }
+  ],
+  "excluded": []
+}
