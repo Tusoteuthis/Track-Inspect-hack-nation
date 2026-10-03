@@ -49,13 +49,13 @@ All paths are relative to the worktree root `.claude/worktrees/ws03-sprint-0/`.
 
 **Goal**: the capability reference. **Independent test**: Q1–Q10 are answered with sources, and the six mechanisms have fallbacks and labels.
 
-- [ ] T014 [US1] Receive notes/ws3-sprints/docs/elevenlabs-capabilities.md from the research subagent
-- [ ] T015 [US1] Review it against FR-001/FR-002: every question has a source, every recommendation has a fallback and a VERIFIED/DOCUMENTED-ONLY label, and the temporary agent was deleted. Fix gaps or mark them as open risks.
+- [x] T014 [US1] Receive notes/ws3-sprints/docs/elevenlabs-capabilities.md from the research subagent
+- [x] T015 [US1] Review it against FR-001/FR-002: every question has a source, every recommendation has a fallback and a VERIFIED/DOCUMENTED-ONLY label, and the temporary agent was deleted. Fix gaps or mark them as open risks.
 
 ## Phase 7: Polish
 
-- [ ] T016 Write notes/ws3-sprints/handoff-sprint-0.md (template in the sprint prompt, section A8) with pasted typecheck/test output, decisions, limitations and the human-gate checklist
-- [ ] T017 Run the quickstart.md checks, mark the tasks done, and commit
+- [x] T016 Write notes/ws3-sprints/handoff-sprint-0.md (template in the sprint prompt, section A8) with pasted typecheck/test output, decisions, limitations and the human-gate checklist
+- [x] T017 Run the quickstart.md checks, mark the tasks done, and commit
 
 ## Dependencies
 

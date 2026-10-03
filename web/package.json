@@ -11,7 +11,8 @@
     "sync-agents": "tsx scripts/sync-agents.mts",
     "probe": "tsx scripts/probe-agents.mts",
     "tts-roundtrip": "tsx scripts/tts-roundtrip.mts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "spike:ws3": "tsx scripts/ws3-capability-spike.mts"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.70.0",
