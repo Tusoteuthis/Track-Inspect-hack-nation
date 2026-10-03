@@ -1,5 +1,7 @@
 # WS5 Sprint 2 — Synthesis, gaps, teach-back & Work Map content
 
+> **Status: DONE (2026-10-04)** on branch `worktree-ws05-sprint-2` (typecheck clean, 225/225 tests). See [handoff-sprint-2.md](handoff-sprint-2.md). Still open: the human gate and the merge into `voice`. Don't run this prompt again.
+
 > Paste this whole file as the first message to a fresh coding agent started in the repo root.
 
 ## Your role
