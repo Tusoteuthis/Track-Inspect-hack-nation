@@ -28,6 +28,25 @@ const NOTICE: Partial<Record<RegionRenderState, string>> = {
   invalid: "Region data invalid: no highlight shown",
 };
 
+const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+// A modal <dialog> makes the page inert, but Tab can still leave it for the
+// browser chrome; wrap focus at both ends so the keyboard stays in the dialog.
+function trapTab(container: HTMLElement, e: { shiftKey: boolean; preventDefault: () => void }) {
+  const items = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(el => !el.hasAttribute("disabled"));
+  if (items.length === 0) return e.preventDefault();
+  const first = items[0];
+  const last = items[items.length - 1];
+  const active = document.activeElement;
+  if (e.shiftKey && (active === first || !container.contains(active))) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && (active === last || !container.contains(active))) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
 const drawable = (state: RegionRenderState) => state === "resolved" || state === "ambiguous";
 
 export function EvidenceViewer({ asset, region, mode = "full", caption }: EvidenceViewerProps) {
@@ -105,6 +124,8 @@ export function EvidenceViewer({ asset, region, mode = "full", caption }: Eviden
           if (e.key === "Escape") {
             e.preventDefault();
             closeInspect();
+          } else if (e.key === "Tab") {
+            trapTab(e.currentTarget, e);
           }
         }}
         onClose={() => inspectButtonRef.current?.focus()}

@@ -74,3 +74,15 @@ test("inspect dialog opens and Escape returns focus", async ({ page }) => {
   await expect(card.getByRole("dialog")).toBeHidden();
   await expect(opener).toBeFocused();
 });
+
+test("inspect dialog keeps keyboard focus inside while open", async ({ page }) => {
+  await page.goto("/dev/evidence");
+  const card = page.locator("article").first();
+  await card.getByRole("button", { name: "Inspect full screen" }).click();
+  const dialog = card.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  for (const key of ["Tab", "Tab", "Tab", "Shift+Tab", "Shift+Tab", "Shift+Tab"]) {
+    await page.keyboard.press(key);
+    expect(await dialog.evaluate(d => d.contains(document.activeElement)), `after ${key}`).toBe(true);
+  }
+});
