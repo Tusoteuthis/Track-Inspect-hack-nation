@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   FIXTURE_IDS,
+  createFixtureSource,
   fixtureSource,
 } from "@/lib/data/fixtureSource";
 import type { LearnerDraft, LearnerEvaluation } from "@/lib/ui/contracts";
@@ -36,14 +37,28 @@ describe("fixtureSource", () => {
   });
 
   it("stubs later-sprint actions explicitly", async () => {
-    const draft = {} as LearnerDraft;
     await expect(fixtureSource.requestOffRecord(FIXTURE_IDS.expertSession, true)).rejects.toThrow(
       "not implemented: Sprint 3"
     );
-    await expect(fixtureSource.submitDraftForReview(draft)).rejects.toThrow("not implemented: Sprint 2");
-    await expect(fixtureSource.commitDraft(draft, {} as LearnerEvaluation)).rejects.toThrow(
-      "not implemented: Sprint 2"
-    );
+  });
+
+  it("simulates review and commit for practice (Sprint 2)", async () => {
+    const source = createFixtureSource({ latencyMs: 0 });
+    const draft: LearnerDraft = { draft_id: "d", draft_revision: 1, decision: "x", reason: "y", region: null };
+    const first = await source.submitDraftForReview(draft);
+    expect(first.status === "acknowledged" && first.value.outcome).toBe("intervene");
+    const edited = { ...draft, draft_revision: 2 };
+    const second = await source.submitDraftForReview(edited);
+    if (second.status !== "acknowledged") throw new Error("expected ack");
+    const commit = await source.commitDraft(edited, second.value, { idempotency_key: "k" });
+    expect(commit.status).toBe("acknowledged");
+  });
+
+  it("can force review and commit failures", async () => {
+    const source = createFixtureSource({ latencyMs: 0, failReview: true, failCommit: true });
+    const draft: LearnerDraft = { draft_id: "d", draft_revision: 1, decision: "x", reason: "y", region: null };
+    expect((await source.submitDraftForReview(draft)).status).toBe("failed");
+    expect((await source.commitDraft(draft, {} as LearnerEvaluation, { idempotency_key: "k" })).status).toBe("failed");
   });
 
   it("subscribe returns an unsubscribe function", () => {
