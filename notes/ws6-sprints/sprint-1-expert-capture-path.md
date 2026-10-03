@@ -1,5 +1,7 @@
 # WS6 Sprint 1 — Expert capture path: session → evidence → event → exchange
 
+> **Status: DONE (2026-10-04)** on branch `002-ws6-expert-capture`, verified (typecheck, 377/377 tests, replay-capture ×2 with no new files, SSE replay, LAN asset read). See [handoff-sprint-1.md](handoff-sprint-1.md). Still open: the human gate and the merge into `worktree-ws06-backend`. Don't run this prompt again.
+
 > Paste this whole file as the first message to a fresh coding agent **started inside the WS6 worktree**:
 > `cd /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws06-backend && claude`
 

@@ -8,9 +8,9 @@ Overview and rationale: [`../06a-ws6-sprint-plan.md`](../06a-ws6-sprint-plan.md)
 
 | Order | File | Delivers | Agent time | Human gate | Status |
 |---|---|---|---|---|---|
-| 0 | `sprint-0-foundation-contracts.md` | contracts + zod, fixtures, store/ID/idempotency primitives, `notes/ws6-api-v0.md`, health | ~1–1.5 h | ~15 min: approve and share the route map | DONE 2026-10-04 ([handoff](handoff-sprint-0.md)), gate pending |
-| 1 | `sprint-1-expert-capture-path.md` | sessions, evidence upload/read, idempotent events/exchanges, SSE with replay, diag log, replay script | ~2–3 h | ~20 min: SSE reconnect, LAN asset access | next |
-| 2 | `sprint-2-knowledge-confirmation.md` | WS5 module host + stub, synthesis jobs, Markdown revisions, revision-bound confirmation, Work Map API | ~2–3 h | ~20 min: Markdown on disk, stale confirm rejected | — |
+| 0 | `sprint-0-foundation-contracts.md` | contracts + zod, fixtures, store/ID/idempotency primitives, `notes/ws6-api-v0.md`, health | ~1–1.5 h | ~15 min: approve and share the route map | DONE 2026-10-04 ([handoff](handoff-sprint-0.md)), merged into `worktree-ws06-backend` |
+| 1 | `sprint-1-expert-capture-path.md` | sessions, evidence upload/read, idempotent events/exchanges, SSE with replay, diag log, replay script | ~2–3 h | ~20 min: SSE reconnect, LAN asset access | DONE 2026-10-04 ([handoff](handoff-sprint-1.md)), gate pending |
+| 2 | `sprint-2-knowledge-confirmation.md` | WS5 module host + stub, synthesis jobs, Markdown revisions, revision-bound confirmation, Work Map API | ~2–3 h | ~20 min: Markdown on disk, stale confirm rejected | next |
 | 3 | `sprint-3-newcomer-presave.md` | newcomer session, evaluator separation, draft/evaluation binding, commit guard, assessment | ~3 h | ~20 min: wrong draft intercepted, bypasses blocked | — |
 | 4 | `sprint-4-trust-recovery-demo.md` | off-record, deletion/revocation cascade, access token, diagnostics, e2e script, README | ~2–3 h | ~30 min: fresh-clone startup + full e2e | — |
 
