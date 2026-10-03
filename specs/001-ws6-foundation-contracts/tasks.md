@@ -63,34 +63,34 @@ None beyond Phase 1. Lane A defines its own `ErrorCode` union in web/lib/backend
 **Goal**: config, ids, store, locks.
 **Independent test**: `npx vitest run lib/backend`.
 
-- [ ] T020 [P] [US2] Write failing tests in web/lib/backend/ids.test.ts:
+- [X] T020 [P] [US2] Write failing tests in web/lib/backend/ids.test.ts:
   - `isValidId` / `assertSafeId` accept or reject correctly (traversal, uppercase, leading hyphen, length 65)
   - `newId` prefixes and format
   - `safeJoin` rejects bad segments and stays inside its base
-- [ ] T021 [P] [US2] Write failing tests in web/lib/backend/locks.test.ts:
+- [X] T021 [P] [US2] Write failing tests in web/lib/backend/locks.test.ts:
   - concurrent `withLock` on the same key never overlaps and runs FIFO
   - different keys may overlap
   - a rejection releases the lock
-- [ ] T022 [P] [US2] Write failing tests in web/lib/backend/store.test.ts, each against an mkdtemp dir:
+- [X] T022 [P] [US2] Write failing tests in web/lib/backend/store.test.ts, each against an mkdtemp dir:
   - `writeJsonAtomic` round trip
   - a failure on rename (via an injected fs or `vi.spyOn`) leaves the target unchanged or absent and no `.tmp` file
   - `readJson`: missing file returns null; invalid JSON or schema raises `validation_failed`
   - `putImmutable`: 201, then same body 200 (key order irrelevant), then different body `conflict_immutable` with the stored record unchanged
   - `putMutable`: create 201, higher rev 200 replaced, lower rev `stale_revision`, equal rev with different body `stale_revision`, equal rev with same body 200 no-op
   - concurrent `putImmutable` of the same new record yields one 201 and one 200
-- [ ] T023 [P] [US2] Write web/lib/backend/config.test.ts: defaults resolve to absolute paths, env overrides work, `setConfigForTests`/`resetConfig` work.
-- [ ] T024 [US2] Implement web/lib/backend/errors.ts: `ApiError` class (code, status, message, details), `ERROR_STATUS` map, `toErrorResponse(err)` (unknown errors → 500 `internal`, without leaking the message).
-- [ ] T025 [US2] Implement web/lib/backend/ids.ts. Include a doc comment stating the idempotency rule.
-- [ ] T026 [US2] Implement web/lib/backend/locks.ts: per-key promise chain. Include a comment stating the single-process assumption.
-- [ ] T027 [US2] Implement web/lib/backend/config.ts.
-- [ ] T028 [US2] Implement web/lib/backend/store.ts: `writeFileAtomic`, `writeJsonAtomic`, `readJson`, `canonicalJson`, `putImmutable`, `putMutable`.
-- [ ] T029 [US2] Make T020–T023 pass, then commit.
+- [X] T023 [P] [US2] Write web/lib/backend/config.test.ts: defaults resolve to absolute paths, env overrides work, `setConfigForTests`/`resetConfig` work.
+- [X] T024 [US2] Implement web/lib/backend/errors.ts: `ApiError` class (code, status, message, details), `ERROR_STATUS` map, `toErrorResponse(err)` (unknown errors → 500 `internal`, without leaking the message).
+- [X] T025 [US2] Implement web/lib/backend/ids.ts. Include a doc comment stating the idempotency rule.
+- [X] T026 [US2] Implement web/lib/backend/locks.ts: per-key promise chain. Include a comment stating the single-process assumption.
+- [X] T027 [US2] Implement web/lib/backend/config.ts.
+- [X] T028 [US2] Implement web/lib/backend/store.ts: `writeFileAtomic`, `writeJsonAtomic`, `readJson`, `canonicalJson`, `putImmutable`, `putMutable`.
+- [X] T029 [US2] Make T020–T023 pass, then commit.
 
 ## Phase 5: User Story 3 — Health check (P2) · Lane A
 
-- [ ] T030 [US3] Write failing test web/app/api/health/route.test.ts: with `setConfigForTests` pointing at temp dirs, `GET()` returns 200 with the exact keys. When the knowledge dir is unwritable (a path under a file), it returns 503 with `ok: false`.
-- [ ] T031 [US3] Implement web/lib/backend/health.ts (`checkHealth()`: mkdir -p + `fs.access` W_OK) and web/app/api/health/route.ts (`runtime = "nodejs"`, `dynamic = "force-dynamic"`, thin).
-- [ ] T032 [US3] Make it pass, then commit.
+- [X] T030 [US3] Write failing test web/app/api/health/route.test.ts: with `setConfigForTests` pointing at temp dirs, `GET()` returns 200 with the exact keys. When the knowledge dir is unwritable (a path under a file), it returns 503 with `ok: false`.
+- [X] T031 [US3] Implement web/lib/backend/health.ts (`checkHealth()`: mkdir -p + `fs.access` W_OK) and web/app/api/health/route.ts (`runtime = "nodejs"`, `dynamic = "force-dynamic"`, thin).
+- [X] T032 [US3] Make it pass, then commit.
 
 ## Phase 6: User Story 4 — Route map + constitution (P2) · Lane C
 
