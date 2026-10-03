@@ -44,7 +44,9 @@ export async function GET(request: NextRequest) {
   }
 
   const sessionId = request.nextUrl.searchParams.get("session_id");
-  if (sessionId === null) return issueToken(apiKey, agentId);
+  if (sessionId === null) {
+    return handleRoute({ component: "voice", op: "conversation-token" }, () => issueToken(apiKey, agentId));
+  }
 
   return handleRoute({ component: "voice", op: "conversation-token", ids: { session_id: sessionId } }, async () => {
     await requireActiveSession(sessionId);

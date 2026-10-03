@@ -45,14 +45,14 @@ async function newSession() {
 }
 
 describe("GET /api/conversation-token", () => {
-  it("without session_id returns exactly { token } (unchanged behaviour, no diag)", async () => {
+  it("without session_id returns exactly { token } (unchanged behaviour) and logs a diag line", async () => {
     const res = await GET(req("flow=expert"));
     expect(res.status).toBe(200);
     const text = await res.text();
     expect(text).toBe('{"token":"tok"}');
     expect(text).not.toContain("test-key-123");
     expect(getWebrtcToken).toHaveBeenCalledWith({ agentId: "agent-x" });
-    await expect(fsp.stat(path.join(dir, "runtime", "diag"))).rejects.toThrow();
+    expect(await fsp.readdir(path.join(dir, "runtime", "diag"))).toHaveLength(1);
   });
 
   it("unknown session → 404 not_found and no token is requested", async () => {
