@@ -16,8 +16,8 @@ At the end, a fixture-driven session must naturally produce **≥ 3 live questio
 
 - Sprint number `N` = **2**
 - Slug = **live-interview**
-- Branch = **`ws3/sprint-2-live-interview`**
-- Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-2`**
+- Branch = **`worktree-ws03-sprint-2`**
+- Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-2`**
 - Dev-server port = **3102**
 
 **First action:** run the A6 location check at the bottom of this prompt. It confirms you are in your worktree, or creates it if you were started in the main checkout. Do not edit anything in the main checkout.
@@ -111,7 +111,7 @@ Debrief, coverage tracking, teach-back and confirmation (Sprint 3). Off-record b
    - you are asked to clarify the ambiguous event
    - at least one guardrail question comes up
 3. Open `timing-report.md` and confirm the interruption count is 0 and the waits look deliberate. If the agent feels too eager or too slow, adjust `pause_ms` or the turn-taking settings with the agent, and rerun.
-4. If satisfied, merge the branch into `voice`, from the main checkout once it's clean and no other agent is mid-commit: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation merge --no-ff ws3/sprint-2-live-interview`. Then remove the worktree: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-2`.
+4. If satisfied, merge the branch into `voice`, from the main checkout once it's clean and no other agent is mid-commit: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation merge --no-ff worktree-ws03-sprint-2`. Then remove the worktree: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-2`.
 
 ---
 
@@ -206,9 +206,9 @@ Several agents work on this repository **at the same time**. The main checkout (
 
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
-WT_ROOT=/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees
-WT=$WT_ROOT/ws3-sprint-N
-BR=ws3/sprint-N-<slug>
+WT_ROOT=$REPO/.claude/worktrees
+WT=$WT_ROOT/ws03-sprint-N
+BR=worktree-ws03-sprint-N
 HERE=$(git rev-parse --show-toplevel)
 CUR=$(git branch --show-current)
 
@@ -250,7 +250,7 @@ cd "$WT"
 
 **Spec-kit inside the worktree.** Spec-kit 1.0.4 here does not create git branches; it creates `specs/NNN-name/` and a local `.specify/feature.json`. Your branch is already `$BR`. Other agents also create specs in parallel, so sequential numbers would collide on merge. When `/speckit-specify` runs `create-new-feature.sh`, pass `--timestamp --short-name ws3-sprint-N-<slug>`. If the skill doesn't let you pass flags, rename the created directory afterwards to `specs/<timestamp>-ws3-sprint-N-<slug>/` and update `.specify/feature.json` to match.
 
-**Subagents for lanes.** Subagents work inside **your** worktree: run them sequentially if they touch the same files. For true parallelism, give each lane its own nested worktree under `$WT_ROOT/ws3-sprint-N-lane-X`, branched from `$BR`, and merge the lanes into `$BR` yourself. These lane worktrees and branches are yours to create and remove.
+**Subagents for lanes.** Subagents work inside **your** worktree: run them sequentially if they touch the same files. For true parallelism, give each lane its own nested worktree under `$WT_ROOT/ws03-sprint-N-lane-X`, branched from `$BR`, and merge the lanes into `$BR` yourself. These lane worktrees and branches are yours to create and remove.
 
 ### A6b. How every WS3 sprint is executed
 
@@ -302,7 +302,7 @@ Probe results are nondeterministic. A behavior counts as "passing" only if it ho
 
 ```markdown
 # WS3 Sprint N handoff — <title>
-Branch: ws3/sprint-N-<slug>   Worktree: <path>   Dev port: 310N   Spec: specs/<timestamp>-ws3-sprint-N-<slug>/   Date: <date>
+Branch: worktree-ws03-sprint-N   Worktree: <path>   Dev port: 310N   Spec: specs/<timestamp>-ws3-sprint-N-<slug>/   Date: <date>
 ## Delivered (files + one line each)
 ## Verification evidence (pasted command output: typecheck, vitest summary, probe pass counts)
 ## Decisions made (and why) — especially anything that deviates from the sprint prompt

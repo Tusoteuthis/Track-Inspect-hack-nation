@@ -18,19 +18,19 @@ Every sprint agent works in **its own git worktree**, never in the shared main c
 
 | Sprint | Branch | Worktree | Dev port |
 |---|---|---|---|
-| 0 | `ws3/sprint-0-spike-contracts` | `../Track-Inspect-worktrees/ws3-sprint-0` | 3100 |
-| 1 | `ws3/sprint-1-golden-path` | `../Track-Inspect-worktrees/ws3-sprint-1` | 3101 |
-| 2 | `ws3/sprint-2-live-interview` | `../Track-Inspect-worktrees/ws3-sprint-2` | 3102 |
-| 3 | `ws3/sprint-3-debrief-confirmation` | `../Track-Inspect-worktrees/ws3-sprint-3` | 3103 |
-| 4 | `ws3/sprint-4-trust-completion` | `../Track-Inspect-worktrees/ws3-sprint-4` | 3104 |
+| 0 | `worktree-ws03-sprint-0` | `.claude/worktrees/ws03-sprint-0` | 3100 |
+| 1 | `worktree-ws03-sprint-1` | `.claude/worktrees/ws03-sprint-1` | 3101 |
+| 2 | `worktree-ws03-sprint-2` | `.claude/worktrees/ws03-sprint-2` | 3102 |
+| 3 | `worktree-ws03-sprint-3` | `.claude/worktrees/ws03-sprint-3` | 3103 |
+| 4 | `worktree-ws03-sprint-4` | `.claude/worktrees/ws03-sprint-4` | 3104 |
 
 **Start each agent inside its worktree (recommended).** This keeps the agent's whole session out of the shared checkout:
 
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
 N=0; SLUG=spike-contracts            # see the table above
-WT=/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-$N
-git -C "$REPO" worktree add -b ws3/sprint-$N-$SLUG "$WT" voice
+WT=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-$N
+git -C "$REPO" worktree add -b worktree-ws03-sprint-$N "$WT" voice
 cp "$REPO/web/.env" "$WT/web/.env"
 cd "$WT" && claude                   # then paste notes/ws3-sprints/sprint-$N-$SLUG.md
 ```
@@ -49,8 +49,8 @@ The prompt's first step (A6) detects that the agent is already in the right work
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
 git -C "$REPO" status                      # must be clean, with no other agent mid-commit
-git -C "$REPO" merge --no-ff ws3/sprint-N-<slug>
-git -C "$REPO" worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-N
+git -C "$REPO" merge --no-ff worktree-ws03-sprint-N
+git -C "$REPO" worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-N
 ```
 
 The next sprint's worktree must be created **after** this merge, so it starts from a `voice` that contains the previous sprint.

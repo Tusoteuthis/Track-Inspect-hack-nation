@@ -10,7 +10,7 @@ Several agents work in this repository at the same time (for example WS5, WS6 an
 
 | Check | How |
 |---|---|
-| The previous sprint is merged into `voice` (skip for Sprint 0) | `git -C <repo> log --oneline -5` shows the merge of `ws3/sprint-(N-1)-…` |
+| The previous sprint is merged into `voice` (skip for Sprint 0) | `git -C <repo> log --oneline -5` shows the merge of `worktree-ws03-sprint-(N-1)` |
 | The previous handoff note exists (skip for Sprint 0) | `notes/ws3-sprints/handoff-sprint-(N-1).md` is on `voice` |
 | ElevenLabs credentials exist | `<repo>/web/.env` has `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID_EXPERT` |
 | The main checkout has nothing uncommitted that the sprint needs | A worktree only sees **committed** files on `voice` |
@@ -19,13 +19,13 @@ Sprint identities:
 
 | N | Slug | Branch | Worktree | Port | Prompt file |
 |---|---|---|---|---|---|
-| 0 | `spike-contracts` | `ws3/sprint-0-spike-contracts` | `…/Track-Inspect-worktrees/ws3-sprint-0` | 3100 | `notes/ws3-sprints/sprint-0-spike-contracts.md` |
-| 1 | `golden-path` | `ws3/sprint-1-golden-path` | `…/Track-Inspect-worktrees/ws3-sprint-1` | 3101 | `notes/ws3-sprints/sprint-1-golden-path.md` |
-| 2 | `live-interview` | `ws3/sprint-2-live-interview` | `…/Track-Inspect-worktrees/ws3-sprint-2` | 3102 | `notes/ws3-sprints/sprint-2-live-interview.md` |
-| 3 | `debrief-confirmation` | `ws3/sprint-3-debrief-confirmation` | `…/Track-Inspect-worktrees/ws3-sprint-3` | 3103 | `notes/ws3-sprints/sprint-3-debrief-confirmation.md` |
-| 4 | `trust-completion` | `ws3/sprint-4-trust-completion` | `…/Track-Inspect-worktrees/ws3-sprint-4` | 3104 | `notes/ws3-sprints/sprint-4-trust-completion.md` |
+| 0 | `spike-contracts` | `worktree-ws03-sprint-0` | `<repo>/.claude/worktrees/ws03-sprint-0` | 3100 | `notes/ws3-sprints/sprint-0-spike-contracts.md` |
+| 1 | `golden-path` | `worktree-ws03-sprint-1` | `<repo>/.claude/worktrees/ws03-sprint-1` | 3101 | `notes/ws3-sprints/sprint-1-golden-path.md` |
+| 2 | `live-interview` | `worktree-ws03-sprint-2` | `<repo>/.claude/worktrees/ws03-sprint-2` | 3102 | `notes/ws3-sprints/sprint-2-live-interview.md` |
+| 3 | `debrief-confirmation` | `worktree-ws03-sprint-3` | `<repo>/.claude/worktrees/ws03-sprint-3` | 3103 | `notes/ws3-sprints/sprint-3-debrief-confirmation.md` |
+| 4 | `trust-completion` | `worktree-ws03-sprint-4` | `<repo>/.claude/worktrees/ws03-sprint-4` | 3104 | `notes/ws3-sprints/sprint-4-trust-completion.md` |
 
-`…` = `/Users/matthiassammer/Documents/Projects`
+`<repo>` = `/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation`. The worktrees sit next to the other workstreams' worktrees (`.claude/worktrees/ws05-…`, `ws06-…`, `ws07-…`) and use the same naming: folder `ws03-sprint-N`, branch `worktree-ws03-sprint-N`.
 
 ## 2. Create the worktree and start the agent inside it
 
@@ -34,10 +34,10 @@ Run this in a terminal. Set `N` and `SLUG` from the table.
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
 N=0; SLUG=spike-contracts
-WT=/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-$N
+WT=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-$N
 
 mkdir -p "$(dirname "$WT")"
-git -C "$REPO" worktree add -b "ws3/sprint-$N-$SLUG" "$WT" voice   # new branch from the voice tip
+git -C "$REPO" worktree add -b "worktree-ws03-sprint-$N" "$WT" voice   # new branch from the voice tip
 cp "$REPO/web/.env" "$WT/web/.env"                                  # .env is gitignored, so copy it
 cd "$WT" && claude                                                  # the agent's whole session now lives here
 ```
@@ -77,7 +77,7 @@ You have two options. Both give the agent the same instructions.
 You are the WS3 Sprint <N> implementing agent. You were started inside your own git worktree.
 
 1. Read the file notes/ws3-sprints/sprint-<N>-<slug>.md completely, top to bottom, before doing anything else. It is your full instruction set.
-2. Run its section A6 location check first. Continue only if it confirms you are in /Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-<N> on branch ws3/sprint-<N>-<slug>. Otherwise stop and ask me.
+2. Run its section A6 location check first. Continue only if it confirms you are in /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws03-sprint-<N> on branch worktree-ws03-sprint-<N>. Otherwise stop and ask me.
 3. Then read every file listed under "Read first" in that prompt, and follow the prompt exactly.
 4. Never edit files in, or run git commands that change, the main checkout /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation. Never touch other agents' worktrees or branches. Do not merge or push.
 5. When done, write notes/ws3-sprints/handoff-sprint-<N>.md, commit on your branch, and report the worktree path, branch, dev port and the human-gate steps.
@@ -122,7 +122,7 @@ The prompt tells the agent to read these. This list is for you, to check the age
 
 Rules the prompt enforces (section A6):
 
-- All edits, commands, tests, dev servers and commits happen inside `…/Track-Inspect-worktrees/ws3-sprint-<N>`.
+- All edits, commands, tests, dev servers and commits happen inside `<repo>/.claude/worktrees/ws03-sprint-<N>`.
 - No `checkout`, `switch`, `reset`, `stash`, `clean`, `rebase`, `merge` or `pull` in the main checkout, and no file edits there.
 - No touching other agents' worktrees or branches. Nothing gets deleted or forced.
 - The dev server runs on the sprint's own port (`npm run dev -- -p 310<N>`).
@@ -136,7 +136,7 @@ Spot checks you can run at any time:
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
 git -C "$REPO" status --short          # the main checkout must show NO sprint files (only pre-existing items such as .claude/worktrees/)
-git -C "$REPO" worktree list           # the sprint worktree is listed on its ws3/sprint-N-… branch
+git -C "$REPO" worktree list           # the sprint worktree is listed on its worktree-ws03-sprint-N branch
 git -C "$WT" log --oneline voice..HEAD # the sprint's commits, only on its branch
 ```
 
@@ -152,7 +152,7 @@ If sprint files show up in the main checkout, stop the agent. Move the changes i
 3. If it's good, merge it and clean up. The main checkout must be clean, with no other agent mid-commit:
    ```bash
    git -C "$REPO" status
-   git -C "$REPO" merge --no-ff ws3/sprint-<N>-<slug>
+   git -C "$REPO" merge --no-ff worktree-ws03-sprint-<N>
    git -C "$REPO" worktree remove "$WT"
    ```
 4. Only now create the worktree for sprint `N+1` (step 2), so it starts from a `voice` that contains this sprint.
