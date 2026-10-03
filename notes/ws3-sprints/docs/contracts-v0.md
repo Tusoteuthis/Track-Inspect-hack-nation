@@ -4,7 +4,7 @@
 
 **Schema version:** `ws3.v0`
 
-**Canonical source:** `web/lib/expert/contracts.ts`, with types and the `validatePointingEvent` validator.
+**Canonical source:** `web/lib/expert/contracts.ts`, with types and validators: `validatePointingEvent`, plus `validateBeginQuestionParams`, `validateExpertExchange`, `validateTimingMark`, `validateSessionSnapshot` and `isValidSessionId` (added in Sprint 1).
 
 **Sample data:** `web/fixtures/pointing-events/*.json`. These are fixtures and carry `source: "fixture"`.
 
@@ -52,7 +52,8 @@ Validation rejects: wrong schema version, missing ids, unknown enum values, regi
 | `event_id` | string | The pointing event the question was about. **Fixed at creation**; it doesn't change if the expert moves on | yes, only for questions not about an event |
 | `phase` | `live` \| `debrief` \| `teach_back` | When it was asked (keeps challenge question counts separate) | no |
 | `kind` | `explain` \| `reasoning` \| `distinction` \| `context` \| `guardrail` \| `exception` \| `clarify_reference` \| `gap` | Question type | no |
-| `question` | string | The agent's spoken question, verbatim | no |
+| `question` | string | The agent's spoken question, verbatim: the agent's first final line after `begin_question`. `""` until spoken | no |
+| `question_planned` | string | *(Sprint 1)* The text the agent passed to `begin_question`. **AI plan, not evidence** | yes |
 | `answer_lines` | `{text, at_utc, transcript_line_id}[]` | The expert's words, **verbatim** | no (may be empty) |
 | `asked_at_utc` | ISO | When the question was asked | no |
 | `answer_started_at_utc`, `answer_ended_at_utc` | ISO | Answer span | yes |
@@ -92,7 +93,22 @@ The `mark` values are `event_received`, `topic_queued`, `topic_released`, `quest
 
 `segment_id`, `state` (`on_record` \| `off_record`), `started_at_utc`, `ended_at_utc` (nullable while open).
 
-## Planned on-disk layout (Sprint 1+, local files, WS6 may take over)
+### SessionSnapshot — Sprint 1, written by `PUT /api/expert-sessions/<id>/snapshot`
+
+The full state of one expert session, validated by `validateSessionSnapshot` and saved idempotently.
+
+- **Fields:** `schema_version`, `session_id` (`^[a-z0-9-]{1,64}$`, e.g. `ses-20261004-011500-a1b2`), `conversation_id` (nullable), `started_at_utc`, `ended_at_utc` (nullable), `events[]`, `exchanges[]`, `active_exchange_id`, `awaiting_question_exchange_id`, `preamble[]` (AnswerLine: expert words before any question), `transcript[]`, `timing[]`, `unlinked_agent_questions[]`.
+- **TranscriptEntry:** `{line_id, role: user|agent, text, at_utc, exchange_id}`. `exchange_id` is the exchange that was active when the line arrived.
+- **UnlinkedQuestion:** `{line_id, text, at_utc}`. Agent speech ending in `?` with no preceding `begin_question`. It is a prompt-tuning defect signal.
+- **Validation also checks** that every record carries the snapshot's `session_id`, that each exchange's `event_id` is a known event, and that ids are unique.
+
+### Client tool `begin_question` — Sprint 1
+
+Params: `{event_id: string ("none" → null), kind: ExchangeKind, question: string}`. It returns `ok exchange_id=ex-NNN` or `error …` to the LLM. Validator: `validateBeginQuestionParams`.
+
+## On-disk layout (Sprint 1+, local files, WS6 may take over)
+
+Sprint 1 writes the first six files. The root is `KNOWLEDGE_DIR`, default `<repo>/knowledge`, and `knowledge/sessions/` is git-ignored. `session.json` holds the snapshot minus events, exchanges and timing, plus `counts`.
 
 ```text
 knowledge/sessions/<session_id>/
