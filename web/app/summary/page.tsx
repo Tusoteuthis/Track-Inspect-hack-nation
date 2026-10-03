@@ -11,7 +11,7 @@ export default function SummaryPage() {
       description="What the learner did independently, what needed help, and what to practise next."
       queryKey={`assessment:${FIXTURE_IDS.newcomerSession}`}
       load={source => source.getAssessment(FIXTURE_IDS.newcomerSession)}
-      summarize={a => `Assessment for ${a.session_id} loaded.`}
+      summarize={() => "Learning summary view loaded."}
     />
   );
 }

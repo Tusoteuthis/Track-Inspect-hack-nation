@@ -11,7 +11,7 @@ export default function ReviewPage() {
       description="Debrief support: the revision under review, open questions and corrections from the spoken conversation."
       queryKey={`workmap:${FIXTURE_IDS.expertSession}`}
       load={source => source.getWorkMap(FIXTURE_IDS.expertSession)}
-      summarize={m => `Revision ${m.revision_id} loaded with ${m.steps.length} items.`}
+      summarize={m => `Revision under review loaded with ${m.steps.length} items.`}
     />
   );
 }

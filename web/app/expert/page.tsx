@@ -11,7 +11,7 @@ export default function ExpertPage() {
       description="Session setup and the expert companion: active trace, latest indicated region, agent and recording status."
       queryKey={`session:${FIXTURE_IDS.expertSession}`}
       load={source => source.getSession(FIXTURE_IDS.expertSession)}
-      summarize={s => `Session ${s.session_id} loaded (${s.lifecycle}).`}
+      summarize={s => `Expert session view loaded (${s.lifecycle.replace("_", " ")}).`}
     />
   );
 }

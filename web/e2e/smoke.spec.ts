@@ -16,6 +16,8 @@ for (const route of FIXTURE_ROUTES) {
     await expect(page.getByRole("status").filter({ hasText: "FIXTURE DATA" })).toBeVisible();
     // Scoped to <main>: Next.js renders its own empty route-announcer alert outside it.
     await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+    // Internal record ids are diagnostics, never user-facing text.
+    await expect(page.getByRole("main")).not.toContainText(/fixture-[a-z-]+\d/);
     await page.screenshot({ path: `test-results/screens${route.path.replaceAll("/", "_")}.png`, fullPage: true });
   });
 }
