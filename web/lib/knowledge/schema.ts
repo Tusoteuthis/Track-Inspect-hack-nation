@@ -58,6 +58,8 @@ export type KnowledgeEntryContent = {
   entry_id: string;
   revision_id: string;
   parent_revision_id: string | null;
+  /** Why this revision exists (set by synthesis on rev-2+; references the exchanges that changed). */
+  change_reason?: string | null;
   status: EntryStatus;
   kind: EntryKind;
   workflow_position: number | null;
@@ -149,6 +151,9 @@ function shapeViolations(input: unknown): Violation[] {
   }
   for (const key of ["parent_revision_id", "revoked_at_utc", "revoked_reason"] as const) {
     if (!isNullableString(e[key])) push(key, "must be a non-empty string or null");
+  }
+  if ("change_reason" in e && !isNullableString(e.change_reason)) {
+    push("change_reason", "must be a non-empty string or null when present");
   }
   if (!oneOf(ENTRY_STATUSES, e.status)) push("status", `must be one of ${ENTRY_STATUSES.join(", ")}`);
   if (!oneOf(ENTRY_KINDS, e.kind)) push("kind", `must be one of ${ENTRY_KINDS.join(", ")}`);
