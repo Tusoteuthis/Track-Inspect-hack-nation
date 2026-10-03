@@ -1,0 +1,21 @@
+{
+  "exchange_id": "exc-009",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-001",
+  "phase": "teach_back",
+  "kind": "exception",
+  "question": "FIXTURE teach-back: did I get decision A right?",
+  "answer_lines": [
+    {
+      "text": "FIXTURE: correction, FIXTURE decision A needs FIXTURE cue B and FIXTURE cue D.",
+      "at_utc": "2026-10-03T10:02:12.000Z",
+      "transcript_line_id": "exc-009-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:02:10.000Z",
+  "answer_started_at_utc": "2026-10-03T10:02:12.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:02:13.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}

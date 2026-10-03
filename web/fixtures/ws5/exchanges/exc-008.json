@@ -1,0 +1,21 @@
+{
+  "exchange_id": "exc-008",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-005",
+  "phase": "live",
+  "kind": "explain",
+  "question": "FIXTURE question: what about this one?",
+  "answer_lines": [
+    {
+      "text": "FIXTURE: off-record remark about region E.",
+      "at_utc": "2026-10-03T10:00:50.000Z",
+      "transcript_line_id": "exc-008-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:00:48.000Z",
+  "answer_started_at_utc": "2026-10-03T10:00:50.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:00:51.000Z",
+  "audio_offset_secs": null,
+  "record_state": "off_record",
+  "source": "fixture"
+}

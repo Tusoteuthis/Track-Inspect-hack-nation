@@ -1,0 +1,21 @@
+{
+  "exchange_id": "exc-006",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-002",
+  "phase": "live",
+  "kind": "explain",
+  "question": "FIXTURE question: and this region?",
+  "answer_lines": [
+    {
+      "text": "FIXTURE: region B looks different, I am not sure yet what it means.",
+      "at_utc": "2026-10-03T10:00:27.000Z",
+      "transcript_line_id": "exc-006-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:00:25.000Z",
+  "answer_started_at_utc": "2026-10-03T10:00:27.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:00:28.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}
