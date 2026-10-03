@@ -15,7 +15,7 @@ import { ApiError } from "./errors";
 
 export const ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
-export type IdPrefix = "ses" | "cnf" | "evl" | "cmt" | "rev" | "seg";
+export type IdPrefix = "ses" | "cnf" | "evl" | "cmt" | "rev" | "seg" | "job";
 
 export function isValidId(v: unknown): v is string {
   return typeof v === "string" && ID_RE.test(v);

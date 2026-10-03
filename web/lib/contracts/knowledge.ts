@@ -44,6 +44,12 @@ export const KnowledgeRevisionSchema = z.object({
   }),
   produced_by: ProducedBySchema,
   created_at_utc: UtcSchema,
+  /** S2: the expert session whose events/exchanges produced it (null for imported/fixture entries). */
+  session_id: IdSchema.nullable().optional(),
+  /** S2: sha256 (hex) of the module Markdown; used to dedupe re-runs. */
+  content_sha256: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+  /** S2: why this revision differs from its parent, as given by the module. */
+  change_reason: z.string().nullable().optional(),
 });
 export type KnowledgeRevision = z.output<typeof KnowledgeRevisionSchema>;
 
@@ -72,6 +78,21 @@ export function toConfirmation(c: ExpertConfirmation, source: Source): Confirmat
   };
 }
 
+/**
+ * One line of `entries/<entry_id>/status.ndjson`. Revision files are immutable, so every later
+ * status change is recorded here with its cause (S2: confirmations; S4: revocations).
+ */
+export const StatusTransitionSchema = z.object({
+  entry_id: IdSchema,
+  revision_id: IdSchema,
+  from: EntryStatusSchema,
+  to: EntryStatusSchema,
+  at_utc: UtcSchema,
+  confirmation_id: IdSchema.nullable(),
+});
+export type StatusTransition = z.output<typeof StatusTransitionSchema>;
+
 export const parseKnowledgeEntry = makeParser(KnowledgeEntrySchema);
 export const parseKnowledgeRevision = makeParser(KnowledgeRevisionSchema);
 export const parseConfirmation = makeParser(ConfirmationSchema);
+export const parseStatusTransition = makeParser(StatusTransitionSchema);

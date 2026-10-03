@@ -6,6 +6,8 @@ export * from "./expert";
 export * from "./session";
 export * from "./asset";
 export * from "./knowledge";
+export * from "./synthesis";
+export * from "./workmap";
 export * from "./learner";
 export * from "./assessment";
 export * from "./bus";
