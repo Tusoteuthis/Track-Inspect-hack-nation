@@ -1,0 +1,31 @@
+[
+  {
+    "type": "client",
+    "name": "begin_question",
+    "description": "Call this immediately before asking the expert any question, every time, then speak the question. Links the question to the pointing event it is about.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "description": "The event_id of the pointing event the question is about (for example evt-001). Use \"none\" when the question is not about any pointing event."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["explain", "reasoning", "distinction", "context", "guardrail", "exception", "clarify_reference", "gap"],
+          "description": "The kind of question: explain, reasoning, distinction, context, guardrail, exception, clarify_reference (which region do you mean) or gap."
+        },
+        "question": {
+          "type": "string",
+          "description": "The exact question you are about to ask, as you will say it."
+        }
+      },
+      "required": ["event_id", "kind", "question"]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  }
+]

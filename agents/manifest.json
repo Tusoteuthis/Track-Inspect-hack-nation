@@ -7,6 +7,23 @@
     "expert": {
       "displayName": "Track Inspect – Expert",
       "envVar": "ELEVENLABS_AGENT_ID_EXPERT",
+      "systemPrompt": "expert/system-prompt.md",
+      "firstMessage": "expert/first-message.md",
+      "tools": "expert/tools.json",
+      "settings": {
+        "llm": "claude-sonnet-5",
+        "turnEagerness": "patient",
+        "speculativeTurn": false,
+        "maxDurationSeconds": 1800,
+        "expressiveMode": false,
+        "skipTurn": true,
+        "clientEventsAdd": [
+          "client_tool_call",
+          "agent_chat_response_part",
+          "vad_score",
+          "tentative_user_transcript"
+        ]
+      },
       "docs": []
     },
     "tutor": {
