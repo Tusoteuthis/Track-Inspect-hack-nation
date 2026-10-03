@@ -1,0 +1,9 @@
+{
+  "confirmation_id": "fixture-confirmation-002",
+  "reviewed_revision_id": "rev-20261003100500-fx0001",
+  "result": "confirmed",
+  "expert_response_exchange_id": "fixture-exchange-002",
+  "at_utc": "2026-10-03T10:06:00.000Z",
+  "step_ids_reviewed": ["fixture-step-001"],
+  "source": "fixture"
+}
