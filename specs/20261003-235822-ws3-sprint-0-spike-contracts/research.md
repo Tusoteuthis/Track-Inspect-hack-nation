@@ -4,7 +4,7 @@ ElevenLabs platform questions (Q1–Q10) are researched separately; their result
 
 ## Test runner
 
-- **Decision**: vitest 5 (dev dependency) with `vitest.config.mts` that maps `@` to `web/`.
+- **Decision**: vitest 4.1 (dev dependency) with `vitest.config.mts` that maps `@` to `web/`. vitest 5 was tried first, but its peer dependency needs `@types/node` ≥ 22. Bumping that shared dependency risks merge conflicts with parallel workstreams, so it was left at ^20.
 - **Rationale**: native TypeScript/ESM support with no Babel setup. Compatible with Node 26 (engines `^22.12 || ^24 || >=26`). Fast to run in agent loops.
 - **Alternatives considered**: Jest (needs a TypeScript/ESM transform and is heavier), and `node:test` with tsx (doesn't resolve path aliases and has weaker assertions).
 
