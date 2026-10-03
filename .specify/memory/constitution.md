@@ -1,5 +1,6 @@
 <!--
 Sync Impact Report
+- 1.0.0 → 1.1.0 (2026-10-04, WS6) MINOR: added section "WS6 Backend Principles" (W1–W8); WS3 content unchanged.
 - Version change: (unfilled template) → 1.0.0
 - Principles defined (template slots 1–5 replaced, 3 added):
   I. Expert Is the Source of Truth
@@ -130,6 +131,77 @@ Rationale: hackathon timeline. The integration owners will replace the stand-ins
 - Dev servers use per-sprint ports (3100 + sprint number) to avoid collisions.
 - Commit messages end with the co-author attribution required by the team's tooling.
 
+## WS6 Backend Principles
+
+These principles bind the shared backend (WS6) and every client of its API. They add to Core
+Principles I–VIII and never relax them.
+
+### W1. Authoritative Backend State
+
+- The backend MUST be the single source of truth for session, recording (off-record), confirmation
+  and commit state. Clients MUST display that state and MUST NOT invent it.
+- Every rule MUST be enforced server-side. A disabled button is never enforcement.
+
+Rationale: retries, double clicks and stale tabs bypass any client-only guard.
+
+### W2. Idempotent Stable IDs
+
+- Producers MUST send their own stable IDs (`asset_id`, `event_id`, `exchange_id`); writes MUST be
+  `PUT` by ID. The same body again MUST be a no-op returning the stored record; a different body for
+  an immutable record MUST be rejected with `409`.
+- IDs MUST match `^[a-z0-9][a-z0-9-]{0,63}$`, which also sanitizes every storage path segment.
+
+Rationale: retries, reconnects and delayed delivery must never duplicate or re-attach records.
+
+### W3. Revision-Bound Decisions
+
+- Confirmations, evaluations and commits MUST name the exact revisions they apply to.
+- Mutable records MUST carry a monotonic `rev`; stale work MUST be rejected, never applied over newer
+  state. A commit MUST require a current evaluation bound to the latest draft and knowledge revisions.
+
+Rationale: a decision about one revision must not silently validate another.
+
+### W4. Off-Record Means Not Stored
+
+- Off-record content MUST NOT be persisted or forwarded to modules: assets, events, exchanges, jobs
+  and outputs. A label on stored content is not compliance.
+- Logs and diagnostics MUST contain IDs, timings and outcomes only, never content.
+
+Rationale: trust requires that "off the record" leaves nothing behind.
+
+### W5. Labelled Fixtures and Stubs
+
+- Every fixture or stub output MUST carry `source: "fixture"` or `source: "stub"`.
+- Fixtures and stubs MUST NOT silently substitute for captured expert knowledge; stubs MUST NOT
+  invent domain interpretation.
+
+Rationale: the demo must show honestly which parts are live.
+
+### W6. Evaluator Key Never Served
+
+- WS4 evaluator-only material MUST live outside every served, retrievable or module-input path
+  (`EVALUATOR_DIR`), and no route, SSE payload or tutor input may read it.
+
+Rationale: a tutor that sees the answer key proves nothing about knowledge transfer.
+
+### W7. Time, Frames and Unknowns
+
+- Session time (`session_time_ms`) and signal time (`signal_interval`) MUST stay separate fields and
+  MUST NOT be derived from each other.
+- Image coordinates MUST declare their frame (`coordinate_space`, frame pixel size). Unknown values
+  MUST stay `null`.
+
+Rationale: false precision corrupts evidence that newcomers are taught from.
+
+### W8. Backend Simplicity
+
+- The backend MUST run as one Next.js process with the local filesystem, in-process modules and SSE;
+  no database server, queue, object store or vector DB without a principle that requires it.
+- The single-process assumption (in-memory locks and SSE bus) MUST be documented wherever it is
+  relied on.
+
+Rationale: hackathon timeline; the simplest architecture that enforces W1–W7 wins.
+
 ## Governance
 
 - This constitution supersedes conflicting guidance in plans, specs and prompts. A sprint prompt may
@@ -144,4 +216,4 @@ Rationale: hackathon timeline. The integration owners will replace the stand-ins
 - Human gates confirm compliance for conversational behavior. Unit tests and probes confirm it for
   logic and agent behavior.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-03 | **Last Amended**: 2026-10-03
+**Version**: 1.1.0 | **Ratified**: 2026-10-03 | **Last Amended**: 2026-10-04

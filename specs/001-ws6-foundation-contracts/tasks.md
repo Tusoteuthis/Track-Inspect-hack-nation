@@ -94,7 +94,7 @@ None beyond Phase 1. Lane A defines its own `ErrorCode` union in web/lib/backend
 
 ## Phase 6: User Story 4 — Route map + constitution (P2) · Lane C
 
-- [ ] T040 [P] [US4] Write notes/ws6-api-v0.md with these sections:
+- [X] T040 [P] [US4] Write notes/ws6-api-v0.md with these sections:
   - Status and conventions: IDs, idempotency, rev, nulls, time separation, the error envelope and codes table, BusEvent and SSE replay, the single-process note
   - Storage layout
   - Resource table → schema names
@@ -102,8 +102,8 @@ None beyond Phase 1. Lane A defines its own `ErrorCode` union in web/lib/backend
   - Asset mapping
   - Per-partner sections WS2/WS3/WS5/WS7 (what they call, plus open questions)
   - Decisions on conflicts
-- [ ] T041 [P] [US4] Append `## WS6 Backend Principles` to WS3's v1.0.0 .specify/memory/constitution.md. Bump the version to 1.1.0 and add a Sync Impact note. Do not rewrite WS3's content.
-- [ ] T042 [US4] Commit.
+- [X] T041 [P] [US4] Append `## WS6 Backend Principles` to WS3's v1.0.0 .specify/memory/constitution.md. Bump the version to 1.1.0 and add a Sync Impact note. Do not rewrite WS3's content.
+- [X] T042 [US4] Commit.
 
 ## Phase 7: Polish & integration (on the feature branch after merging the lanes)
 
