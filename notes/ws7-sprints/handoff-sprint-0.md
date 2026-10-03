@@ -66,7 +66,7 @@ See `notes/ws7-ui-contracts-v0.md` §3–4. Please forward it to the WS6 and WS5
 ## Known limitations / fixture-only screens
 - All screens are fixture-only. No WS6 API exists yet.
 - WS3 `web/lib/expert/contracts.ts` has not landed. Reconcile the types when it does.
-- The dialog test in jsdom uses a minimal `showModal` polyfill. Real focus trapping is covered by the Playwright test.
+- The dialog test in jsdom uses a minimal `showModal` polyfill. Real Esc and focus trapping are covered by the Playwright tests (see Re-verification).
 
 ## Human gate checklist
 1. In this worktree: `cd web && npm run dev`, then open http://localhost:3000/dev/evidence on the **demo monitor**.
@@ -85,3 +85,26 @@ See `notes/ws7-ui-contracts-v0.md` §3–4. Please forward it to the WS6 and WS5
 - S1 (`/map`, `/review`) and S2 (`/practice`) can now run in parallel. Each replaces its placeholder page and reuses `EvidenceViewer`, `useSourceQuery` and `FixtureBanner`.
 - Extend `SourceUpdate` and `fixtureSource` additively. S1 adds the scripted revision sequence; S2 implements `submitDraftForReview`/`commitDraft` with latency and failure toggles.
 - Use the `data-render-state` and `data-mode` attributes and the `region-outline` test id for assertions.
+
+## Re-verification (2026-10-04, review pass)
+A second agent re-ran every check and reviewed the branch against the S0 acceptance criteria and the B2 rules. Two gaps were found and fixed:
+- **Focus trap missing.** Tab could leave the open inspect dialog for the browser chrome, and the earlier "covered by Playwright" claim was wrong: that test only checked Esc. Fix: `EvidenceViewer` now wraps Tab/Shift+Tab inside the dialog. New e2e test: "inspect dialog keeps keyboard focus inside while open". It failed before the fix and passes after. Commit `3d66602`.
+- **Internal ids on user-facing screens.** `/expert`, `/review`, `/practice` and `/summary` printed record ids such as `fixture-session-001`, which B5 forbids. They now show neutral text, and the fixture-route smoke test asserts that `<main>` contains no `fixture-…` id. Commit `d37360f`.
+
+Fresh output after the fixes:
+```
+$ npm run typecheck          → tsc --noEmit (no errors)
+$ npx vitest run             → Test Files 5 passed (5), Tests 43 passed (43)
+$ npx playwright test        → 12 passed (3.0s)
+$ npm run build              → ✓ Generating static pages (10/10)
+$ grep -riE "expected_decision|acceptable_explanation|common_wrong|scoring|answer_key" fixtures public/fixtures   → exit 1 (none)
+$ grep -rliE "expected_decision|acceptable_explanation|common_wrong|answer_key" .next/static                       → exit 1 (none)
+```
+
+**WS3 Sprint 0 merge check.** Done as a throwaway merge of `worktree-ws03-sprint-0` into this branch, in a scratch worktree that was then removed:
+- Conflicts appear only in `web/package.json` (keep both the `test:e2e` and `spike:ws3` scripts) and `web/package-lock.json` (keep ours; WS3 adds the same vitest 4.1.11).
+- WS3 ships `web/vitest.config.mts` and we ship `web/vitest.config.ts`. Vitest loads `.ts` first, and ours already covers WS3's tests (`**/*.test.{ts,tsx}`, node env, `@` alias).
+- Merged result: `npx vitest run` gives 7 files and 62 tests passed, and `tsc --noEmit` is clean.
+- Recommendation: delete `vitest.config.mts` in whichever merge lands second, so there is one config.
+
+**Flag for the human.** `voice` HEAD `44f5489 "WIP"` commits `.DS_Store` and gitlinks for `.claude/worktrees/*`. That looks accidental. It was not merged here and was left untouched.
