@@ -11,6 +11,7 @@
     "sync-agents": "tsx scripts/sync-agents.mts",
     "probe": "tsx scripts/probe-agents.mts",
     "tts-roundtrip": "tsx scripts/tts-roundtrip.mts",
+    "replay-capture": "tsx scripts/replay-capture.mts",
     "test": "vitest run",
     "spike:ws3": "tsx scripts/ws3-capability-spike.mts",
     "test:e2e": "playwright test"
