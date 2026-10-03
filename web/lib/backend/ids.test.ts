@@ -25,7 +25,7 @@ describe("isValidId / assertSafeId", () => {
 });
 
 describe("newId", () => {
-  const prefixes: IdPrefix[] = ["ses", "cnf", "evl", "cmt", "rev"];
+  const prefixes: IdPrefix[] = ["ses", "cnf", "evl", "cmt", "rev", "seg"];
 
   it.each(prefixes)("produces a valid %s id with a UTC timestamp", (prefix) => {
     const id = newId(prefix, new Date(Date.UTC(2026, 9, 4, 3, 5, 9)));

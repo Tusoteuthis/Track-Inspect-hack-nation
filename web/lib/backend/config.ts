@@ -4,7 +4,11 @@ export type BackendConfig = {
   knowledgeDir: string;
   runtimeDir: string;
   evaluatorDir: string;
+  /** Per-file cap for evidence uploads (ASSET_MAX_BYTES, default 15 MiB). */
+  assetMaxBytes: number;
 };
+
+const DEFAULT_ASSET_MAX_BYTES = 15 * 1024 * 1024;
 
 let cached: BackendConfig | null = null;
 
@@ -17,7 +21,9 @@ function resolveConfig(): BackendConfig {
   const knowledgeDir = fromEnv("KNOWLEDGE_DIR", "../knowledge");
   const runtimeDir = fromEnv("RUNTIME_DIR", ".runtime");
   const evaluatorDir = fromEnv("EVALUATOR_DIR", path.join(runtimeDir, "evaluator"));
-  return { knowledgeDir, runtimeDir, evaluatorDir };
+  const cap = Number(process.env.ASSET_MAX_BYTES?.trim());
+  const assetMaxBytes = Number.isInteger(cap) && cap > 0 ? cap : DEFAULT_ASSET_MAX_BYTES;
+  return { knowledgeDir, runtimeDir, evaluatorDir, assetMaxBytes };
 }
 
 export function getConfig(): BackendConfig {

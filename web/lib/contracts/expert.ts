@@ -214,3 +214,19 @@ export type _Ws3DriftChecks = [
   Assert<Equals<Out<typeof SignalIntervalSchema>, Ws3SignalInterval>>,
   Assert<Equals<Out<typeof Ws3SourceSchema>, Ws3SourceType>>,
 ];
+
+// --- WS6 S1 request/response shapes -----------------------------------------
+
+/** Response of `PUT /api/sessions/:sid/events/:eid`; `seq` is the event's `event.stored` seq, stable on retry. */
+export const EventAckSchema = z.strictObject({
+  event_id: IdSchema,
+  status: z.literal("stored"),
+  seq: z.number().int().min(1),
+});
+export type EventAck = z.output<typeof EventAckSchema>;
+export const parseEventAck = makeParser(EventAckSchema);
+
+/** Body of `PUT /api/sessions/:sid/exchanges/:xid`: the full exchange plus a required `rev`. */
+export const ExchangePutSchema = ExpertExchangeSchema.extend({ rev: z.number().int().min(1) });
+export type ExchangePut = z.output<typeof ExchangePutSchema>;
+export const parseExchangePut = makeParser(ExchangePutSchema);

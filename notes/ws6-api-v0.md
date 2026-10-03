@@ -1,13 +1,13 @@
 # WS6 API v0 — pending agreement
 
-**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts)
+**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented)
 **Code:** contracts `web/lib/contracts/` (zod; `SCHEMA_VERSION = "ws6.v0"`), server lib `web/lib/backend/`, routes `web/app/api/`, fixtures `web/fixtures/ws6/`.
 **Record fields:** [`specs/001-ws6-foundation-contracts/data-model.md`](../specs/001-ws6-foundation-contracts/data-model.md). This doc names schemas; it does not repeat every field.
 **Dev server:** `npm run dev -- -p 3006` (add `-H 0.0.0.0` for LAN/iPhone).
 
 ## 1. Status and feedback
 
-- **v0, pending agreement.** Nothing here is final except `GET /api/health` (the only route implemented in S0). Every other route is a promise with its owning sprint (S1–S4).
+- **v0, pending agreement.** Implemented: `GET /api/health` (S0) and every route marked **S1** in §5.2–5.5 and §5.10 (S1 implementation notes in §5.11). Every other route is a promise with its owning sprint (S1–S4).
 - Route paths below are the ones already promised in `notes/ws6-sprints/sprint-1..4-*.md`. Where this doc deviates from a sprint prompt, the deviation is listed in §9.
 - **How to object:** reply to the WS6 owner or add a note to `notes/ws6-sprints/handoff-sprint-0.md` → "Requests from partners". Objections are collected into the **next sprint's handoff** and the doc is updated there. Please answer the numbered questions in §8 by number (e.g. "WS3-Q2: …").
 - Partner names (WS3 `ws3.v0`, WS5 `ws5.v0`, WS7 `ws7.ui.v0`) are cited from their notes. WS6 does not define their APIs.
@@ -82,11 +82,11 @@ Reserved, added to `ErrorCode` when their sprint lands: `no_confirmed_knowledge`
 
 | BusEvent `type` | `ids` | Emitted by | Sprint |
 |---|---|---|---|
-| `session.updated` | `session_id` | lifecycle change, pinning | S1 |
-| `record_state.changed` | `segment_id` | record-state route (the **acknowledged** state) | S1 |
-| `asset.stored` | `asset_id` | asset PUT (first store) | S1 |
-| `event.stored` | `event_id`, `asset_id?` | event PUT (first store) | S1 |
-| `exchange.updated` | `exchange_id`, `event_id?` | exchange PUT (create or higher rev) | S1 |
+| `session.updated` | `session_id` | lifecycle change, pinning | **S1** |
+| `record_state.changed` | `segment_id` | record-state route (the **acknowledged** state) | **S1** |
+| `asset.stored` | `asset_id` | asset PUT (first store) | **S1** |
+| `event.stored` | `event_id`, `asset_id?` | event PUT (first store) | **S1** |
+| `exchange.updated` | `exchange_id`, `event_id?` | exchange PUT (create or higher rev) | **S1** |
 | `synthesis.started` / `.done` / `.failed` / `.discarded` | `job_id`, `revision_ids?` | synthesis job | S2 |
 | `revision.created` | `entry_id`, `revision_id` | revision store | S2 |
 | `draft.updated` | expert: `revision_ids`; newcomer: `draft_rev` | synthesis draft (S2) / learner draft PUT (S3) | S2/S3 |
@@ -190,10 +190,10 @@ Legend — **Idem.**: `PUT-id` = idempotency table in §2; `key` = Idempotency-K
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| POST | `/api/sessions` | `{ role: "expert", source?, trace_ref? }` or `{ role: "newcomer", case_id?, source? }`; header `Idempotency-Key?`; newcomer `?allow_fixture_knowledge=1` | `201 Session` (`200` on key replay) | key | `no_confirmed_knowledge`, `case_not_permitted` (newcomer, S3) | — | S1 (newcomer S3) |
-| GET | `/api/sessions/:sid` | — | `Session` | safe | — | — | S1 |
-| POST | `/api/sessions/:sid/lifecycle` | `{ action: "start" \| "end" \| "abort", rev }` | `200 Session` | rev; same action already applied → `200` | `stale_revision`, `invalid_transition` | `session.updated` | S1 |
-| POST | `/api/sessions/:sid/record-state` | `{ state: "on_record" \| "off_record" }` | `200 Session` (new `RecordingSegment` appended; same state → no-op `200`) | idempotent by state | `invalid_transition` (ended session) | `record_state.changed` | S1 |
+| POST | `/api/sessions` | `{ role: "expert", source?, trace_ref? }` or `{ role: "newcomer", case_id?, source? }`; header `Idempotency-Key?`; newcomer `?allow_fixture_knowledge=1` | `201 Session` (`200` on key replay) | key | `no_confirmed_knowledge`, `case_not_permitted` (newcomer, S3) | — | **S1** (newcomer S3) |
+| GET | `/api/sessions/:sid` | — | `Session` | safe | — | — | **S1** |
+| POST | `/api/sessions/:sid/lifecycle` | `{ action: "start" \| "end" \| "abort", rev }` | `200 Session` | rev; same action already applied → `200` | `stale_revision`, `invalid_transition` | `session.updated` | **S1** |
+| POST | `/api/sessions/:sid/record-state` | `{ state: "on_record" \| "off_record" }` | `200 Session` (new `RecordingSegment` appended; same state → no-op `200`) | idempotent by state | `invalid_transition` (ended session) | `record_state.changed` | **S1** |
 
 Lifecycle: `created → active → ended`; `created | active → aborted`; `ended`, `aborted` terminal.
 
@@ -201,10 +201,10 @@ Lifecycle: `created → active → ended`; `created | active → aborted`; `ende
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| PUT | `/api/sessions/:sid/assets/:aid` | `multipart/form-data`: `meta` (JSON, EvidenceAsset input: `kind`, `coordinate_space`, `captured_at_utc`, `record_state`, `source`, `event_id?`, declared `width_px`/`height_px`), `original` (png/jpeg, required), `highlighted` (optional); size cap ~15 MB | `201 EvidenceAsset` (server fills `path`, `mime`, `sha256`, `status: "stored"`) | PUT-id by content hash: same bytes → `200`; different → `409` | `conflict_immutable`, `off_record`, `invalid_transition` | `asset.stored` | S1 |
-| GET | `/api/assets/:aid` | — | `EvidenceAsset` | safe | — (deleted → 404) | — | S1 |
-| GET | `/api/assets/:aid/original` | — | image bytes, correct `Content-Type`, `Cache-Control: private` | safe | — | — | S1 |
-| GET | `/api/assets/:aid/highlighted` | — | image bytes (404 if none) | safe | — | — | S1 |
+| PUT | `/api/sessions/:sid/assets/:aid` | `multipart/form-data`: `meta` (JSON `AssetUploadMeta`: `kind`, `captured_at_utc`, `source`, `event_id?`, `record_state?`, `coordinate_space?`, `original: {width_px,height_px}`, `highlighted?: {width_px,height_px} \| null`), `original` (png/jpeg by content sniffing, required), `highlighted` (required iff `meta.highlighted`); per-file cap `ASSET_MAX_BYTES` (default 15 MiB); declared dims must match the image | `201 EvidenceAsset` (server fills `path`, `mime`, `sha256`, `status: "stored"`) | PUT-id by content hash: same bytes → `200`; different → `409` | `conflict_immutable`, `off_record`, `invalid_transition` | `asset.stored` | **S1** |
+| GET | `/api/assets/:aid` | — | `EvidenceAsset` | safe | — (deleted → 404) | — | **S1** |
+| GET | `/api/assets/:aid/original` | — | image bytes, correct `Content-Type`, `Cache-Control: private` | safe | — | — | **S1** |
+| GET | `/api/assets/:aid/highlighted` | — | image bytes (404 if none) | safe | — | — | **S1** |
 
 Asset reads resolve only under `knowledge/images/` (and S3 case assets under `CASES_DIR`); `RUNTIME_DIR`/`EVALUATOR_DIR` are rejected by the path resolver.
 
@@ -212,18 +212,32 @@ Asset reads resolve only under `knowledge/images/` (and S3 case assets under `CA
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| PUT | `/api/sessions/:sid/events/:eid` | `PointingEvent` (`session_id`/`event_id` must match the path; `asset_id` recommended) | `201`/`200 EventAck { event_id, status: "stored", seq }` (`seq` of its `event.stored`, stable on retry) | PUT-id (immutable) | `conflict_immutable`, `asset_not_available`, `off_record`, `invalid_transition` | `event.stored` | S1 |
-| GET | `/api/sessions/:sid/events` | — | `PointingEvent[]` ordered by `captured_at_utc`, then arrival | safe | — | — | S1 |
-| GET | `/api/sessions/:sid/events/:eid` | — | `PointingEvent` (image refs rewritten, §7) | safe | — | — | S1 |
-| PUT | `/api/sessions/:sid/exchanges/:xid` | `ExpertExchange` + `rev` (full record each time; answer lines grow) | `201`/`200 ExpertExchange` | PUT-id mutable `rev`; `event_id` immutable after first write | `stale_revision`, `conflict_immutable` (event_id changed), `not_found` (event_id not stored), `off_record` | `exchange.updated` | S1 |
-| GET | `/api/sessions/:sid/exchanges` | — | `ExpertExchange[]` | safe | — | — | S1 |
-| GET | `/api/sessions/:sid/exchanges/:xid` | — | `ExpertExchange` | safe | — | — | S1 |
+| PUT | `/api/sessions/:sid/events/:eid` | `PointingEvent` (`session_id`/`event_id` must match the path; **`asset_id` required** — S1) | `201`/`200 EventAck { event_id, status: "stored", seq }` (`seq` of its `event.stored`, stable on retry) | PUT-id (immutable) | `conflict_immutable`, `asset_not_available`, `off_record`, `invalid_transition` | `event.stored` | **S1** |
+| GET | `/api/sessions/:sid/events` | — | `PointingEvent[]` ordered by `captured_at_utc`, then arrival | safe | — | — | **S1** |
+| GET | `/api/sessions/:sid/events/:eid` | — | `PointingEvent` (image refs rewritten, §7) | safe | — | — | **S1** |
+| PUT | `/api/sessions/:sid/exchanges/:xid` | `ExpertExchange` + `rev` (full record each time; answer lines grow) | `201`/`200 ExpertExchange` | PUT-id mutable `rev`; `event_id` immutable after first write | `stale_revision`, `conflict_immutable` (event_id changed), `not_found` (event_id not stored), `off_record` | `exchange.updated` | **S1** |
+| GET | `/api/sessions/:sid/exchanges` | — | `ExpertExchange[]` | safe | — | — | **S1** |
+| GET | `/api/sessions/:sid/exchanges/:xid` | — | `ExpertExchange` | safe | — | — | **S1** |
 
 ### 5.5 Live stream
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| GET | `/api/sessions/:sid/stream` | header `Last-Event-ID?` or `?after=<seq>` | `text/event-stream` of `BusEvent` | replay by seq | — | (all) | S1 |
+| GET | `/api/sessions/:sid/stream` | header `Last-Event-ID?` or `?after=<seq>` | `text/event-stream` of `BusEvent` | replay by seq | — | (all) | **S1** |
+
+### 5.11 S1 implementation notes
+
+- **Write guard (all content writes: assets, events, exchanges):** unknown session `404`; `aborted` → `409 invalid_transition`; session `off_record` **or** the record's own `record_state: "off_record"` → `403 off_record`, nothing written. `created`/`active`/`ended` accept writes (late delivery after `end` is accepted, WS2-Q7).
+- **Identical retries are always answered.** A byte-identical retry of a stored asset/event/exchange returns `200` with the stored record (events: the original ack `seq`) even if the session went off-record or was aborted since — it stores nothing new. Only *new* content is refused.
+- **Event acks:** `seq` is the seq of the event's `event.stored` bus entry. Seqs are shared with all bus types of the session, so they are not 1..N per event. If the bus line was lost (crash between write and publish), the retry re-announces the event and acks with the new seq.
+- **Asset checks for events:** `409 asset_not_available` with `details.asset_id` when the asset is missing, deleted, or belongs to another session; `details.missing: "highlighted"` when it has no highlighted image (WS2-Q3 default).
+- **Exchanges:** check order is identical-retry → write guard → `event_id` change (`409 conflict_immutable`, `details.field: "event_id"`, even with a higher rev) → stale rev (`409 stale_revision`, `details.current_rev`/`received_rev`) → referenced event stored (`404 not_found`, `details.missing: "event"`). `exchange.updated` is emitted on create and on a higher rev only; `ids.event_id` is omitted when `event_id` is null. Lists are ordered by `asked_at_utc`.
+- **Lifecycle:** an action whose target state is already reached returns `200` with the current session regardless of `rev` (safe retries); otherwise `rev` must equal the current rev. `end`/`abort` close the open recording segment. Record-state on ended/aborted → `409 invalid_transition`. `record_state.changed.ids = { segment_id }` of the new segment.
+- **Session create:** `Idempotency-Key` = 1–200 printable ASCII chars (else `400`); the key → session mapping lives in `RUNTIME_DIR/idempotency/sessions/`.
+- **Asset reads:** `Cache-Control: private, no-cache` (not immutable, so S4 deletion takes effect), `X-Content-Type-Options: nosniff`, `ETag: "<sha256>"`. A corrupt/tampered `meta.json`, a missing file, or a resolved path outside `knowledge/images/` (symlinks resolved; never inside `RUNTIME_DIR`/`EVALUATOR_DIR`) → `404`. Invalid IDs → `400`.
+- **SSE:** `Last-Event-ID` (non-empty) wins over `?after=`; invalid values → live only. Replay then live with no gaps or duplicates; heartbeat `: hb` every 15 s.
+- **Voice token:** `?session_id=` failures use the WS6 envelope (`400`/`404`/`409`); ElevenLabs/config failures keep the route's original `{ error: string }` shape on both paths. Success with `session_id` → `{ token, session_id }`.
+- **Diagnostics:** every route appends `{at_utc, component, op, ids, outcome, duration_ms, error_code?}` to `RUNTIME_DIR/diag/<yyyy-mm-dd>.ndjson`; keys outside this allow-list and non-ID `ids` values are dropped.
 
 ### 5.6 Synthesis, draft & gaps (jobs)
 
@@ -277,7 +291,7 @@ Cascade order (pure function over stored links): event → assets; exchange → 
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| GET | `/api/conversation-token?flow=expert\|tutor[&session_id=]` | — | existing response (short-lived ElevenLabs token); with `session_id`: session must exist and be `active`, and the session id is echoed for WS3 to pass as a dynamic variable. API key never returned. | safe | `not_found`, `invalid_transition` (session not active) | — | exists; `session_id` S1 |
+| GET | `/api/conversation-token?flow=expert\|tutor[&session_id=]` | — | existing response (short-lived ElevenLabs token); with `session_id`: session must exist and be `active`, and the session id is echoed for WS3 to pass as a dynamic variable. API key never returned. | safe | `not_found`, `invalid_transition` (session not active) | — | exists; `session_id` **S1** |
 
 ## 6. Commit rule (enforced S3; policy table pending WS5)
 
@@ -416,3 +430,6 @@ Full rationale: [`specs/001-ws6-foundation-contracts/research.md`](../specs/001-
 | D10 | `canCommit` codes map onto the S0 `ErrorCode` set: `knowledge_changed` → `evaluation_stale`, `blocked_by_outcome`/`already_committed` → `commit_blocked` with `details.reason` | keep the S0 union stable; reasons stay visible |
 | D11 | One `Confirmation` record per reviewed revision for a multi-revision POST | data model has a single `reviewed_revision_id` |
 | D12 | Codes `no_confirmed_knowledge`, `case_not_permitted`, `gone` reserved, added in S3/S4 | not needed by S0 code |
+| D13 (S1) | Identical retries are answered `200` even after off-record/abort; only new content is refused | a lost ack must never turn into a client-side failure; nothing new is stored |
+| D14 (S1) | Event `asset_id` is required (was "recommended") | an event without a stored asset would dangle (no-dangling-references rule) |
+| D15 (S1) | Late content writes to `ended` sessions are accepted; `aborted` sessions refuse them | WS2-Q7 lean; late answers must still persist |
