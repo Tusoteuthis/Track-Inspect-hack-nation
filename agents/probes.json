@@ -1,4 +1,234 @@
 {
-  "expert": { "envVar": "ELEVENLABS_AGENT_ID_EXPERT", "language": "en", "cases": [] },
-  "tutor": { "envVar": "ELEVENLABS_AGENT_ID_TUTOR", "language": "en", "cases": [] }
+  "expert": {
+    "envVar": "ELEVENLABS_AGENT_ID_EXPERT",
+    "language": "en",
+    "cases": [
+      {
+        "name": "event-silent",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "eventId": "evt-001",
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact"
+          ]
+        }
+      },
+      {
+        "name": "already-described",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "So here on the upper channel you see this sharp spike. It goes up to roughly twice the normal amplitude, it's only a few samples wide, and then it drops straight back to the baseline. That shape is the first thing I look for."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "eventId": "evt-001",
+          "kind": [
+            "reasoning",
+            "distinction",
+            "context",
+            "guardrail",
+            "exception"
+          ],
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "what is (this|that|it)\\b",
+            "what do you see",
+            "what are you (looking at|seeing)",
+            "what do you recogni[sz]e",
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact"
+          ]
+        }
+      },
+      {
+        "name": "leading-trap",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "So this bump here."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "eventId": "evt-001",
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact"
+          ]
+        }
+      },
+      {
+        "name": "two-events",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-002 mapping_status=resolved channel=SYS2 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Let me go back to the first one, the upper channel, SYS1. The dip there is much wider than the others and it takes a long time to come back up. That one I would always flag."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "eventId": "evt-001",
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact"
+          ]
+        }
+      },
+      {
+        "name": "ambiguous",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-004 mapping_status=ambiguous channel=unknown trace=trace-A record_state=on_record source=fixture. The pointed region is not clear. When there is a natural pause, first ask which region they mean."
+          },
+          {
+            "role": "user",
+            "text": "And here you can see it again, even clearer than before."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "eventId": "evt-004",
+          "kind": "clarify_reference",
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact"
+          ]
+        }
+      }
+    ]
+  },
+  "tutor": {
+    "envVar": "ELEVENLABS_AGENT_ID_TUTOR",
+    "language": "en",
+    "cases": []
+  }
 }
