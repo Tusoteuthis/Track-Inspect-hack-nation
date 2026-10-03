@@ -17,10 +17,10 @@ The lanes touch disjoint files and run in parallel after Phase 1.
 
 ## Phase 1: Setup (shared, before lanes split)
 
-- [X] T001 Add `zod` ^4 to dependencies and `vitest` ^4.1.11 to devDependencies, and add the `"test": "vitest run"` script, in web/package.json. Then run `npm install` in web/.
-- [X] T002 [P] Create web/vitest.config.mts, identical to WS3's: alias `@` → web dir, include `**/*.test.ts`, exclude node_modules/.next.
+- [X] T001 Merge `voice` into the base (WS3 vitest and contracts arrive with it), then add `zod` ^4 to web/package.json.
+- [X] T002 [P] Reuse the existing vitest config from `voice` (no new config).
 - [X] T003 [P] Add `knowledge/sessions/`, `knowledge/images/`, `knowledge/assessments/` and `web/.runtime/` to .gitignore.
-- [ ] T004 Commit the setup on `001-ws6-foundation-contracts`, then create the nested lane worktrees `.claude/worktrees/ws06-s0-lane{A,B,C}`.
+- [X] T004 Commit the setup on `001-ws6-foundation-contracts`, then create the nested lane worktrees `.claude/worktrees/ws06-s0-lane{A,B,C}`.
 
 ## Phase 2: Foundational
 
@@ -38,7 +38,7 @@ None beyond Phase 1. Lane A defines its own `ErrorCode` union in web/lib/backend
   - the asset fixture's sha256 and width/height match the PNG files
   - `toConfirmation` maps the WS3 ExpertConfirmation
 - [ ] T011 [P] [US1] Create web/lib/contracts/version.ts (`SCHEMA_VERSION = "ws6.v0"`), web/lib/contracts/parse.ts (`ParseResult`, `makeParser(schema)` turning zod issues into `{path, message}`), and web/lib/contracts/common.ts (`IdSchema`, `UtcSchema`, `SourceSchema`, `Ws3SourceSchema`, `RecordStateSchema`, `RegionSchema`, `SignalIntervalSchema`).
-- [ ] T012 [US1] Create web/lib/contracts/expert.ts. It mirrors WS3 ws3.v0 (PointingEvent with optional `asset_id`, AnswerLine, ExpertExchange with optional `rev`, CoverageItem, OpenQuestion, DraftStep, DraftRevision, ExpertConfirmation, TimingMark, RecordingSegment) and carries a header comment pointing at ws03-sprint-0 @ 00e9ef3.
+- [ ] T012 [US1] Create web/lib/contracts/expert.ts. It re-exports the WS3 types from `@/lib/expert/contracts` and wraps them in zod schemas: PointingEvent (+ `asset_id?`), AnswerLine, ExpertExchange (+ `rev?`), CoverageItem, OpenQuestion, DraftStep, DraftRevision, ExpertConfirmation, TimingMark, RecordingSegment. A compile-time check asserts that each schema's output type equals the WS3 type.
 - [ ] T013 [P] [US1] Create the WS6 record files:
   - web/lib/contracts/session.ts (Session)
   - asset.ts (EvidenceAsset, AssetFile)
@@ -102,7 +102,7 @@ None beyond Phase 1. Lane A defines its own `ErrorCode` union in web/lib/backend
   - Asset mapping
   - Per-partner sections WS2/WS3/WS5/WS7 (what they call, plus open questions)
   - Decisions on conflicts
-- [ ] T041 [P] [US4] Append `## WS6 Backend Principles` to .specify/memory/constitution.md, with minimal header/version edits.
+- [ ] T041 [P] [US4] Append `## WS6 Backend Principles` to WS3's v1.0.0 .specify/memory/constitution.md. Bump the version to 1.1.0 and add a Sync Impact note. Do not rewrite WS3's content.
 - [ ] T042 [US4] Commit.
 
 ## Phase 7: Polish & integration (on the feature branch after merging the lanes)

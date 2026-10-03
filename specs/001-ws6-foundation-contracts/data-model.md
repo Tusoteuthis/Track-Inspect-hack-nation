@@ -22,7 +22,7 @@
   - `start` and `end` are finite with `start ≤ end`.
   - `unit` is a non-empty string.
 
-## WS3 mirror (`expert.ts`): identical to ws3.v0
+## WS3 records (`expert.ts`): re-exported from `@/lib/expert/contracts` (ws3.v0) and wrapped in zod
 
 | Record | Fields |
 |---|---|
@@ -37,7 +37,7 @@
 | TimingMark | `session_id`, `event_id\|null`, `exchange_id\|null`, `mark: event_received\|topic_queued\|topic_released\|question_tool_called\|agent_speech_started\|answer_started\|answer_ended`, `at_utc`, `at_perf_ms` |
 | RecordingSegment | `segment_id`, `state: RecordState`, `started_at_utc`, `ended_at_utc\|null` |
 
-The ID-like fields in the mirror (`session_id`, `event_id`, `exchange_id`, `frame_id`, …) use `Id`, so path-traversal IDs are rejected. WS3 only requires non-empty strings, so this rule is stricter than theirs. It is listed as a request to WS3 (their ID regex `^[a-z0-9-]{1,64}$` is close). The free-text `image_ref` and `highlighted_image_ref` remain non-empty strings.
+The ID-like fields in the WS3 records (`session_id`, `event_id`, `exchange_id`, `frame_id`, …) use `Id`, so path-traversal IDs are rejected. WS3 only requires non-empty strings, so this rule is stricter than theirs. It is listed as a request to WS3 (their ID regex `^[a-z0-9-]{1,64}$` is close). The free-text `image_ref` and `highlighted_image_ref` remain non-empty strings.
 
 **Asset mapping:**
 1. WS2 uploads the asset first and sends `asset_id` on the event.

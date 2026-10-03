@@ -37,7 +37,7 @@ This sprint lays the WS6 shared-backend foundation inside the existing Next.js a
 
 ## Constitution Check
 
-The constitution is still the unfilled template on this branch. WS3's ratified v1.0.0 has not been merged. The gates used are the A2 rules from the sprint prompt, which the WS6 section of the constitution will encode:
+The constitution is WS3's ratified v1.0.0 (merged via `voice`): Principles I–VIII. The gates below combine those principles with the prompt's A2 rules. WS6 appends its own section as v1.1.0.
 
 | Gate | Status |
 |---|---|
