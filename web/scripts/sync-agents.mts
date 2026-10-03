@@ -62,6 +62,7 @@ type AgentSettings = {
   turnEagerness?: TurnEagerness;
   speculativeTurn?: boolean;
   maxDurationSeconds?: number;
+  expressiveMode?: boolean; // TTS audio-tag prompt ("[curious] …"); tags would end up in transcripts
   skipTurn?: boolean; // enable the skip_turn system tool (prompt.builtInTools.skipTurn)
   clientEventsAdd?: ClientEvent[]; // merged into the current client_events, never replacing them
 };
@@ -253,6 +254,9 @@ for (const agent of agentNames) {
     conversationConfig: {
       ...(additionalLanguages.length ? { languagePresets } : {}),
       ...(Object.keys(turnPatch).length ? { turn: { ...turn, ...turnPatch } } : {}),
+      // tts is patched with this one field only: echoing the read-back would fail
+      // client-side validation for model ids newer than the SDK enum (e.g. eleven_v4_turbo)
+      ...(settings.expressiveMode !== undefined ? { tts: { expressiveMode: settings.expressiveMode } } : {}),
       ...(Object.keys(conversationPatch).length ? { conversation: { ...conversation, ...conversationPatch } } : {}),
       agent: {
         ...current.conversationConfig.agent,
@@ -398,6 +402,8 @@ async function printReadBack(agentId: string) {
   for (const t of tools) console.log(`      ${t.id}  ${t.name}  [${t.type}]`);
   console.log(`    builtInTools: ${builtIn.length ? builtIn.join(", ") : "(none)"}`);
   console.log(`    turnEagerness: ${turn.turnEagerness ?? "(unset)"}  speculativeTurn: ${turn.speculativeTurn ?? "(unset)"}`);
+  const tts = a.conversationConfig.tts;
+  console.log(`    tts: ${tts?.modelId ?? "(default)"} voice ${tts?.voiceId ?? "(default)"}  expressiveMode: ${tts?.expressiveMode ?? "(unset)"}`);
   console.log(`    maxDurationSeconds: ${conv.maxDurationSeconds ?? "(unset)"}`);
   console.log(`    clientEvents: ${(conv.clientEvents ?? []).join(", ") || "(none)"}`);
   console.log(
