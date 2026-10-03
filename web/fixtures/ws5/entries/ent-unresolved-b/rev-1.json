@@ -1,0 +1,63 @@
+{
+  "schema_version": "ws5.v0",
+  "parent_revision_id": null,
+  "workflow_position": null,
+  "source": "fixture",
+  "produced_by": {
+    "module": "ws5-fixtures",
+    "version": "0.1.0"
+  },
+  "created_at_utc": "2026-10-03T10:03:20.000Z",
+  "revoked_at_utc": null,
+  "revoked_reason": null,
+  "interpretation": [],
+  "reasoning": [],
+  "exceptions": [],
+  "qualifiers": [],
+  "open_questions": [
+    "FIXTURE gap: what distinguishes region B?"
+  ],
+  "confirmation": {
+    "confirmation_id": "cnf-004",
+    "revision_id_reviewed": "rev-1",
+    "result": "unresolved",
+    "expert_response_exchange_id": "exc-005"
+  },
+  "entry_id": "ent-unresolved-b",
+  "revision_id": "rev-1",
+  "status": "unresolved",
+  "kind": "decision",
+  "workflow_step": {
+    "type": "ai_synthesis",
+    "text": "FIXTURE decision: what region B means (unresolved)."
+  },
+  "observation": {
+    "type": "ai_synthesis",
+    "text": "FIXTURE observation: highlighted region B on the second channel."
+  },
+  "expert_words": [
+    {
+      "exchange_id": "exc-006",
+      "quote": "region B looks different, I am not sure yet what it means."
+    }
+  ],
+  "visual_evidence": [
+    {
+      "event_id": "evt-002",
+      "asset_id": null,
+      "image_ref": "../../../../public/fixtures/trace-a-full.svg",
+      "highlighted_image_ref": "../../../../public/fixtures/trace-a-evt-002-highlight.svg",
+      "region": {
+        "x": 0.55,
+        "y": 0.55,
+        "width": 0.15,
+        "height": 0.25,
+        "coordinate_space": "original_frame_normalized",
+        "frame_width_px": 1600,
+        "frame_height_px": 900
+      },
+      "session_time_ms": 21000,
+      "signal_interval": null
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // Own port so this doesn't collide with other agents' dev servers on :3000.
-const PORT = 3100;
+// PW_PORT lets parallel sprint worktrees run e2e at the same time.
+const PORT = Number(process.env.PW_PORT ?? 3100);
 
 export default defineConfig({
   testDir: "./e2e",

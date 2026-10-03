@@ -5,6 +5,7 @@ import assessment from "@/fixtures/ui/assessment.json";
 import practiceCase from "@/fixtures/ui/practice-case.json";
 import sessionExpert from "@/fixtures/ui/session-expert.json";
 import workmap from "@/fixtures/ui/workmap.json";
+import { createFixturePractice } from "@/lib/data/fixturePractice";
 import type { DataSource } from "@/lib/data/source";
 import type {
   AssessmentView,
@@ -33,15 +34,36 @@ function found<T>(value: T, id: string, expected: string, what: string): Promise
 const notImplemented = (sprint: number) => () =>
   Promise.reject(new Error(`not implemented: Sprint ${sprint}`));
 
-export const fixtureSource: DataSource = {
-  kind: "fixture",
-  getSession: id => found(SESSION, id, SESSION.session_id, "session"),
-  getWorkMap: id => found(WORKMAP, id, WORKMAP.session_id, "session"),
-  getPracticeCase: id => found(PRACTICE, id, PRACTICE.case_id, "case"),
-  getAssessment: id => found(ASSESSMENT, id, ASSESSMENT.session_id, "session"),
-  requestOffRecord: notImplemented(3),
-  submitDraftForReview: notImplemented(2),
-  commitDraft: notImplemented(2),
-  // Fixture event replay arrives in Sprint 3.
-  subscribe: () => () => {},
+export type FixtureSourceOptions = {
+  /** Simulated latency for review, commit and screen-frame calls (ms). */
+  latencyMs?: number;
+  failReview?: boolean;
+  failCommit?: boolean;
 };
+
+export const DEFAULT_FIXTURE_LATENCY_MS = 600;
+
+export function createFixtureSource(options: FixtureSourceOptions = {}): DataSource {
+  const practice = createFixturePractice({
+    latencyMs: options.latencyMs ?? DEFAULT_FIXTURE_LATENCY_MS,
+    failReview: options.failReview,
+    failCommit: options.failCommit,
+    knowledgeRevisionId: PRACTICE.knowledge_revision_id,
+    workmap: WORKMAP,
+  });
+  return {
+    kind: "fixture",
+    getSession: id => found(SESSION, id, SESSION.session_id, "session"),
+    getWorkMap: id => found(WORKMAP, id, WORKMAP.session_id, "session"),
+    getPracticeCase: id => found(PRACTICE, id, PRACTICE.case_id, "case"),
+    getAssessment: id => found(ASSESSMENT, id, ASSESSMENT.session_id, "session"),
+    requestOffRecord: notImplemented(3),
+    submitDraftForReview: practice.submitDraftForReview,
+    commitDraft: practice.commitDraft,
+    submitScreenFrame: practice.submitScreenFrame,
+    // Fixture event replay arrives in Sprint 3.
+    subscribe: () => () => {},
+  };
+}
+
+export const fixtureSource: DataSource = createFixtureSource();

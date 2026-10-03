@@ -1,5 +1,7 @@
 # WS7 Sprint 2 — Newcomer practice and the pre-save review loop
 
+> **Status: DONE (2026-10-04)** on branch `ws7-sprint-2`. See [handoff-sprint-2.md](handoff-sprint-2.md). Still open: the human gate (live tutor voice + screen sharing with keys) and the merge into `voice`. Don't run this prompt again.
+
 > Paste this whole file as the first message to a fresh coding agent started in the repo root.
 
 ## Your role

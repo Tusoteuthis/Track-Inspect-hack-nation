@@ -1,0 +1,21 @@
+{
+  "exchange_id": "exc-010",
+  "session_id": "fixture-session-001",
+  "event_id": null,
+  "phase": "teach_back",
+  "kind": "context",
+  "question": "FIXTURE question: should this rule stay?",
+  "answer_lines": [
+    {
+      "text": "FIXTURE: please remove that rule, it was wrong.",
+      "at_utc": "2026-10-03T10:02:22.000Z",
+      "transcript_line_id": "exc-010-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:02:20.000Z",
+  "answer_started_at_utc": "2026-10-03T10:02:22.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:02:23.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}
