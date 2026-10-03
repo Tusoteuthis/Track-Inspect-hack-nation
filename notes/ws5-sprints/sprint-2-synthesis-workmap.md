@@ -10,13 +10,13 @@ You are the implementing agent for **Sprint 2** of workstream WS5. Turn the expe
 
 - Sprint number `N` = **2**
 - Slug = **synthesis-workmap**
-- Branch = **`ws5/sprint-2-synthesis-workmap`**
-- Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws5-sprint-2`**
+- Branch = **`worktree-ws05-sprint-2`**
+- Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation/.claude/worktrees/ws05-sprint-2`**
 - Dev-server port = **3502**
 
 ## Read first
 
-- `notes/ws5-sprints/handoff-sprint-1.md`, `notes/ws5-sprints/knowledge-schema-v0.md`, `web/lib/knowledge/`
+- `notes/ws5-sprints/handoff-sprint-1.md`, `notes/ws5-sprints/docs/knowledge-schema-v0.md`, `web/lib/knowledge/`
 - `notes/05-knowledge-newcomer-tutor.md` §5–6
 - WS3: `notes/ws3-sprints/sprint-3-debrief-confirmation.md` (coverage dimensions, gap selector, `DraftRevision`, the `synthesis.ts` interface `getGaps(state)` / `buildDraft(state, parentRevision?)`, the verbatim-quote test) and the merged `web/lib/expert/synthesis.ts` / `coverage.ts` if present
 - WS6: `notes/ws6-sprints/sprint-2-knowledge-confirmation.md` (`SynthesisModule.synthesize` signature, revision store, Work Map API shape) and the merged `web/lib/backend/modules.ts` if present
@@ -54,7 +54,7 @@ WS5 Sprint 1 merged into `voice`. If not, stop and tell the human. WS3 Sprint 3 
 3. Adapters:
    - `web/lib/knowledge/adapters/ws3-synthesis.ts` implements WS3's `getGaps` / `buildDraft`, mapping our output to their `DraftRevision` (`steps` with `supporting_event_ids` and `supporting_exchange_ids`).
    - `web/lib/knowledge/adapters/ws6-synthesis-module.ts` implements WS6's `SynthesisModule` (`id: "ws5-synthesis"`, `version`).
-   - Don't edit their files; export so they can import. Add a short section to `knowledge-schema-v0.md` on how to swap the stub out.
+   - Don't edit their files; export so they can import. Add a short section to `notes/ws5-sprints/docs/knowledge-schema-v0.md` on how to swap the stub out.
 
 ### Lane C — Work Map content (`workmap.ts`)
 
@@ -97,7 +97,7 @@ Tutor evaluation (Sprint 3), routes/jobs/locks (WS6), Work Map UI (WS7), and the
    - Nothing is stated that the expert did not say.
 2. Read the gap list. **Check:** each gap is real and not already answered.
 3. Read the teach-back aloud. **Check:** it sounds like instructions someone else could follow.
-4. Merge into `voice` if satisfied (same `git -C … merge --no-ff ws5/sprint-2-synthesis-workmap` + `worktree remove` pattern as Sprint 1). Tell the WS3 and WS6 owners that the real synthesis module is available.
+4. Merge into `voice` if satisfied (same `git -C … merge --no-ff worktree-ws05-sprint-2` + `worktree remove` pattern as Sprint 1). Tell the WS3 and WS6 owners that the real synthesis module is available.
 
 ---
 
@@ -140,7 +140,7 @@ Core loop: *expert points → app identifies the visual reference → voice agen
 |---|---|---|
 | WS1 | Pitch, business case | Consumes our demonstrated learning flow; only claims backed by evidence |
 | WS2 | Glasses/iPhone capture, PointingEvent | Indirect: its events arrive through WS3/WS6 records |
-| WS3 | Expert conversation, ElevenLabs adapter, debrief, teach-back delivery, confirmation tool | **Produces** exchanges, draft revisions and confirmations. Its Sprint 3 puts coverage/draft logic behind `web/lib/expert/synthesis.ts` (`getGaps`, `buildDraft`) **for us to replace**. Its Sprint 4 writes `notes/ws3-voice-interface.md` for our tutor. |
+| WS3 | Expert conversation, ElevenLabs adapter, debrief, teach-back delivery, confirmation tool | **Produces** exchanges, draft revisions and confirmations. Its Sprint 3 puts coverage/draft logic behind `web/lib/expert/synthesis.ts` (`getGaps`, `buildDraft`) **for us to replace**. Its Sprint 4 writes `notes/ws3-sprints/docs/voice-interface.md` for our tutor. |
 | WS4 | Trace cases, task definition, evaluator notes | Supplies learner-visible cases; the evaluator answer key must never reach us at runtime |
 | **WS5 (us)** | Knowledge schema semantics, synthesis, eligibility/retrieval, tutor evaluation, assessment, tutor agent prompt | — |
 | WS6 | Backend: routes, Markdown/JSON store, jobs, confirmation binding, commit guard | **Hosts** our modules in `web/lib/backend/modules.ts` (`SynthesisModule`, `TutorEvaluator`, eligibility, assessment) with labelled stubs until ours land. Enforces our outcome policy. |
@@ -169,7 +169,7 @@ knowledge/                 runtime Markdown + images written by WS6 (entries/<id
 
 Code style: small focused modules, pure functions where possible, comments only where the "why" is non-obvious, strict TypeScript, no `any`. Match the style of `web/lib/voice/transcript.ts`. **Reuse partner types:** import WS3/WS6 contracts; never fork their field meanings. If a field you need is missing, add a WS5-side type that maps to theirs and list the request in your handoff.
 
-**Never invent APIs** (ElevenLabs, LLM providers, WS3/WS6 modules). Check installed typings, official docs and the partner's merged code. For ElevenLabs, read `notes/ws3-elevenlabs-capabilities.md` (WS3 Sprint 0) first. If something does not exist, say so and choose a documented fallback.
+**Never invent APIs** (ElevenLabs, LLM providers, WS3/WS6 modules). Check installed typings, official docs and the partner's merged code. For ElevenLabs, read `notes/ws3-sprints/docs/elevenlabs-capabilities.md` (WS3 Sprint 0) first. If something does not exist, say so and choose a documented fallback.
 
 ### A6. Git worktree isolation (MANDATORY — other agents work in this repo in parallel)
 
@@ -182,24 +182,45 @@ Several agents work on this repository **at the same time**. The main checkout (
 - Only push config to the **tutor** ElevenLabs agent (`npm run sync-agents -- --agent tutor`). Never touch the expert agent.
 - All file edits, commands, tests, dev servers and commits happen **inside your worktree directory**.
 
-**Setup (run once at the start; use the sprint number `N` and `<slug>` from "Worktree identity")**
+**Worktree layout.** All workstream worktrees live in the shared folder `<repo>/.claude/worktrees/` (next to `ws03-…`, `ws06-…`, `ws07-…`). WS5 sprint `N` uses folder **`ws05-sprint-N`** and branch **`worktree-ws05-sprint-N`**.
+
+**Recommended start: the human launches you inside your worktree** (see `notes/ws5-sprints/HOW-TO-START-AN-AGENT.md`). That is the safest setup, because your whole session (shell, relative paths, spec-kit scripts) then lives in the worktree. You may also have been started in the main checkout. Either way, run this location check **before doing anything else** (replace `N` with the sprint number from "Worktree identity"):
 
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
-WT_ROOT=/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees
-WT=$WT_ROOT/ws5-sprint-N
-BR=ws5/sprint-N-<slug>
+WT_ROOT=$REPO/.claude/worktrees
+WT=$WT_ROOT/ws05-sprint-N
+BR=worktree-ws05-sprint-N
+HERE=$(git rev-parse --show-toplevel)
+CUR=$(git branch --show-current)
 
-mkdir -p "$WT_ROOT"
-git -C "$REPO" worktree list                    # check that $WT and $BR don't already exist
-git -C "$REPO" worktree add -b "$BR" "$WT" voice   # new branch from the local voice tip
+if [ "$HERE" = "$WT" ] && [ "$CUR" = "$BR" ]; then
+  echo "OK: already in my worktree ($WT on $BR); skip creation"
+elif [ "$HERE" = "$REPO" ]; then
+  echo "Started in the MAIN checkout; creating/using my worktree"
+  if git -C "$REPO" worktree list | grep -q " $WT "; then
+    echo "worktree exists already"
+  else
+    mkdir -p "$WT_ROOT"
+    git -C "$REPO" worktree add -b "$BR" "$WT" voice
+  fi
+else
+  echo "STOP: unexpected location $HERE on branch $CUR; ask the human"
+fi
+```
+
+- **If it printed STOP:** stop and ask the human.
+- **If the worktree exists but is on a different branch than `$BR`,** or `$BR` already exists elsewhere: stop and ask the human. Never force, reset or delete anything.
+- **If you were started in the main checkout:** from now on, **every** shell command starts with `cd "$WT" && …`, and **every** file path you read, edit or write must start with `$WT/`, never with `$REPO/`. Run spec-kit commands (`/speckit-*`) only after `cd "$WT"`. Before each commit, check that `git -C "$REPO" status --short` shows none of your files.
+
+Then, in the worktree, set up what git does not carry over:
+
+```bash
 cd "$WT"
-
-# Things git does not carry into a worktree:
-cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the human"
+[ -f web/.env ] || cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the human"
 [ -f agents/manifest.json ] || { [ -f "$REPO/agents/manifest.json" ] && cp "$REPO/agents/manifest.json" agents/; }
 [ -f agents/probes.json ]   || { [ -f "$REPO/agents/probes.json" ]   && cp "$REPO/agents/probes.json" agents/; }
-(cd web && npm ci)
+[ -d web/node_modules ] || (cd web && npm ci)
 ```
 
 **Checks after setup.** If any check fails, stop and ask the human; don't copy files from the main checkout to work around it.
@@ -212,7 +233,22 @@ cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the huma
 
 **Spec-kit inside the worktree.** Spec-kit here does not create git branches; your branch is already `$BR`. Other workstreams create specs in parallel, so sequential numbers would collide. When `/speckit-specify` runs `create-new-feature.sh`, pass `--timestamp --short-name ws5-sprint-N-<slug>`. If the skill doesn't let you pass flags, rename the created directory afterwards to `specs/<timestamp>-ws5-sprint-N-<slug>/` and update `.specify/feature.json` to match.
 
-**Subagents for lanes.** Subagents work inside **your** worktree: run them sequentially if they touch the same files. For true parallelism, give each lane its own nested worktree under `$WT_ROOT/ws5-sprint-N-lane-X`, branched from `$BR`, and merge the lanes into `$BR` yourself.
+**Subagents for lanes.** Subagents work inside **your** worktree: run them sequentially if they touch the same files. For true parallelism, give each lane its own nested worktree under `$WT_ROOT/ws05-sprint-N-lane-X`, branched from `$BR`, and merge the lanes into `$BR` yourself. These lane worktrees and branches are yours to create and remove.
+
+### A6c. Where WS5 documents live (all inside `notes/ws5-sprints/`)
+
+```
+notes/ws5-sprints/
+  README.md                         how to run the sprints (for the human)
+  HOW-TO-START-AN-AGENT.md          human guide: create the worktree, launch, kickoff, isolation checks, merge
+  sprint-plan.md                    overview, decisions, dependencies, open decisions (e.g. D1)
+  sprint-1-…md … sprint-4-…md       these paste-ready prompts
+  handoff-sprint-N.md               written by each sprint agent at the end
+  docs/                             WS5 reference docs produced by the sprints:
+    knowledge-schema-v0.md            Sprint 1: entry schema, statuses, invariants, mapping to WS3/WS6 (extended in Sprints 2 and 4)
+```
+
+Put every WS5 note you create in this folder (or `docs/`). Don't add WS5 files elsewhere in `notes/`.
 
 ### A6b. How every WS5 sprint is executed
 
@@ -245,7 +281,7 @@ LLM-backed behavior (synthesis phrasing, tutor evaluation, tutor agent) is nonde
 
 ```markdown
 # WS5 Sprint N handoff — <title>
-Branch: ws5/sprint-N-<slug>   Worktree: <path>   Dev port: 350N   Spec: specs/<timestamp>-ws5-sprint-N-<slug>/   Date: <date>
+Branch: worktree-ws05-sprint-N   Worktree: <path>   Dev port: 350N   Spec: specs/<timestamp>-ws5-sprint-N-<slug>/   Date: <date>
 ## Delivered (files + one line each)
 ## Verification evidence (pasted output: typecheck, vitest summary, LLM/probe pass counts)
 ## Decisions made (and why), especially deviations from this prompt

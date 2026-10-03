@@ -8,9 +8,9 @@ Everything for WS5 (knowledge & newcomer tutor) lives in this folder. The source
 |---|---|
 | [`HOW-TO-START-AN-AGENT.md`](HOW-TO-START-AN-AGENT.md) | Human guide: pre-flight checks, kickoff message, reading order, isolation checks, merge and cleanup |
 | [`sprint-plan.md`](sprint-plan.md) | Why the work is split, decisions, sprint table, sync points with WS3/WS4/WS6/WS7, open decisions |
-| `sprint-N-*.md` | One **self-contained prompt** per sprint. Start a fresh coding agent in the repo root and paste the whole file as its first message. Sprint-specific instructions come first; the shared WS5 context (A1–A8) follows and is identical in every file. |
+| `sprint-N-*.md` | One **self-contained prompt** per sprint. Create the sprint's worktree, start a fresh coding agent **inside it**, and paste the whole file (or the short kickoff from the guide) as its first message. Sprint-specific instructions come first; the shared WS5 context (A1–A8) follows and is identical in every file. |
 | `handoff-sprint-N.md` | Written by each sprint's agent (not present yet) |
-| `knowledge-schema-v0.md` | Written by Sprint 1: the schema doc for partner workstreams (not present yet) |
+| `docs/knowledge-schema-v0.md` | Written by Sprint 1: the schema doc for partner workstreams (not present yet) |
 
 | Order | File | Delivers | Agent time | Human gate |
 |---|---|---|---|---|
@@ -21,14 +21,14 @@ Everything for WS5 (knowledge & newcomer tutor) lives in this folder. The source
 
 ## Worktrees, branches, ports
 
-Every sprint agent works in **its own git worktree**, never in the shared main checkout. Section A6 of each prompt has the exact setup commands and hard rules: no checkout, reset, stash or merge in the main checkout; only WS5 paths; spec-kit `--timestamp` naming.
+Every sprint agent works in **its own git worktree**, never in the shared main checkout. The worktrees sit in the shared `<repo>/.claude/worktrees/` folder next to the other workstreams' (`ws03-…`, `ws06-…`, `ws07-…`), with the same naming: folder `ws05-sprint-N`, branch `worktree-ws05-sprint-N`. `<repo>` = `/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation`. The human creates the worktree and launches the agent inside it (see the guide). Section A6 of each prompt has the exact setup commands and hard rules: no checkout, reset, stash or merge in the main checkout; only WS5 paths; spec-kit `--timestamp` naming.
 
 | Sprint | Branch | Worktree | Dev port |
 |---|---|---|---|
-| 1 | `ws5/sprint-1-knowledge-schema` | `../Track-Inspect-worktrees/ws5-sprint-1` | 3501 |
-| 2 | `ws5/sprint-2-synthesis-workmap` | `../Track-Inspect-worktrees/ws5-sprint-2` | 3502 |
-| 3 | `ws5/sprint-3-tutor-evaluation` | `../Track-Inspect-worktrees/ws5-sprint-3` | 3503 |
-| 4 | `ws5/sprint-4-voice-assessment` | `../Track-Inspect-worktrees/ws5-sprint-4` | 3504 |
+| 1 | `worktree-ws05-sprint-1` | `<repo>/.claude/worktrees/ws05-sprint-1` | 3501 |
+| 2 | `worktree-ws05-sprint-2` | `<repo>/.claude/worktrees/ws05-sprint-2` | 3502 |
+| 3 | `worktree-ws05-sprint-3` | `<repo>/.claude/worktrees/ws05-sprint-3` | 3503 |
+| 4 | `worktree-ws05-sprint-4` | `<repo>/.claude/worktrees/ws05-sprint-4` | 3504 |
 
 ## Rules for running them
 
