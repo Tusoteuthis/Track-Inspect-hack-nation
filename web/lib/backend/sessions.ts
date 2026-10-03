@@ -86,7 +86,7 @@ export async function createSession(
   });
 }
 
-export function changeLifecycle(sid: string, req: LifecycleRequest, now: Date = new Date()): Promise<Session> {
+export async function changeLifecycle(sid: string, req: LifecycleRequest, now: Date = new Date()): Promise<Session> {
   assertSafeId(sid, "session_id");
   return withSessionLock(sid, async () => {
     const applied = applyLifecycle(await getSession(sid), req, now);
@@ -97,7 +97,7 @@ export function changeLifecycle(sid: string, req: LifecycleRequest, now: Date = 
   });
 }
 
-export function changeRecordState(sid: string, req: RecordStateRequest, now: Date = new Date()): Promise<Session> {
+export async function changeRecordState(sid: string, req: RecordStateRequest, now: Date = new Date()): Promise<Session> {
   assertSafeId(sid, "session_id");
   return withSessionLock(sid, async () => {
     const segmentId = newId("seg", now);
