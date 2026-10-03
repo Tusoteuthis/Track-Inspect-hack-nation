@@ -1,0 +1,10 @@
+{
+  "session_id": "fixture-session-001",
+  "role": "expert",
+  "lifecycle": "not_started",
+  "recording_state": "on_record",
+  "connection": { "capture": "unknown", "agent": "unknown", "backend": "unknown" },
+  "case_id": "fixture-case-expert-001",
+  "knowledge_revision_id": null,
+  "source": "fixture"
+}
