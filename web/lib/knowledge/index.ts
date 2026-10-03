@@ -23,3 +23,22 @@ export {
   type RetrievalQuery,
   type RetrievalRequest,
 } from "./retrieve";
+
+// Sprint 2: synthesis, gaps, teach-back, Work Map, partner adapters.
+export * from "./synthesis-types";
+export { contentHash, KIND_LABEL, renderWorkflowMarkdown, synthesize } from "./synthesize";
+export { findGaps, type GapInput } from "./gaps";
+export { buildTeachBack, TEACH_BACK_QUESTION } from "./teach-back";
+export { buildWorkMap, type WorkMapInput } from "./workmap";
+export { knowledgeImageRef } from "./adapters/image-ref";
+export { toWs3Gap, ws3Synthesis, type Ws3Gap, type Ws3SynthesisModule, type Ws3SynthesisState } from "./adapters/ws3-synthesis";
+export {
+  createWs6SynthesisModule,
+  type Ws6DraftKnowledgeOut,
+  type Ws6KnowledgeRevision,
+  type Ws6Session,
+  type Ws6SynthesisInput,
+  type Ws6SynthesisModule,
+  type Ws6SynthesisOptions,
+  type Ws6SynthesisResult,
+} from "./adapters/ws6-synthesis-module";

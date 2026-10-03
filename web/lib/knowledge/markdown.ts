@@ -176,6 +176,8 @@ export function renderEntryMarkdown(entry: KnowledgeEntryContent): string {
   return [
     "---",
     ...FRONTMATTER_KEYS.map(k => `${k}: ${JSON.stringify(entry[k])}`),
+    // Optional, so entries written before Sprint 2 render byte-identically.
+    ...(entry.change_reason !== undefined ? [`change_reason: ${JSON.stringify(entry.change_reason)}`] : []),
     "---",
     "",
     `# ${entry.kind} \`${entry.entry_id}\` · ${entry.revision_id}`,
@@ -326,6 +328,7 @@ export function parseEntryMarkdown(md: string): KnowledgeEntryContent {
 
   const entry = {
     ...Object.fromEntries(FRONTMATTER_KEYS.map(k => [k, meta[k]])),
+    ...("change_reason" in meta ? { change_reason: meta.change_reason } : {}),
     workflow_step: parseOptionalStatement(get("workflow_step"), "workflow_step"),
     observation: parseOptionalStatement(get("observation"), "observation"),
     expert_words: parseExpertWords(get("expert_words")),

@@ -1,0 +1,21 @@
+{
+  "exchange_id": "sx-008",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-001",
+  "phase": "debrief",
+  "kind": "gap",
+  "question": "FIXTURE question: you said usually; when does decision A not apply?",
+  "answer_lines": [
+    {
+      "text": "Unless FIXTURE condition E is present.",
+      "at_utc": "2026-10-03T10:08:10.000Z",
+      "transcript_line_id": "sx-008-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:08:05.000Z",
+  "answer_started_at_utc": "2026-10-03T10:08:10.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:08:11.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}
