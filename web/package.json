@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "sync-agents": "tsx scripts/sync-agents.mts",
     "probe": "tsx scripts/probe-agents.mts",
-    "tts-roundtrip": "tsx scripts/tts-roundtrip.mts"
+    "tts-roundtrip": "tsx scripts/tts-roundtrip.mts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.70.0",
@@ -24,6 +25,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
   }
 }

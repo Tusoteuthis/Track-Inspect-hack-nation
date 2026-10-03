@@ -1,0 +1,26 @@
+{
+  "schema_version": "ws3.v0",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-005",
+  "source": "fixture",
+  "captured_at_utc": "2026-10-03T10:00:47.000Z",
+  "session_time_ms": 47000,
+  "frame_id": "frame-0005",
+  "image_ref": "/fixtures/trace-a-full.svg",
+  "highlighted_image_ref": "/fixtures/trace-a-evt-005-highlight.svg",
+  "region": {
+    "x": 0.75,
+    "y": 0.15,
+    "width": 0.12,
+    "height": 0.25,
+    "coordinate_space": "original_frame_normalized",
+    "frame_width_px": 1600,
+    "frame_height_px": 900
+  },
+  "mapping_status": "resolved",
+  "trace_id": "trace-A",
+  "channel_id": "SYS1",
+  "signal_interval": null,
+  "record_state": "off_record",
+  "label": "FIXTURE: off-record gesture"
+}
