@@ -1,0 +1,8 @@
+{
+  "case_id": "fixture-practice-001",
+  "asset": { "asset_id": "fixture-asset-b", "original_url": "/fixtures/ui/trace-b.svg", "highlighted_url": null, "frame_id": "fixture-frame-b", "width_px": 1600, "height_px": 900 },
+  "visible_context": ["Learner-visible context placeholder (fixture)."],
+  "decision_options": null,
+  "knowledge_revision_id": "fixture-rev-2",
+  "source": "fixture"
+}

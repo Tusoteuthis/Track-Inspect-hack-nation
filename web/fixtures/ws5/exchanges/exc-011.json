@@ -1,0 +1,21 @@
+{
+  "exchange_id": "exc-011",
+  "session_id": "fixture-session-001",
+  "event_id": null,
+  "phase": "teach_back",
+  "kind": "context",
+  "question": "FIXTURE teach-back: is the corrected version right?",
+  "answer_lines": [
+    {
+      "text": "FIXTURE: yes, the corrected version is right.",
+      "at_utc": "2026-10-03T10:02:32.000Z",
+      "transcript_line_id": "exc-011-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:02:30.000Z",
+  "answer_started_at_utc": "2026-10-03T10:02:32.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:02:33.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}

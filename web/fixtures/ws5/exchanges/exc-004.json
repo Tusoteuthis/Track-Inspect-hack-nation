@@ -1,0 +1,21 @@
+{
+  "exchange_id": "exc-004",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-003",
+  "phase": "debrief",
+  "kind": "gap",
+  "question": "FIXTURE question: what do you do when you can't tell?",
+  "answer_lines": [
+    {
+      "text": "FIXTURE: when I can't tell region A apart, I escalate to a senior engineer instead of saving a decision.",
+      "at_utc": "2026-10-03T10:01:02.000Z",
+      "transcript_line_id": "exc-004-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:01:00.000Z",
+  "answer_started_at_utc": "2026-10-03T10:01:02.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:01:03.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}

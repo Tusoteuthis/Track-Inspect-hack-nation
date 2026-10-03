@@ -1,82 +1,35 @@
-"use client";
+import Link from "next/link";
 
-import { useConversationControls, useConversationStatus } from "@elevenlabs/react";
-import { useState } from "react";
-import { ExpertConsole } from "@/components/expert/ExpertConsole";
-import { useExpertSession } from "@/components/expert/useExpertSession";
-import { VoiceSession } from "@/components/voice/VoiceSession";
-import { FLOWS, type Flow } from "@/lib/voice/flows";
+const OPTIONS = [
+  {
+    href: "/expert",
+    title: "Expert session",
+    text: "Companion view while the expert points at traces with the glasses and talks to the apprentice.",
+  },
+  {
+    href: "/practice",
+    title: "Newcomer practice",
+    text: "Work through an unseen trace with the voice tutor and save a reviewed decision.",
+  },
+  {
+    href: "/map",
+    title: "Work Map",
+    text: "Browse the confirmed workflow with the expert's evidence and words for every step.",
+  },
+] as const;
 
-export default function Home() {
-  const [flow, setFlow] = useState<Flow>("expert");
-  const expert = useExpertSession();
-
+export default function EntryPage() {
   return (
-    <main className="page">
-      <header>
-        <h1>Track Inspect</h1>
-        <p className="muted">ElevenLabs voice agent</p>
-      </header>
-
-      <div role="radiogroup" aria-label="Flow" className="flow-picker">
-        {(Object.keys(FLOWS) as Flow[]).map(f => (
-          <button
-            key={f}
-            type="button"
-            role="radio"
-            aria-checked={flow === f}
-            onClick={() => setFlow(f)}
-            className={flow === f ? "active" : ""}
-          >
-            {FLOWS[f].label}
-          </button>
+    <section className="entry">
+      <h1>Track Inspect</h1>
+      <div className="entry-options">
+        {OPTIONS.map(option => (
+          <Link key={option.href} href={option.href} className="entry-card">
+            <h2>{option.title}</h2>
+            <p>{option.text}</p>
+          </Link>
         ))}
       </div>
-
-      {/* key: switching flow remounts the session so it never talks to the wrong agent */}
-      {flow === "expert" ? (
-        <VoiceSession key={flow} flow={flow} {...expert.voiceProps}>
-          <ExpertConsole session={expert} raw={<ContextSender />} />
-        </VoiceSession>
-      ) : (
-        <VoiceSession key={flow} flow={flow}>
-          <ContextSender />
-        </VoiceSession>
-      )}
-    </main>
-  );
-}
-
-// Dev helper: push a contextual update (e.g. a fixture pointing event) into the
-// live conversation. The agent receives it as context without being forced to reply.
-function ContextSender() {
-  const { sendContextualUpdate } = useConversationControls();
-  const { status } = useConversationStatus();
-  const [text, setText] = useState("");
-
-  return (
-    <form
-      className="context-sender"
-      onSubmit={e => {
-        e.preventDefault();
-        if (!text.trim()) return;
-        sendContextualUpdate(text.trim());
-        setText("");
-      }}
-    >
-      <label htmlFor="ctx">Contextual update (dev)</label>
-      <div>
-        <input
-          id="ctx"
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder='e.g. {"event_id":"evt-1","region":…}'
-          disabled={status !== "connected"}
-        />
-        <button type="submit" disabled={status !== "connected" || !text.trim()}>
-          Send
-        </button>
-      </div>
-    </form>
+    </section>
   );
 }

@@ -1,0 +1,21 @@
+{
+  "exchange_id": "exc-003",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-002",
+  "phase": "live",
+  "kind": "guardrail",
+  "question": "FIXTURE question: when would you not do that?",
+  "answer_lines": [
+    {
+      "text": "FIXTURE: never save FIXTURE decision A when FIXTURE condition C is present on the second channel.",
+      "at_utc": "2026-10-03T10:00:24.000Z",
+      "transcript_line_id": "exc-003-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:00:22.000Z",
+  "answer_started_at_utc": "2026-10-03T10:00:24.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:00:25.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}
