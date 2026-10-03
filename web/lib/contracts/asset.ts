@@ -35,3 +35,25 @@ export type EvidenceAsset = z.output<typeof EvidenceAssetSchema>;
 
 export const parseAssetFile = makeParser(AssetFileSchema);
 export const parseEvidenceAsset = makeParser(EvidenceAssetSchema);
+
+const DeclaredDimsSchema = z.strictObject({
+  width_px: z.number().int().positive(),
+  height_px: z.number().int().positive(),
+});
+
+/**
+ * `meta` part of `PUT /api/sessions/:sid/assets/:aid`. The server fills `asset_id`, `session_id`,
+ * file `path`/`mime`/`sha256` and `status`; declared dimensions must match the uploaded image.
+ */
+export const AssetUploadMetaSchema = z.strictObject({
+  kind: z.enum(["frame", "case_trace"]),
+  captured_at_utc: UtcSchema,
+  source: SourceSchema,
+  event_id: IdSchema.nullable().default(null),
+  record_state: RecordStateSchema.default("on_record"),
+  coordinate_space: z.literal("original_frame_normalized").default("original_frame_normalized"),
+  original: DeclaredDimsSchema,
+  highlighted: DeclaredDimsSchema.nullable().default(null),
+});
+export type AssetUploadMeta = z.output<typeof AssetUploadMetaSchema>;
+export const parseAssetUploadMeta = makeParser(AssetUploadMetaSchema);
