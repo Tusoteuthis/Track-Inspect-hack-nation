@@ -19,12 +19,12 @@ Context sections A1–A8 below apply to you in full.
 - Worktree = **`/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-0`**
 - Dev-server port = **3100**
 
-**First action:** follow section A6 at the bottom of this prompt to create your worktree. Do not edit anything in the main checkout.
+**First action:** run the A6 location check at the bottom of this prompt. It confirms you are in your worktree, or creates it if you were started in the main checkout. Do not edit anything in the main checkout.
 
 ## Read first
 
 - `notes/03-elevenlabs-expert-interaction.md` (our brief, all of it)
-- `notes/03a-ws3-sprint-plan.md` (the sprint split you are starting)
+- `notes/ws3-sprints/sprint-plan.md` (the sprint split you are starting)
 - `notes/02-glasses-iphone-visual-processing.md` §5 (PointingEvent v0 fields and geometry)
 - `notes/05-knowledge-newcomer-tutor.md` §3–5 (what WS5 expects from us)
 - `web/components/voice/VoiceSession.tsx`, `web/lib/voice/transcript.ts`, `web/scripts/probe-agents.mts`, `web/scripts/sync-agents.mts`
@@ -56,7 +56,7 @@ Answer each question with **official sources** (ElevenLabs docs at elevenlabs.io
 | Q9 | System tools available (for example `end_call`, `skip_turn`, language detection). Is there a "skip turn / stay silent" tool the agent can use to deliberately not speak? | Interruption restraint |
 | Q10 | Which LLMs can the agent use, and which is the current default? Any known limits on tool-call reliability? | Prompt and tool design in Sprint 1 |
 
-**Deliverable:** `notes/ws3-elevenlabs-capabilities.md` with one section per question (answer, evidence, source) and a final **"Recommended mechanisms"** section that tells Sprints 1–4 which mechanism to use for:
+**Deliverable:** `notes/ws3-sprints/docs/elevenlabs-capabilities.md` with one section per question (answer, evidence, source) and a final **"Recommended mechanisms"** section that tells Sprints 1–4 which mechanism to use for:
 - (a) delivering pointing events
 - (b) linking a question to an event
 - (c) pause-aware release of queued topics
@@ -102,7 +102,7 @@ Also include: a technology constraints section (Next.js 16, React 19, TypeScript
 
    Use placeholder image refs under `web/public/fixtures/` (add 2–3 simple placeholder PNG/SVG "trace screenshot" images so the dev UI can render them; label them visibly as FIXTURE). Do **not** encode any interpretation of the trace in the fixtures.
 4. Unit tests: every fixture validates against the guards; invalid samples (missing `event_id`, bad `mapping_status`, out-of-range region) are rejected.
-5. Write `notes/ws3-contracts-v0.md`, a human-readable summary of the contracts for WS2, WS5 and WS6. It is a proposal: mark it "v0, pending agreement", and list the open questions for each partner.
+5. Write `notes/ws3-sprints/docs/contracts-v0.md`, a human-readable summary of the contracts for WS2, WS5 and WS6. It is a proposal: mark it "v0, pending agreement", and list the open questions for each partner.
 
 ## Out of scope
 
@@ -110,16 +110,16 @@ Agent prompt, client tools, UI changes, persistence routes. These start in Sprin
 
 ## Acceptance criteria
 
-- `notes/ws3-elevenlabs-capabilities.md` answers Q1–Q10, each with a source, plus "Recommended mechanisms" with fallbacks and verified/documented-only labels.
+- `notes/ws3-sprints/docs/elevenlabs-capabilities.md` answers Q1–Q10, each with a source, plus "Recommended mechanisms" with fallbacks and verified/documented-only labels.
 - `.specify/memory/constitution.md` filled, versioned 1.0.0, no template placeholders left.
 - `cd web && npm run typecheck && npm test` passes. The tests cover the transcript sanity case, fixture validation and invalid-input rejection.
-- `web/lib/expert/contracts.ts`, `web/fixtures/pointing-events/*.json` (5 files), and `notes/ws3-contracts-v0.md` exist.
+- `web/lib/expert/contracts.ts`, `web/fixtures/pointing-events/*.json` (5 files), and `notes/ws3-sprints/docs/contracts-v0.md` exist.
 - Handoff note `notes/ws3-sprints/handoff-sprint-0.md` written.
 
 ## Human gate (for the human, ~15 min)
 
 1. Read the "Recommended mechanisms" section and accept or adjust it.
-2. Skim `notes/ws3-contracts-v0.md` and share it with the WS2, WS5 and WS6 owners.
+2. Skim `notes/ws3-sprints/docs/contracts-v0.md` and share it with the WS2, WS5 and WS6 owners.
 3. If satisfied, merge the branch into `voice`, from the main checkout once it's clean and no other agent is mid-commit: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation merge --no-ff ws3/sprint-0-spike-contracts`. Then remove the worktree: `git -C /Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation worktree remove /Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-0`.
 
 ---
@@ -170,7 +170,7 @@ Useful question patterns (patterns, not a script): "What do you recognize in thi
 | WS6 | Shared backend (does not exist yet) | Will take over our local-file persistence later; keep it behind a small interface |
 | WS7 | Web frontend | Will build the polished UI; our UI is a functional dev/companion page |
 
-Full briefs, if you need more detail: `notes/project-brief.md`, `notes/03-elevenlabs-expert-interaction.md` (our brief), `notes/02-glasses-iphone-visual-processing.md` (PointingEvent contract, §5), `notes/05-knowledge-newcomer-tutor.md` (knowledge entry structure, §3–5), `notes/06-backend-integration.md`. The overall WS3 sprint plan is `notes/03a-ws3-sprint-plan.md`.
+Full briefs, if you need more detail: `notes/project-brief.md`, `notes/03-elevenlabs-expert-interaction.md` (our brief), `notes/02-glasses-iphone-visual-processing.md` (PointingEvent contract, §5), `notes/05-knowledge-newcomer-tutor.md` (knowledge entry structure, §3–5), `notes/06-backend-integration.md`. The overall WS3 sprint plan is `notes/ws3-sprints/sprint-plan.md`.
 
 ### A5. Repository state you start from
 
@@ -199,7 +199,7 @@ web/                          Next.js 16 / React 19 / TypeScript app (path alias
 
 Packages: `@elevenlabs/react` ^1.16, `@elevenlabs/elevenlabs-js` ^2.70, `next` ^16.1, `react` ^19.2, `tsx`, `typescript`. Code style: small focused modules, comments only where the "why" is non-obvious, strict TypeScript, no `any`. Match the existing style in `VoiceSession.tsx` and `transcript.ts`.
 
-**Never invent ElevenLabs API surface.** Check the installed SDK typings in `web/node_modules/@elevenlabs/...` and the official ElevenLabs docs, plus `notes/ws3-elevenlabs-capabilities.md` once Sprint 0 has produced it. If something you need does not exist, say so and choose a documented fallback.
+**Never invent ElevenLabs API surface.** Check the installed SDK typings in `web/node_modules/@elevenlabs/...` and the official ElevenLabs docs, plus `notes/ws3-sprints/docs/elevenlabs-capabilities.md` once Sprint 0 has produced it. If something you need does not exist, say so and choose a documented fallback.
 
 ### A6. Git worktree isolation (MANDATORY — other agents work in this repo in parallel)
 
@@ -211,25 +211,43 @@ Several agents work on this repository **at the same time**. The main checkout (
 - All file edits, commands, tests, dev servers and commits happen **inside your worktree directory**.
 - Only push config to the **expert** ElevenLabs agent (`npm run sync-agents -- --agent expert`). Never touch the tutor agent or any other agent.
 
-**Setup (run once at the start; replace `N` and `<slug>` with the sprint number and slug from the title of this prompt)**
+**Recommended start: the human launches you inside your worktree.** The human may already have created your worktree and started you in it. That is the safest setup, because your whole session (shell, file paths, spec-kit scripts) then lives in the worktree. You may also have been started in the main checkout. Either way, run this **before doing anything else** (replace `N` and `<slug>` with the values from "Worktree identity"):
 
 ```bash
 REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
 WT_ROOT=/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees
 WT=$WT_ROOT/ws3-sprint-N
 BR=ws3/sprint-N-<slug>
+HERE=$(git rev-parse --show-toplevel)
+CUR=$(git branch --show-current)
 
-mkdir -p "$WT_ROOT"
-git -C "$REPO" worktree list                    # check that $WT and $BR don't already exist
-git -C "$REPO" fetch origin 2>/dev/null || true # read-only for the main checkout; ignore if offline
-git -C "$REPO" worktree add -b "$BR" "$WT" voice   # new branch from the local voice tip
+if [ "$HERE" = "$WT" ] && [ "$CUR" = "$BR" ]; then
+  echo "OK: already in my worktree ($WT on $BR); skip creation"
+elif [ "$HERE" = "$REPO" ]; then
+  echo "Started in the MAIN checkout; creating/using my worktree"
+  if git -C "$REPO" worktree list | grep -q " $WT "; then
+    echo "worktree exists already"
+  else
+    mkdir -p "$WT_ROOT"
+    git -C "$REPO" worktree add -b "$BR" "$WT" voice
+  fi
+else
+  echo "STOP: unexpected location $HERE on branch $CUR; ask the human"
+fi
+```
+
+- **If it printed STOP:** stop and ask the human.
+- **If the worktree exists but is on a different branch than `$BR`,** or `$BR` already exists elsewhere: stop and ask the human. Never force, reset or delete anything.
+- **If you were started in the main checkout:** from now on, **every** shell command starts with `cd "$WT" && …`, and **every** file path you read, edit or write must start with `$WT/`, never with `$REPO/`. Run spec-kit commands (`/speckit-*`) only after `cd "$WT"`. Before each commit, check that `git -C "$REPO" status --short` shows none of your files.
+
+Then, in the worktree, set up what git does not carry over:
+
+```bash
 cd "$WT"
-
-# Things git does not carry into a worktree:
-cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the human"
+[ -f web/.env ] || cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the human"
 [ -f agents/manifest.json ] || { [ -f "$REPO/agents/manifest.json" ] && cp "$REPO/agents/manifest.json" agents/; }
 [ -f agents/probes.json ]   || { [ -f "$REPO/agents/probes.json" ]   && cp "$REPO/agents/probes.json" agents/; }
-(cd web && npm ci)
+[ -d web/node_modules ] || (cd web && npm ci)
 ```
 
 **Checks after setup.** If any check fails, stop and ask the human; don't copy files from the main checkout to work around it.
@@ -256,6 +274,23 @@ cp "$REPO/web/.env" web/.env 2>/dev/null || echo "web/.env missing: ask the huma
    - the branch name
    - the dev-server port
    - exactly what they must do for the **human gate**, including running the gate from the worktree (`cd $WT/web && npm run dev -- -p 310N`)
+
+### A6c. Where WS3 documents live (all inside `notes/ws3-sprints/`)
+
+```
+notes/ws3-sprints/
+  README.md                         how to run the sprints (for the human)
+  sprint-plan.md                    overview, estimates, verification modes
+  sprint-0-…md … sprint-4-…md       these paste-ready prompts
+  handoff-sprint-N.md               written by each sprint agent at the end
+  docs/                             WS3 reference docs produced by the sprints:
+    elevenlabs-capabilities.md        Sprint 0: verified ElevenLabs capabilities + recommended mechanisms
+    contracts-v0.md                   Sprint 0: data contracts for WS2/WS5/WS6 (updated in Sprint 4)
+    voice-interface.md                Sprint 4: how WS5 reuses the voice component and consumes our output
+    trust.md                          Sprint 4: off-record semantics and retention facts
+```
+
+Put every WS3 note you create in this folder (or `docs/`). Don't add WS3 files elsewhere in `notes/`.
 
 ### A7. Standard verification commands
 

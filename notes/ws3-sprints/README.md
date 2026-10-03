@@ -1,8 +1,8 @@
 # WS3 sprint prompts: paste-ready agent instructions
 
-Each `sprint-N-*.md` file is a **self-contained prompt**. Start a fresh coding agent in the repo root and paste the entire file as its first message. Each file has the sprint-specific instructions at the top and the shared project context (sections A1–A8) at the bottom. The shared context is identical in every file, so no agent depends on another agent's conversation.
+Each `sprint-N-*.md` file is a **self-contained prompt**. Start a fresh coding agent **inside its own worktree** (see "Worktree setup" below) and paste the entire file as its first message. Each file has the sprint-specific instructions at the top and the shared project context (sections A1–A8) at the bottom. The shared context is identical in every file, so no agent depends on another agent's conversation.
 
-Overview and estimates: [`../03a-ws3-sprint-plan.md`](../03a-ws3-sprint-plan.md). Source brief: [`../03-elevenlabs-expert-interaction.md`](../03-elevenlabs-expert-interaction.md).
+Overview and estimates: [`sprint-plan.md`](sprint-plan.md). Source brief: [`../03-elevenlabs-expert-interaction.md`](../03-elevenlabs-expert-interaction.md).
 
 | Order | File | Delivers | Agent time | Human gate |
 |---|---|---|---|---|
@@ -24,8 +24,20 @@ Every sprint agent works in **its own git worktree**, never in the shared main c
 | 3 | `ws3/sprint-3-debrief-confirmation` | `../Track-Inspect-worktrees/ws3-sprint-3` | 3103 |
 | 4 | `ws3/sprint-4-trust-completion` | `../Track-Inspect-worktrees/ws3-sprint-4` | 3104 |
 
-**Once, before Sprint 0:** a worktree only contains what is **committed** on `voice`. These are currently untracked in the main checkout and must be committed to `voice` first, or the agents won't have them:
-- `notes/03a-ws3-sprint-plan.md`
+**Start each agent inside its worktree (recommended).** This keeps the agent's whole session out of the shared checkout:
+
+```bash
+REPO=/Users/matthiassammer/Documents/Projects/Track-Inspect-hack-nation
+N=0; SLUG=spike-contracts            # see the table above
+WT=/Users/matthiassammer/Documents/Projects/Track-Inspect-worktrees/ws3-sprint-$N
+git -C "$REPO" worktree add -b ws3/sprint-$N-$SLUG "$WT" voice
+cp "$REPO/web/.env" "$WT/web/.env"
+cd "$WT" && claude                   # then paste notes/ws3-sprints/sprint-$N-$SLUG.md
+```
+
+The prompt's first step (A6) detects that the agent is already in the right worktree and skips creating one. If you start the agent in the main checkout instead, it creates the worktree itself and must then use only worktree paths. That works, but relies on the agent following instructions.
+
+**Once, before Sprint 0 (done in commit 6fcd031):** a worktree only contains what is **committed** on `voice`. These had to be committed to `voice` first:
 - `notes/ws3-sprints/`
 - `.specify/`
 - `.claude/skills/speckit-*`
@@ -50,3 +62,7 @@ The next sprint's worktree must be created **after** this merge, so it starts fr
 - **Handoff notes** (`handoff-sprint-N.md`) are written into this folder by each agent. They hold verification output, decisions, contract changes and the gate checklist.
 - **Prerequisite for Sprints 1–4:** `web/.env` with `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID_EXPERT`. Sprint 0 can do most of its research without them.
 - If an agent's findings contradict a prompt, for example an ElevenLabs feature that doesn't exist, the agent follows the verified finding and records the deviation in its handoff note. Read the "Decisions made" section before merging.
+
+## Folder layout
+
+Everything WS3 lives in this folder. `sprint-plan.md` is the overview. `sprint-*.md` are the prompts. `handoff-sprint-N.md` files are written by the agents. `docs/` holds the reference docs the sprints produce (ElevenLabs capabilities, contracts, voice interface, trust).
