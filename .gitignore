@@ -3,3 +3,9 @@
 # Claude Code agent worktrees: nested git worktrees, never commit (see notes/WORKTREES.md)
 .claude/worktrees/
 .DS_Store
+
+# WS6 runtime data (curated knowledge/workflow.md and knowledge/entries/ stay committable)
+knowledge/sessions/
+knowledge/images/
+knowledge/assessments/
+web/.runtime/
