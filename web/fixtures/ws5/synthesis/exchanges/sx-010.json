@@ -1,0 +1,21 @@
+{
+  "exchange_id": "sx-010",
+  "session_id": "fixture-session-001",
+  "event_id": null,
+  "phase": "teach_back",
+  "kind": "explain",
+  "question": "FIXTURE question: is that right?",
+  "answer_lines": [
+    {
+      "text": "No, FIXTURE decision A also needs FIXTURE cue A2.",
+      "at_utc": "2026-10-03T10:12:10.000Z",
+      "transcript_line_id": "sx-010-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:12:05.000Z",
+  "answer_started_at_utc": "2026-10-03T10:12:10.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:12:11.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}

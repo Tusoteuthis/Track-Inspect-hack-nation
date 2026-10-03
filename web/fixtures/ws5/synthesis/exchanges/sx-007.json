@@ -1,0 +1,21 @@
+{
+  "exchange_id": "sx-007",
+  "session_id": "fixture-session-001",
+  "event_id": "evt-001",
+  "phase": "live",
+  "kind": "context",
+  "question": "FIXTURE question: anything else here?",
+  "answer_lines": [
+    {
+      "text": "OFFRECORD-MARKER-SX7 private remark.",
+      "at_utc": "2026-10-03T10:07:10.000Z",
+      "transcript_line_id": "sx-007-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:07:05.000Z",
+  "answer_started_at_utc": "2026-10-03T10:07:10.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:07:11.000Z",
+  "audio_offset_secs": null,
+  "record_state": "off_record",
+  "source": "fixture"
+}
