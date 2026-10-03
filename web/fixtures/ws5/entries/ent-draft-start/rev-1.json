@@ -1,0 +1,55 @@
+{
+  "schema_version": "ws5.v0",
+  "parent_revision_id": null,
+  "workflow_position": 0,
+  "source": "fixture",
+  "produced_by": {
+    "module": "ws5-fixtures",
+    "version": "0.1.0"
+  },
+  "created_at_utc": "2026-10-03T10:03:20.000Z",
+  "revoked_at_utc": null,
+  "revoked_reason": null,
+  "interpretation": [],
+  "reasoning": [],
+  "exceptions": [],
+  "qualifiers": [],
+  "open_questions": [
+    "FIXTURE gap: why the upper channel first?"
+  ],
+  "confirmation": null,
+  "entry_id": "ent-draft-start",
+  "revision_id": "rev-1",
+  "status": "draft",
+  "kind": "step",
+  "workflow_step": {
+    "type": "ai_synthesis",
+    "text": "FIXTURE draft step: start at the upper channel."
+  },
+  "observation": null,
+  "expert_words": [
+    {
+      "exchange_id": "exc-007",
+      "quote": "first I look at the upper channel."
+    }
+  ],
+  "visual_evidence": [
+    {
+      "event_id": "evt-001",
+      "asset_id": null,
+      "image_ref": "../../../../public/fixtures/trace-a-full.svg",
+      "highlighted_image_ref": "../../../../public/fixtures/trace-a-evt-001-highlight.svg",
+      "region": {
+        "x": 0.2,
+        "y": 0.15,
+        "width": 0.15,
+        "height": 0.25,
+        "coordinate_space": "original_frame_normalized",
+        "frame_width_px": 1600,
+        "frame_height_px": 900
+      },
+      "session_time_ms": 5000,
+      "signal_interval": null
+    }
+  ]
+}
