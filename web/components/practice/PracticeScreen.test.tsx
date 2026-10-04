@@ -72,6 +72,8 @@ function fakeSource() {
     submitScreenFrame: vi.fn(),
     getReview: vi.fn(),
     submitReviewMark: vi.fn(),
+    revokeEntry: vi.fn(),
+    deleteEvidence: vi.fn(),
     subscribe: vi.fn((_id: string, fn: (u: SourceUpdate) => void) => {
       listener = fn;
       return () => (listener = null);

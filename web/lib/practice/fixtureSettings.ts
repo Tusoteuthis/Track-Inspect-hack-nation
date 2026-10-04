@@ -1,12 +1,12 @@
 // Fixture-only URL settings for /practice and /expert:
-// ?fixture_latency=<ms>&fixture_fail=review|commit|offrecord|pause|stop&fixture_replay_ms=<ms>
+// ?fixture_latency=<ms>&fixture_fail=review|commit|offrecord|pause|stop|revoke|delete&fixture_replay_ms=<ms>
 import {
   DEFAULT_FIXTURE_LATENCY_MS,
   DEFAULT_FIXTURE_REPLAY_MS,
   type FixtureSourceOptions,
 } from "@/lib/data/fixtureSource";
 
-export type FixtureSettings = Required<FixtureSourceOptions>;
+export type FixtureSettings = Required<Omit<FixtureSourceOptions, "knowledge">>;
 
 const MAX_LATENCY_MS = 30_000;
 const MIN_REPLAY_MS = 50;
@@ -27,5 +27,7 @@ export function parseFixtureSettings(params: { get(name: string): string | null 
     failOffRecord: fail === "offrecord",
     failPause: fail === "pause",
     failStop: fail === "stop",
+    failRevoke: fail === "revoke",
+    failDelete: fail === "delete",
   };
 }

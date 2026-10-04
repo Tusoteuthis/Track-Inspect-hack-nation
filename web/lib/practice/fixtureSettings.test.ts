@@ -14,6 +14,8 @@ describe("parseFixtureSettings", () => {
       failOffRecord: false,
       failPause: false,
       failStop: false,
+      failRevoke: false,
+      failDelete: false,
     });
   });
   it("reads latency and failure, clamped", () => {
@@ -29,5 +31,10 @@ describe("parseFixtureSettings", () => {
     expect(p("fixture_fail=offrecord").failOffRecord).toBe(true);
     expect(p("fixture_fail=pause").failPause).toBe(true);
     expect(p("fixture_fail=stop").failStop).toBe(true);
+  });
+  it("reads trust-control failures (Sprint 4)", () => {
+    expect(p("fixture_fail=revoke").failRevoke).toBe(true);
+    expect(p("fixture_fail=delete").failDelete).toBe(true);
+    expect(p("fixture_fail=delete").failRevoke).toBe(false);
   });
 });

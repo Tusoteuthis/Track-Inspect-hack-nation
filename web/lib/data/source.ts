@@ -5,6 +5,7 @@ import type {
   AssessmentView,
   CaseSummary,
   ConnectionState,
+  KnowledgeStatus,
   LearnerDraft,
   LearnerEvaluation,
   PracticeCaseView,
@@ -29,7 +30,14 @@ export type SourceUpdate =
   /** A pointing gesture (WS2 → WS3). Displayed only; the UI never forwards it to the agent. */
   | { type: "pointing_event"; event: PointingEvent }
   /** State of the live-update connection itself; "connected" after a drop means: resync. */
-  | { type: "connection"; state: ConnectionState };
+  | { type: "connection"; state: ConnectionState }
+  /** A knowledge entry changed status (WS6 `entry.revoked`); broadcast to every session. */
+  | { type: "knowledge"; entry_id: string; revision_id: string; status: KnowledgeStatus };
+
+/** Acknowledged removal of an entry from teaching. */
+export type RevokeResult = { entry_id: string; revision_id: string };
+/** Acknowledged evidence deletion and the entries revoked because they cited it. */
+export type DeleteEvidenceResult = { event_id: string; revoked_entry_ids: string[] };
 
 export interface DataSource {
   readonly kind: "fixture" | "api";
@@ -61,6 +69,10 @@ export interface DataSource {
   ): Promise<Ack<ScreenFrameRef>>;
   /** Acknowledged = received; it does not mean anything was corrected. */
   submitReviewMark(mark: ReviewMark): Promise<Ack<{ received_at_utc: string }>>;
+  /** Removes an entry from teaching. Acknowledged = the backend revoked it. */
+  revokeEntry(entryId: string, revisionId: string): Promise<Ack<RevokeResult>>;
+  /** Deletes one piece of captured evidence; entries citing it are revoked (WS6 cascade). */
+  deleteEvidence(sessionId: string, eventId: string): Promise<Ack<DeleteEvidenceResult>>;
   /** Returns an unsubscribe function. */
   subscribe(sessionId: string, onUpdate: (update: SourceUpdate) => void): () => void;
 }

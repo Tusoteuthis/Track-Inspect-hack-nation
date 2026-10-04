@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { createFixtureKnowledge } from "@/lib/data/fixtureKnowledge";
 import {
   FIXTURE_IDS,
   createFixtureSource,
@@ -94,5 +95,71 @@ describe("fixtureSource", () => {
     fixtureReviewControls.reset();
     expect(updates).toHaveLength(4);
     expect((await fixtureSource.getWorkMap(FIXTURE_IDS.expertSession)).revision_label).toBe("Revision 1");
+  });
+});
+
+describe("fixtureSource trust controls (Sprint 4)", () => {
+  const draft: LearnerDraft = { draft_id: "d-trust", draft_revision: 1, decision: "x", reason: "y", region: null };
+
+  it("a revoke is acknowledged only after the latency, then pushes knowledge + refreshed views", async () => {
+    vi.useFakeTimers();
+    try {
+      const knowledge = createFixtureKnowledge();
+      const source = createFixtureSource({ latencyMs: 500, knowledge });
+      const updates: SourceUpdate[] = [];
+      const off = source.subscribe(FIXTURE_IDS.expertSession, u => updates.push(u));
+      let settled = false;
+      const pending = source.revokeEntry("fixture-entry-003", "fixture-rev-2").then(a => ((settled = true), a));
+      await vi.advanceTimersByTimeAsync(499);
+      expect(settled).toBe(false);
+      expect(knowledge.isRevoked("fixture-entry-003")).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect((await pending).status).toBe("acknowledged");
+      await vi.advanceTimersByTimeAsync(0);
+      expect(updates.map(u => u.type).filter(t => t !== "session" && t !== "pointing_event")).toEqual([
+        "knowledge",
+        "workmap",
+        "review",
+      ]);
+      const map = await source.getWorkMap(FIXTURE_IDS.expertSession);
+      expect(map.steps.find(s => s.entry_id === "fixture-entry-003")?.status).toBe("revoked");
+      off();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a revoked entry is never cited by a later practice review", async () => {
+    const knowledge = createFixtureKnowledge();
+    const source = createFixtureSource({ latencyMs: 0, knowledge });
+    const before = await source.submitDraftForReview(draft);
+    if (before.status !== "acknowledged") throw new Error("expected ack");
+    const cited = before.value.citations[0].entry_id;
+    await source.revokeEntry(cited, "fixture-rev-2");
+    const again = await createFixtureSource({ latencyMs: 0, knowledge }).submitDraftForReview(draft);
+    if (again.status !== "acknowledged") throw new Error("expected ack");
+    expect(again.value.citations.map(c => c.entry_id)).not.toContain(cited);
+  });
+
+  it("deleting evidence revokes the entries citing it", async () => {
+    const source = createFixtureSource({ latencyMs: 0, knowledge: createFixtureKnowledge() });
+    const ack = await source.deleteEvidence(FIXTURE_IDS.expertSession, "fixture-event-003");
+    expect(ack).toEqual({
+      status: "acknowledged",
+      value: { event_id: "fixture-event-003", revoked_entry_ids: ["fixture-entry-003"] },
+    });
+  });
+
+  it("can force revoke and delete failures, which change nothing", async () => {
+    const knowledge = createFixtureKnowledge();
+    const source = createFixtureSource({ latencyMs: 0, knowledge, failRevoke: true, failDelete: true });
+    expect((await source.revokeEntry("fixture-entry-003", "fixture-rev-2")).status).toBe("failed");
+    expect((await source.deleteEvidence(FIXTURE_IDS.expertSession, "fixture-event-003")).status).toBe("failed");
+    expect(knowledge.isRevoked("fixture-entry-003")).toBe(false);
+  });
+
+  it("rejects revoking an unknown item", async () => {
+    const source = createFixtureSource({ latencyMs: 0, knowledge: createFixtureKnowledge() });
+    expect((await source.revokeEntry("nope", "fixture-rev-2")).status).toBe("failed");
   });
 });

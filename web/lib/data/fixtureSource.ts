@@ -7,9 +7,10 @@ import practiceCase from "@/fixtures/ui/practice-case.json";
 import sessionExpert from "@/fixtures/ui/session-expert.json";
 import confirmedWorkmap from "@/fixtures/ui/workmap-rev-2-confirmed.json";
 import { createExpertScript, type ExpertScriptControls } from "@/lib/data/fixtureExpertScript";
+import { sharedFixtureKnowledge, type FixtureKnowledge } from "@/lib/data/fixtureKnowledge";
 import { createFixturePractice } from "@/lib/data/fixturePractice";
 import { createReviewScript } from "@/lib/data/fixtureReviewScript";
-import type { DataSource } from "@/lib/data/source";
+import { acknowledged, failed, type DataSource } from "@/lib/data/source";
 import type {
   AssessmentView,
   CaseSummary,
@@ -52,37 +53,52 @@ export type FixtureSourceOptions = {
   failOffRecord?: boolean;
   failPause?: boolean;
   failStop?: boolean;
+  failRevoke?: boolean;
+  failDelete?: boolean;
+  /** Revocation/deletion state; defaults to the store shared by every fixture source in the tab. */
+  knowledge?: FixtureKnowledge;
 };
 
 export const DEFAULT_FIXTURE_LATENCY_MS = 600;
 export const DEFAULT_FIXTURE_REPLAY_MS = 2500;
 
 /** A fixture source plus the controls of its scripted expert session (drop/restore). */
-export type FixtureDataSource = DataSource & { readonly expertControls: ExpertScriptControls };
+export type FixtureDataSource = DataSource & {
+  readonly expertControls: ExpertScriptControls;
+  readonly knowledge: FixtureKnowledge;
+};
 
 export function createFixtureSource(options: FixtureSourceOptions = {}): FixtureDataSource {
+  const latencyMs = options.latencyMs ?? DEFAULT_FIXTURE_LATENCY_MS;
+  const knowledge = options.knowledge ?? sharedFixtureKnowledge;
+  const delay = () => new Promise<void>(resolve => setTimeout(resolve, Math.max(0, latencyMs)));
   const practice = createFixturePractice({
-    latencyMs: options.latencyMs ?? DEFAULT_FIXTURE_LATENCY_MS,
+    latencyMs,
     failReview: options.failReview,
     failCommit: options.failCommit,
     knowledgeRevisionId: PRACTICE.knowledge_revision_id,
-    workmap: CONFIRMED_WORKMAP,
+    // A getter, so evaluations never cite an entry revoked after this source was created.
+    workmap: () => knowledge.apply(CONFIRMED_WORKMAP),
   });
   const expert = createExpertScript({
     session: SESSION,
     caseIds: CASES.map(c => c.case_id),
-    latencyMs: options.latencyMs ?? DEFAULT_FIXTURE_LATENCY_MS,
+    latencyMs,
     replayMs: options.replayMs ?? DEFAULT_FIXTURE_REPLAY_MS,
     fail: { offRecord: options.failOffRecord, pause: options.failPause, stop: options.failStop },
   });
+  const getWorkMap = async (sessionId: string) => knowledge.apply(await reviewScript.getWorkMap(sessionId));
+  const getReview = async (sessionId: string) => knowledge.applyReview(await reviewScript.getReview(sessionId));
+
   return {
     kind: "fixture",
     expertControls: expert.controls,
+    knowledge,
     getSession: expert.getSession,
-    getWorkMap: reviewScript.getWorkMap,
+    getWorkMap,
     getPracticeCase: id => found(PRACTICE, id, PRACTICE.case_id, "case"),
     getAssessment: id => found(ASSESSMENT, id, ASSESSMENT.session_id, "session"),
-    getReview: reviewScript.getReview,
+    getReview,
     submitReviewMark: reviewScript.submitReviewMark,
     listCases: () => Promise.resolve(structuredClone(CASES)),
     startSession: expert.startSession,
@@ -93,13 +109,50 @@ export function createFixtureSource(options: FixtureSourceOptions = {}): Fixture
     submitDraftForReview: practice.submitDraftForReview,
     commitDraft: practice.commitDraft,
     submitScreenFrame: practice.submitScreenFrame,
-    // Review stages (S1) and the expert session replay (S3) both push to the expert session.
+    async revokeEntry(entryId, revisionId) {
+      await delay();
+      if (options.failRevoke) return failed("Fixture: removal not confirmed (forced by fixture settings).");
+      const map = await reviewScript.getWorkMap(FIXTURE_IDS.expertSession);
+      if (!map.steps.some(s => s.entry_id === entryId)) return failed("Unknown item.");
+      // Idempotent like WS6: an already revoked entry acknowledges again.
+      if (!knowledge.isRevoked(entryId)) knowledge.revoke(entryId, revisionId);
+      return acknowledged({ entry_id: entryId, revision_id: revisionId });
+    },
+    async deleteEvidence(sessionId, eventId) {
+      await delay();
+      if (options.failDelete) return failed("Fixture: deletion not confirmed (forced by fixture settings).");
+      if (sessionId !== FIXTURE_IDS.expertSession) return failed("Unknown session.");
+      const map = await reviewScript.getWorkMap(sessionId);
+      return acknowledged({ event_id: eventId, revoked_entry_ids: knowledge.deleteEvent(eventId, map) });
+    },
+    // Review stages (S1) and the expert session replay (S3) push to the expert session;
+    // revocations are broadcast to every session, like WS6 `entry.revoked`.
     subscribe(sessionId, onUpdate) {
-      const offReview = reviewScript.subscribe(sessionId, onUpdate);
+      const offReview = reviewScript.subscribe(sessionId, update =>
+        onUpdate(
+          update.type === "workmap"
+            ? { type: "workmap", workmap: knowledge.apply(update.workmap) }
+            : update.type === "review"
+              ? { type: "review", review: knowledge.applyReview(update.review) }
+              : update
+        )
+      );
       const offExpert = expert.subscribe(sessionId, onUpdate);
+      let active = true;
+      const offKnowledge = knowledge.subscribe(update => {
+        onUpdate(update);
+        if (sessionId !== FIXTURE_IDS.expertSession) return;
+        void Promise.all([getWorkMap(sessionId), getReview(sessionId)]).then(([workmap, review]) => {
+          if (!active) return;
+          onUpdate({ type: "workmap", workmap });
+          onUpdate({ type: "review", review });
+        });
+      });
       return () => {
+        active = false;
         offReview();
         offExpert();
+        offKnowledge();
       };
     },
   };

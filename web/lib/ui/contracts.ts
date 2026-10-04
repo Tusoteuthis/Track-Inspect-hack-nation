@@ -6,8 +6,11 @@ import type { DraftRevision, ExpertConfirmation, OpenQuestion } from "@/lib/expe
 
 export const UI_CONTRACT_VERSION = "ws7.ui.v0";
 
-/** Where the data on screen came from. "fixture" must always be visibly labelled. */
-export type DataOrigin = "live" | "fixture";
+/**
+ * Where the data on screen came from. "fixture" and "stub" (WS6 placeholder
+ * module output) must always be visibly labelled; only "live" is unlabelled.
+ */
+export type DataOrigin = "live" | "fixture" | "stub";
 
 export type ConnectionState = "connected" | "disconnected" | "reconnecting" | "unknown";
 
@@ -175,7 +178,12 @@ export type ScreenFrameRef = {
   source: DataOrigin;
 };
 
-export type AssessmentItem = { description: string; citations: Citation[] };
+export type AssessmentItem = {
+  description: string;
+  citations: Citation[];
+  /** Hints/interventions the learner received for this decision (WS5). Non-empty = assisted. */
+  interventions?: string[];
+};
 
 export type AssessmentView = {
   session_id: string;
@@ -184,6 +192,8 @@ export type AssessmentView = {
   unresolved: AssessmentItem[];
   practice_next: string[];
   evidence_used: Citation[];
+  /** WS5's statement of what this assessment cannot show (e.g. one coached case is not mastery). */
+  limitations?: string[];
   source: DataOrigin;
 };
 

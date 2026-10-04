@@ -18,8 +18,8 @@ export type FixturePracticeOptions = {
   failCommit?: boolean;
   /** Knowledge revision the scripted evaluation claims to have used. */
   knowledgeRevisionId: string;
-  /** Expert knowledge to cite (the fixture Work Map). */
-  workmap: WorkMapView;
+  /** Expert knowledge to cite (the fixture Work Map); a getter sees later revocations. */
+  workmap: WorkMapView | (() => WorkMapView);
   now?: () => Date;
 };
 
@@ -54,6 +54,7 @@ export function createFixturePractice(options: FixturePracticeOptions) {
   const now = options.now ?? (() => new Date());
   const delay = () =>
     new Promise<void>(resolve => setTimeout(resolve, Math.max(0, options.latencyMs ?? 0)));
+  const currentWorkmap = () => (typeof options.workmap === "function" ? options.workmap() : options.workmap);
   const reviewsByDraft = new Map<string, number>();
   const commitsByKey = new Map<string, { committed_at_utc: string }>();
   let frameCount = 0;
@@ -71,7 +72,7 @@ export function createFixturePractice(options: FixturePracticeOptions) {
       outcome: first ? "intervene" : "ok",
       message: first ? FIXTURE_GUIDANCE_MESSAGE : FIXTURE_COMPLETE_MESSAGE,
       guiding_question: first ? FIXTURE_GUIDING_QUESTION : null,
-      citations: first ? structuredClone(fixtureCitations(options.workmap)) : [],
+      citations: first ? structuredClone(fixtureCitations(currentWorkmap())) : [],
     });
   }
 
