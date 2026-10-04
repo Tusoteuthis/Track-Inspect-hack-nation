@@ -370,7 +370,8 @@ async function runJob(queued: Job): Promise<Job> {
     component: "synthesis",
     op: "job",
     ids: { session_id: sid, job_id: job.job_id },
-    outcome: job.status === "done" ? "ok" : "error",
+    // A discarded job is the rule working (inputs changed), not a failed component.
+    outcome: job.status === "failed" ? "error" : "ok",
     duration_ms: performance.now() - started,
   });
   return job;

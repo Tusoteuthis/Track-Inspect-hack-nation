@@ -296,6 +296,7 @@ function acceptResult(r: TutorResult, pinnedIds: readonly string[]): Partial<Eva
 }
 
 async function runEvaluation(sid: string, evaluation: Evaluation, provider: TutorProvider, generation: number): Promise<Evaluation> {
+  const started = performance.now();
   let fields: Partial<Evaluation> | null = null;
   let errorCode: string | null = null;
   try {
@@ -321,7 +322,15 @@ async function runEvaluation(sid: string, evaluation: Evaluation, provider: Tuto
     // Module errors may carry content; only the code is stored.
     errorCode = "module_error";
   }
-  return finishEvaluation(sid, evaluation.evaluation_id, fields, errorCode, generation);
+  const finished = await finishEvaluation(sid, evaluation.evaluation_id, fields, errorCode, generation);
+  await diag({
+    component: "evaluations",
+    op: "run",
+    ids: { session_id: sid, evaluation_id: evaluation.evaluation_id },
+    outcome: finished.status === "failed" ? "error" : "ok",
+    duration_ms: performance.now() - started,
+  });
+  return finished;
 }
 
 const sameSet = (a: readonly string[], b: readonly string[]) => canonicalJson([...a].sort()) === canonicalJson([...b].sort());

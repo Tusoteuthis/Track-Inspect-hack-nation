@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { CommitRequest, Evaluation, KnowledgeRef, Session } from "@/lib/contracts";
 import type { Judge, JudgeVerdict } from "@/lib/knowledge";
 import { getAssessment } from "./assessment";
+import { checkHealth } from "./health";
 import { readBusAfter } from "./bus";
 import { errorOf, seedAsset } from "./capture-test-helpers";
 import { getExchange, putExchange } from "./exchanges";
@@ -216,11 +217,12 @@ describe("evaluation", () => {
     }
   });
 
-  it("the real WS5 evaluator without a working judge → failed, never uncertain", async () => {
+  it("the real WS5 evaluator without a working judge → failed, never uncertain; health names the component", async () => {
     const broken: Judge = { name: "broken", judge: async () => Promise.reject(new Error("no key")) };
     setTutorProviderForTests(createWs5TutorProvider(broken));
     await putLearnerDraft(sid, draftReq(0));
     expect(await evaluate(1)).toMatchObject({ status: "failed", error_code: "module_error", outcome: null });
+    expect((await checkHealth()).failing_components).toContain("evaluations");
   });
 });
 
