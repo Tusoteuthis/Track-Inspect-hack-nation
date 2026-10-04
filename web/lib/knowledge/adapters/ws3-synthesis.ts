@@ -97,7 +97,8 @@ export const ws3Synthesis: Ws3SynthesisModule = {
       kind: STEP_KIND[e.kind],
       supporting_event_ids: [...new Set(e.visual_evidence.map(v => v.event_id))].sort(),
       supporting_exchange_ids: [...new Set(collectQuotes(e).map(q => q.exchange_id))].sort(),
-    }));
+      supported: false,
+    })).map(s => ({ ...s, supported: s.supporting_event_ids.length > 0 && s.supporting_exchange_ids.length > 0 }));
     // Unchanged content keeps the parent revision: no duplicate revision for the same draft.
     if (parentRevision && sameSteps(parentRevision.steps, steps)) return parentRevision;
 
@@ -117,6 +118,8 @@ export const ws3Synthesis: Ws3SynthesisModule = {
             .filter(Boolean)
             .join("; ")
         : null,
+      // The synthesis adapter rebuilds from entries; it does not know which exchange carried a correction.
+      change_exchange_ids: [],
     };
   },
 };

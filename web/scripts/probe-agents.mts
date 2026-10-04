@@ -7,6 +7,7 @@
  *   npm run probe                          # all agents
  *   npm run probe -- expert                # one agent
  *   npm run probe -- expert --runs 5       # each case 5×, with a pass-count summary
+ *   npm run probe -- expert --runs 5 --case two-events,teach-back-shape   # only these cases
  *
  * Two case shapes:
  *   { name, user: string[] }                          print-only (a neutral agent turn between lines)
@@ -36,17 +37,40 @@ type Expect = {
   questionBeforeQuote?: boolean; // the first "?" comes before the first quoted span (asks before telling)
   allowedQuotes?: string[]; // every quoted span of ≥ 3 words must be part of one of these (case-insensitive)
   requireAnyPatterns?: string[]; // case-insensitive regexes; at least one must match the spoken reply
-  maxWords?: number; // max words in the spoken reply
+  toolOptional?: boolean; // staying silent (no question, no tool call) also passes
+  forbidKinds?: string[]; // kind params that must not be used
+  requirePatterns?: string[]; // case-insensitive regexes the spoken question must match (when one is asked)
+  requireTools?: ToolMatch[]; // each must be called (params JSON matching paramsPattern, if given)
+  forbidTools?: ToolMatch[]; // none may be called (with params JSON matching paramsPattern, if given)
+  allowedGapIds?: string[]; // every begin_question gap_id must be one of these
+  endsWithQuestion?: boolean; // the spoken reply must end with "?"
+  requireReply?: string; // case-insensitive regex the spoken reply must match (always checked, so silence fails)
+  maxWords?: number; // max words in the spoken reply (shared by WS3 and WS5 probes)
 };
+type ToolMatch = { name: string; paramsPattern?: string };
 type LegacyCase = { name: string; user: string[] };
-type HistoryCase = { name: string; history: { role: "user" | "agent"; text: string }[]; expect?: Expect };
+/** A replayed client tool call (agent turn with toolCalls + toolResults), so histories match what the app produced. */
+type ToolTurn = { role: "agent"; tool: { name: string; params: Record<string, unknown>; result: string } };
+type TextTurn = { role: "user" | "agent"; text: string };
+// toolMocks on a case override the agent-level ones (e.g. the app's set_record_state result for that state)
+type HistoryCase = { name: string; history: (TextTurn | ToolTurn)[]; expect?: Expect; toolMocks?: Record<string, string> };
 type Case = LegacyCase | HistoryCase;
 // { "<agent>": { "envVar": "...", "language": "en", "cases": [...] } }
-type Probes = Record<string, { envVar: string; language?: string; cases: Case[] }>;
+// toolMocks: per-agent mock results (override TOOL_MOCKS), e.g. the app's real propose_draft result
+type Probes = Record<string, { envVar: string; language?: string; toolMocks?: Record<string, string>; cases: Case[] }>;
 
 type RunResult = { lastUser: string; toolCalls: { name: string; params: string }[]; reply: string; failures: string[] };
 
-const TOOL_MOCKS = { begin_question: { defaultReturnValue: "ok exchange_id=ex-sim" } };
+const TOOL_MOCKS = {
+  // same wording as the app (SAY_IT in session.ts, AFTER_COVERAGE_LIVE in debrief.ts)
+  begin_question: { defaultReturnValue: "ok exchange_id=ex-sim. Now say the question out loud, word for word." },
+  record_coverage: { defaultReturnValue: "ok coverage recorded. Next: either call begin_question and then say that question out loud, or call skip_turn." },
+  signal_task_complete: { defaultReturnValue: "ok phase=debrief." },
+  propose_draft: { defaultReturnValue: "ok revision_id=rev-sim." },
+  confirm_revision: { defaultReturnValue: "ok confirmation recorded." },
+  set_record_state: { defaultReturnValue: "ok record_state recorded." },
+  strike_last_answer: { defaultReturnValue: "ok struck." },
+};
 
 const webDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const envPath = join(webDir, ".env");
@@ -63,7 +87,9 @@ const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! })
 const args = process.argv.slice(2);
 const runsIdx = args.indexOf("--runs");
 const runs = runsIdx >= 0 ? Math.max(1, Number(args[runsIdx + 1]) || 1) : 1;
-const only = args.find((a, i) => !a.startsWith("--") && i !== runsIdx + 1);
+const caseIdx = args.indexOf("--case");
+const caseFilter = caseIdx >= 0 ? new Set(args[caseIdx + 1]?.split(",")) : null;
+const only = args.find((a, i) => !a.startsWith("--") && i !== runsIdx + 1 && i !== caseIdx + 1);
 
 const summary: { agent: string; name: string; passed: number | null; runs: number }[] = [];
 
@@ -79,10 +105,16 @@ for (const [agent, spec] of Object.entries(PROBES)) {
   console.log(`\n═══ ${agent} (${cfg.name}) ═══`);
 
   for (const c of spec.cases) {
+    if (caseFilter && !caseFilter.has(c.name)) continue;
     const history = buildHistory(c, first);
     // runs of one case go in parallel
     const results = await Promise.all(
-      Array.from({ length: runs }, () => simulate(agentId, history, spec.language ?? "en", "expect" in c ? c.expect : undefined)),
+      Array.from({ length: runs }, () =>
+        simulate(agentId, history, spec.language ?? "en", "expect" in c ? c.expect : undefined, {
+          ...spec.toolMocks,
+          ...("toolMocks" in c ? c.toolMocks : {}),
+        }),
+      ),
     );
     console.log(`\n▸ ${c.name}\n  👤 ${results[0].lastUser}`);
     results.forEach((r, i) => {
@@ -112,7 +144,17 @@ if (summary.some(s => s.passed !== null)) {
 function buildHistory(c: Case, first: string): Turn[] {
   const history: Turn[] = [{ role: "agent", message: first, timeInCallSecs: 0 }];
   if ("history" in c) {
-    c.history.forEach((t, i) => history.push({ role: t.role, message: t.text, timeInCallSecs: (i + 1) * 5 }));
+    c.history.forEach((t, i) => {
+      const timeInCallSecs = (i + 1) * 5;
+      if (!("tool" in t)) return history.push({ role: t.role, message: t.text, timeInCallSecs });
+      const requestId = `${t.tool.name}_${i}`;
+      history.push({
+        role: "agent",
+        timeInCallSecs,
+        toolCalls: [{ type: "client", requestId, toolName: t.tool.name, paramsAsJson: JSON.stringify(t.tool.params), toolHasBeenCalled: true }],
+        toolResults: [{ type: "client", requestId, toolName: t.tool.name, resultValue: t.tool.result, isError: false, toolHasBeenCalled: true }],
+      });
+    });
   } else {
     c.user.forEach((u, i) => {
       if (i > 0) history.push({ role: "agent", message: "Understood.", timeInCallSecs: i * 10 - 5 });
@@ -122,8 +164,18 @@ function buildHistory(c: Case, first: string): Turn[] {
   return history;
 }
 
-async function simulate(agentId: string, history: Turn[], language: string, expect?: Expect): Promise<RunResult> {
-  const lastUser = [...history].reverse().find(t => t.role === "user")?.message ?? "";
+async function simulate(
+  agentId: string,
+  history: Turn[],
+  language: string,
+  expect?: Expect,
+  mocks: Record<string, string> = {},
+): Promise<RunResult> {
+  const toolMockConfig = {
+    ...TOOL_MOCKS,
+    ...Object.fromEntries(Object.entries(mocks).map(([name, value]) => [name, { defaultReturnValue: value }])),
+  };
+  const lastUser = [...history].reverse().find(t => t.role === "user" && t.message)?.message ?? "";
   let turns: OutTurn[];
   try {
     const res = await client.conversationalAi.agents.simulateConversation(agentId, {
@@ -134,12 +186,14 @@ async function simulate(agentId: string, history: Turn[], language: string, expe
           prompt: { prompt: "You are the human in this conversation. Reply only with 'ok'." },
         },
         partialConversationHistory: history,
-        toolMockConfig: TOOL_MOCKS,
+        toolMockConfig,
       },
       // a tool call (or a language switch) costs turns before the spoken reply
       newTurnsLimit: 4,
     });
-    turns = res.simulatedConversation.slice(history.length);
+    // replayed tool turns come back as two items each (call + result)
+    const offset = history.length + history.filter(t => t.toolCalls?.length).length;
+    turns = res.simulatedConversation.slice(offset);
   } catch (e) {
     return { lastUser, toolCalls: [], reply: "", failures: [`simulation failed: ${(e as Error).message}`] };
   }
@@ -176,7 +230,8 @@ function check(
     }
   });
 
-  if (expect.toolCalled) {
+  const silent = !calls.length && questionCount === 0;
+  if (expect.toolCalled && !(expect.toolOptional && silent)) {
     if (!calls.length) {
       const others = toolCalls.map(t => t.name).join(", ");
       failures.push(`${expect.toolCalled} not called${others ? ` (called: ${others})` : ""}`);
@@ -188,6 +243,17 @@ function check(
         failures.push(`event_id ${JSON.stringify(p.event_id)} ≠ ${expect.eventId}`);
       const kinds = expect.kind === undefined ? undefined : [expect.kind].flat();
       if (kinds && !kinds.includes(String(p.kind))) failures.push(`kind ${JSON.stringify(p.kind)} ∉ ${kinds.join("|")}`);
+    }
+  }
+
+  for (const p of params) {
+    if (expect.forbidKinds?.includes(String(p.kind))) failures.push(`forbidden kind ${JSON.stringify(p.kind)}`);
+  }
+
+  if (expect.requirePatterns?.length && !silent) {
+    const asked = [reply, ...params.map(p => (typeof p.question === "string" ? p.question : ""))].join(" ");
+    for (const pat of expect.requirePatterns) {
+      if (!new RegExp(pat, "i").test(asked)) failures.push(`required /${pat}/ not found`);
     }
   }
 
@@ -216,9 +282,31 @@ function check(
   if (expect.requireAnyPatterns?.length && !expect.requireAnyPatterns.some(p => new RegExp(p, "i").test(reply))) {
     failures.push(`none of /${expect.requireAnyPatterns.join("/, /")}/ matched`);
   }
+  const matches = (m: ToolMatch) =>
+    toolCalls.filter(t => t.name === m.name && (!m.paramsPattern || new RegExp(m.paramsPattern, "i").test(t.params)));
+  for (const m of expect.requireTools ?? []) {
+    if (!matches(m).length) failures.push(`${m.name}${m.paramsPattern ? ` /${m.paramsPattern}/` : ""} not called`);
+  }
+  for (const m of expect.forbidTools ?? []) {
+    const hit = matches(m)[0];
+    if (hit) failures.push(`forbidden ${m.name} ${hit.params}`);
+  }
+  if (expect.allowedGapIds) {
+    for (const t of toolCalls.filter(t => t.name === "begin_question")) {
+      let gap: unknown;
+      try {
+        gap = (JSON.parse(t.params) as Record<string, unknown>).gap_id;
+      } catch {
+        gap = undefined;
+      }
+      if (!expect.allowedGapIds.includes(String(gap))) failures.push(`gap_id ${JSON.stringify(gap)} not on the agenda`);
+    }
+  }
+  if (expect.endsWithQuestion && !/\?["'”’)]*\s*$/.test(reply)) failures.push("reply does not end with a question");
+  if (expect.requireReply && !new RegExp(expect.requireReply, "i").test(reply)) failures.push(`reply does not match /${expect.requireReply}/`);
   if (expect.maxWords !== undefined) {
     const words = reply.split(/\s+/).filter(Boolean).length;
-    if (words > expect.maxWords) failures.push(`${words} words > ${expect.maxWords}`);
+    if (words > expect.maxWords) failures.push(`${words} words spoken > ${expect.maxWords}`);
   }
 
   if (expect.maxQuestions !== undefined) {

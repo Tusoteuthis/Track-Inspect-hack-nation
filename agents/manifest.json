@@ -13,10 +13,12 @@
       "settings": {
         "llm": "claude-sonnet-5",
         "turnEagerness": "patient",
+        "turnTimeout": 15,
         "speculativeTurn": false,
         "maxDurationSeconds": 1800,
         "expressiveMode": false,
         "skipTurn": true,
+        "skipTurnDescription": "Call this instead of speaking whenever you should stay silent: the expert is mid-sentence, mid-explanation or thinking aloud, they paused only briefly, nothing new invites a question, or the live question budget is used up. Calling it means you say nothing this turn.",
         "clientEventsAdd": [
           "client_tool_call",
           "agent_chat_response_part",
