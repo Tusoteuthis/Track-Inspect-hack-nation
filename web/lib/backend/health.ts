@@ -1,9 +1,9 @@
-import { constants, promises as fs } from "node:fs";
 import { SCHEMA_VERSION, type ModuleInfo } from "@/lib/contracts";
 import { configuredAccessToken } from "./access";
 import { getConfig } from "./config";
 import { componentStatuses, failingComponents, readDiagLines, type ComponentStatus } from "./diagnostics";
 import { activeModules } from "./modules";
+import { getBlobStore } from "./blobstore";
 
 export type HealthReport = {
   ok: boolean;
@@ -22,15 +22,7 @@ export type HealthReport = {
   failing_components: string[];
 };
 
-async function isWritableDir(dir: string): Promise<boolean> {
-  try {
-    await fs.mkdir(dir, { recursive: true });
-    await fs.access(dir, constants.W_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
+const isWritableDir = (dir: string) => getBlobStore().checkWritable(dir);
 
 const present = (name: string) => Boolean(process.env[name]?.trim());
 
