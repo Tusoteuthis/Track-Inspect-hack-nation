@@ -30,6 +30,6 @@ TDD: each logic task writes its vitest file first.
 - [X] T015 [US4] Probe harness (requireTools, forbidTools, allowedGapIds, endsWithQuestion, mocks) in web/scripts/probe-agents.mts; 5+ cases in agents/probes(.example).json; wording test in web/lib/expert/probes.test.ts
 
 ## Phase 7: Polish
-- [ ] T016 sync-agents + probes ×5; contracts doc notes/ws3-sprints/docs/contracts-v0.md; dev smoke on 3103; handoff notes/ws3-sprints/handoff-sprint-3.md
+- [X] T016 sync-agents + probes ×5; contracts doc notes/ws3-sprints/docs/contracts-v0.md; dev smoke on 3103; handoff notes/ws3-sprints/handoff-sprint-3.md
 
 Dependencies: T002 → T003 → T004 → T007 → T009 → T010 → T011 → T012; T013–T015 after T010.
