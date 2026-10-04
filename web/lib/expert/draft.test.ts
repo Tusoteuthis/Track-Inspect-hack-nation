@@ -38,6 +38,7 @@ function ex(id: string, event: string | null, kind: ExpertExchange["kind"], line
     audio_offset_secs: null,
     record_state: "on_record",
     source: "fixture",
+    outcome: null,
   };
 }
 

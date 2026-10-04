@@ -1,4 +1,4 @@
-import type { DebriefItem, DraftRevision, DraftStep, PointingEvent, RecordState } from "./contracts";
+import type { DebriefItem, DraftRevision, DraftStep, InteractionMode, PointingEvent, RecordState } from "./contracts";
 
 /**
  * The contextual update that tells the agent about a pointing event: one stable,
@@ -54,8 +54,17 @@ export const isControlText = (text: string) => text.trimStart().startsWith(CONTR
 /** Current live-question budget, sent with the fixed context id `ws3-state`. */
 export const budgetStateLine = (exhausted: boolean) =>
   exhausted
-    ? "[STATE] live_question_budget=used_up. Do not ask more live questions now; call skip_turn instead. Remaining topics are kept for the debrief."
+    ? "[STATE] live_question_budget=used_up. Do not ask more live questions; call skip_turn instead. Remaining topics are kept for the debrief."
     : "[STATE] live_question_budget=available.";
+
+/** Budget plus the expert's interaction mode, sent together as the current `ws3-state`. */
+export function stateLine(exhausted: boolean, mode: InteractionMode): string {
+  const modeLine =
+    mode === "listen_only"
+      ? " [STATE] mode=listen_only. The expert asked you to just listen: ask nothing and call skip_turn on every turn until they invite questions again. Saying they are done still ends the task."
+      : " [STATE] mode=questions.";
+  return budgetStateLine(exhausted) + modeLine;
+}
 
 /** Fixed context id for phase blocks; a newer block supersedes the older one. */
 export const PHASE_CONTEXT_ID = "ws3-phase";

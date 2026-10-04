@@ -621,7 +621,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -761,7 +761,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -803,7 +803,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -976,7 +976,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -1018,7 +1018,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -1166,7 +1166,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -1208,7 +1208,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -1340,7 +1340,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -1382,7 +1382,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -1508,7 +1508,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -1550,7 +1550,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {

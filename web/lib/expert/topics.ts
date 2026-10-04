@@ -5,6 +5,7 @@
 import type {
   DeferredReason,
   ExpertExchange,
+  InteractionMode,
   InterviewConfig,
   PointingEvent,
   Region,
@@ -12,6 +13,7 @@ import type {
   Topic,
 } from "./contracts";
 import { formatPointingEventUpdate } from "./context-update";
+import { budgetState } from "./question-policy";
 
 type Stamp = { at_utc: string; perf_ms: number };
 
@@ -28,27 +30,29 @@ export function regionIoU(a: Region, b: Region): number {
 }
 
 /**
- * The topic a new event repeats, if any: same channel (null = null), same record state,
- * region IoU ≥ threshold with the topic's primary region, and received within the window
- * of the topic's newest event. Receive time is the only clock used (never signal time).
+ * The topic a new event repeats, if any: same known trace (an unknown trace never matches),
+ * same channel (null = null), same record state and region IoU ≥ threshold with the topic's
+ * primary region. No time window (D3): pointing again later never opens a fresh topic, so it
+ * never resets the topic's question allowance.
  */
 export function findDuplicateTopic(
   topics: Topic[],
   events: PointingEvent[],
   event: PointingEvent,
-  now: number,
+  _now: number,
   config: InterviewConfig
 ): Topic | undefined {
-  const regionOf = (id: string) => events.find(e => e.event_id === id)?.region;
+  const primaryOf = (id: string) => events.find(e => e.event_id === id);
   return topics
     .filter(t => {
-      const region = regionOf(t.primary_event_id);
+      const primary = primaryOf(t.primary_event_id);
       return (
-        region !== undefined &&
+        primary !== undefined &&
+        primary.trace_id !== null &&
+        primary.trace_id === event.trace_id &&
         t.channel_id === event.channel_id &&
         t.record_state === event.record_state &&
-        now - t.last_event_at_perf_ms <= config.dedup_window_ms &&
-        regionIoU(region, event.region) >= config.dedup_min_iou - IOU_EPSILON
+        regionIoU(primary.region, event.region) >= config.dedup_min_iou - IOU_EPSILON
       );
     })
     .sort((a, b) => b.last_event_at_perf_ms - a.last_event_at_perf_ms)[0];
@@ -66,10 +70,16 @@ export function ingestEvent(
   const others = events.filter(e => e.event_id !== event.event_id);
   const duplicate = findDuplicateTopic(topics, others, event, at.perf_ms, config);
   if (duplicate) {
-    const topic = {
+    // Returning to a region that was never discussed (the expert had moved on) makes it askable again.
+    const requeue =
+      duplicate.state === "deferred_to_debrief" &&
+      (duplicate.deferred_reason === "moved_on" || duplicate.deferred_reason === "release_timeout") &&
+      duplicate.exchange_ids.length === 0;
+    const topic: Topic = {
       ...duplicate,
       alias_event_ids: [...duplicate.alias_event_ids, event.event_id],
       last_event_at_perf_ms: at.perf_ms,
+      ...(requeue ? { state: "queued" as const, deferred_reason: null, released_at_utc: null, released_at_perf_ms: null, nudged_at_perf_ms: null, queued_at_utc: at.at_utc, queued_at_perf_ms: at.perf_ms } : {}),
     };
     return { topics: topics.map(t => (t.topic_id === topic.topic_id ? topic : t)), topic, merged: true };
   }
@@ -129,10 +139,7 @@ export function openTopic(topics: Topic[]): Topic | undefined {
   });
 }
 
-export function budgetState(timing: TimingMark[], now: number, config: InterviewConfig) {
-  const used = timing.filter(m => m.mark === "question_tool_called" && now - m.at_perf_ms < config.budget_window_ms).length;
-  return { used, max: config.budget_max_questions, exhausted: used >= config.budget_max_questions };
-}
+export { budgetState };
 
 export type ReleaseSignals = {
   agent_speaking: boolean;
@@ -157,26 +164,38 @@ function pauseReasons(signals: ReleaseSignals, config: InterviewConfig): BlockRe
   return reasons;
 }
 
-/** One step of the release controller; the caller applies the decision and calls again later. */
+/**
+ * One step of the release controller; the caller applies the decision and calls again later.
+ * Listen-only mode and a used-up budget defer topics to the debrief instead of releasing them,
+ * so resuming questions never produces a burst of catch-up questions.
+ */
 export function planRelease(
-  view: { topics: Topic[]; timing: TimingMark[] },
+  view: { topics: Topic[]; timing: TimingMark[]; exchanges: ExpertExchange[]; interaction_mode: InteractionMode },
   signals: ReleaseSignals,
   now: number,
   config: InterviewConfig
 ): ReleaseDecision {
   const { topics, timing } = view;
+  const listenOnly = view.interaction_mode === "listen_only";
+  const exhausted = budgetState(view.exchanges, config).exhausted;
 
   const released = topics.find(t => t.state === "released");
   if (released) {
     const at = released.released_at_perf_ms ?? released.queued_at_perf_ms;
     if (newerTopicSince(topics, released, at)) return { kind: "defer", topic_ids: [released.topic_id], reason: "moved_on" };
+    if (listenOnly) return { kind: "defer", topic_ids: [released.topic_id], reason: "listen_only" };
     if (now - at >= config.release_timeout_ms) {
       return { kind: "defer", topic_ids: [released.topic_id], reason: "release_timeout" };
     }
     const agentActed = timing.some(
       m => (m.mark === "agent_speech_started" || m.mark === "question_tool_called") && m.at_perf_ms >= at
     );
+    // D9: silence is never a reason to ask on its own. Nudge only when the expert pointed and has
+    // said nothing since, so the gesture itself is the invitation; at most once, within budget.
+    const expertSpokeSincePointing = timing.some(m => m.mark === "user_speech_started" && m.at_perf_ms >= released.last_event_at_perf_ms);
     if (
+      !exhausted &&
+      !expertSpokeSincePointing &&
       config.nudge_after_ms > 0 &&
       released.nudged_at_perf_ms === null &&
       now - at >= config.nudge_after_ms &&
@@ -194,7 +213,8 @@ export function planRelease(
     .sort((a, b) => a.queued_at_perf_ms - b.queued_at_perf_ms)[0];
   if (!candidate) return { kind: "wait", reasons: ["nothing_queued"] };
 
-  if (budgetState(timing, now, config).exhausted) return { kind: "defer", topic_ids: [candidate.topic_id], reason: "budget" };
+  if (listenOnly) return { kind: "defer", topic_ids: [candidate.topic_id], reason: "listen_only" };
+  if (exhausted) return { kind: "defer", topic_ids: [candidate.topic_id], reason: "budget" };
 
   const reasons = pauseReasons(signals, config);
   if (reasons.length) return { kind: "wait", reasons };

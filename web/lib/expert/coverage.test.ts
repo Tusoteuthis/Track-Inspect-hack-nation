@@ -56,6 +56,7 @@ function exchange(id: string, event: string | null, kind: ExpertExchange["kind"]
     audio_offset_secs: null,
     record_state: "on_record",
     source: "fixture",
+    outcome: null,
   };
 }
 
@@ -177,9 +178,20 @@ describe("selectGaps", () => {
 });
 
 describe("debriefAgenda", () => {
-  it("freezes at most DEBRIEF_MAX_GAPS open items", () => {
+  it("opens at most DEBRIEF_MAX_GAPS (3) items and keeps the rest as dropped, never asked (D6)", () => {
     const agenda = debriefAgenda(snap({ topics: [topic("top-001", "evt-001")] }));
-    expect(agenda).toHaveLength(DEBRIEF_MAX_GAPS);
-    expect(agenda.every(i => i.state === "open" && i.exchange_ids.length === 0)).toBe(true);
+    expect(DEBRIEF_MAX_GAPS).toBe(3);
+    expect(agenda.filter(i => i.state === "open")).toHaveLength(DEBRIEF_MAX_GAPS);
+    expect(agenda.slice(DEBRIEF_MAX_GAPS).every(i => i.state === "dropped")).toBe(true);
+    expect(agenda.every(i => i.exchange_ids.length === 0)).toBe(true);
+  });
+
+  it("puts a guardrail gap first when no guardrail was asked live (D6)", () => {
+    const s = snap({ topics: [topic("top-001", "evt-001")] });
+    const plain = debriefAgenda(s, 3, false);
+    const first = debriefAgenda(s, 3, true);
+    expect(first[0].dimension).toBe("guardrails");
+    expect(first.filter(i => i.state === "open")).toHaveLength(3);
+    expect(new Set(first.map(i => i.gap_id))).toEqual(new Set(plain.map(i => i.gap_id)));
   });
 });

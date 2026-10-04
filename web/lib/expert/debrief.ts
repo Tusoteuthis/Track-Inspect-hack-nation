@@ -17,7 +17,7 @@ import {
   validateRecordCoverageParams,
 } from "./contracts";
 import { formatDebriefUpdate, formatStruckRevisionUpdate, formatTeachBackUpdate } from "./context-update";
-import { DEBRIEF_MAX_GAPS, applyCoverage, openQuestionsFromTopics } from "./coverage";
+import { agendaFromGaps, applyCoverage, openQuestionsFromTopics } from "./coverage";
 import { activeConfirmations, addRevision, isSuperseded, stepsToTeach } from "./draft";
 import { SAY_IT, type SessionState } from "./session";
 import { type Stamp, closeActive, mark, updateExchange } from "./session-util";
@@ -83,11 +83,14 @@ export function startDebrief(
     t.state === "queued" || t.state === "released" ? { ...t, state: "deferred_to_debrief" as const, deferred_reason: "task_complete" as const } : t
   );
   const open_questions = openQuestionsFromTopics(topics, closed.open_questions);
-  const agenda: DebriefItem[] = synthesis
-    .getGaps({ ...closed, topics, open_questions })
-    .slice(0, DEBRIEF_MAX_GAPS)
-    .map(g => ({ ...g, state: "open", exchange_ids: [] }));
-  const next = withPhase({ ...closed, topics, open_questions, debrief_agenda: agenda }, "debrief", trigger, at);
+  const guardrailAskedLive = closed.exchanges.some(x => x.phase === "live" && x.kind === "guardrail" && x.answer_lines.length > 0);
+  const agenda: DebriefItem[] = agendaFromGaps(
+    synthesis.getGaps({ ...closed, topics, open_questions }),
+    closed.interview_config.debrief_max_gaps,
+    !guardrailAskedLive
+  );
+  // Listen-only ends with the live part: the debrief is the expert's agreed time for questions.
+  const next = withPhase({ ...closed, topics, open_questions, debrief_agenda: agenda, interaction_mode: "questions" }, "debrief", trigger, at);
   return { ...next, last_tool_result: `ok phase=debrief. ${formatDebriefUpdate(agenda)}` };
 }
 
@@ -96,12 +99,13 @@ export function startDebrief(
  * session.ts). Debrief questions need an open agenda gap; their event comes from the gap.
  */
 export function beginPhaseQuestion(state: SessionState, params: BeginQuestionParams, at: Stamp): SessionState | null {
-  if (params.phase !== null && params.phase !== state.phase) {
+  if (params.phase !== null && params.phase !== state.phase && !(params.phase === "orient" && state.phase === "live")) {
     return fail(state, `the current phase is ${state.phase}, not ${params.phase}`);
   }
   switch (state.phase) {
     case "live":
       if (params.gap_id !== null) return fail(state, "gap_id is only used in the debrief");
+      // orientation questions are asked while the session is live (before any pointing)
       if (params.kind === "teach_back" || params.kind === "correction") return fail(state, `kind ${params.kind} is not a live question`);
       return null;
     case "debrief":
@@ -122,6 +126,9 @@ function beginDebriefQuestion(state: SessionState, params: BeginQuestionParams, 
   if (!item) return fail(state, `gap_id ${params.gap_id} is not on the agenda; open gaps: ${open.join(", ") || "none"}`);
   if (item.state === "resolved" || item.state === "unknown") {
     return fail(state, `gap ${item.gap_id} is already answered; do not ask it again. Open gaps: ${open.join(", ") || "none, call propose_draft"}`);
+  }
+  if (item.state === "dropped") {
+    return fail(state, `gap ${item.gap_id} was dropped (debrief limit or skipped by the expert); do not ask it. Open gaps: ${open.join(", ") || "none, call propose_draft"}`);
   }
   const topic = state.topics.find(t => t.topic_id === item.topic_id);
   const event = state.events.find(e => e.event_id === item.event_id);
@@ -206,6 +213,7 @@ function newExchange(
     answer_started_at_utc: null,
     answer_ended_at_utc: null,
     audio_offset_secs: null,
+    outcome: null,
     ...fields,
   };
 }
@@ -215,7 +223,7 @@ const AGENDA_STATE: Record<"partial" | "covered" | "unknown_escalate", DebriefIt
   covered: "resolved",
   unknown_escalate: "unknown",
 };
-const STATE_RANK: Record<DebriefItemState, number> = { open: 0, asked: 1, partial: 2, resolved: 3, unknown: 3 };
+const STATE_RANK: Record<DebriefItemState, number> = { open: 0, asked: 1, partial: 2, resolved: 3, unknown: 3, dropped: 3 };
 
 /** `record_coverage`: called after the expert answered; upgrades coverage and the agenda item. */
 export function recordCoverage(state: SessionState, params: unknown): SessionState {
@@ -290,8 +298,10 @@ export function proposeDraft(
   let change_reason: string | null = null;
 
   if (state.phase === "debrief") {
-    const asked = state.exchanges.filter(x => x.phase === "debrief" && x.answer_lines.length > 0).length;
-    const needed = Math.min(MIN_DEBRIEF_QUESTIONS, state.debrief_agenda.length);
+    // a gap the expert skipped counts as handled: their "skip" is an answer about priorities
+    const asked = state.exchanges.filter(x => x.phase === "debrief" && (x.answer_lines.length > 0 || x.outcome === "declined")).length;
+    const askable = state.debrief_agenda.filter(i => i.state !== "dropped" || i.exchange_ids.length > 0).length;
+    const needed = Math.min(MIN_DEBRIEF_QUESTIONS, askable);
     if (trigger === "agent_tool" && asked < needed) {
       return fail(state, `ask at least ${needed} debrief questions first (${asked} answered); open gaps: ${openGapIds(state.debrief_agenda).join(", ")}`);
     }
@@ -380,6 +390,20 @@ export function confirmRevision(state: SessionState, params: unknown, at: Stamp)
   };
   let next: SessionState = { ...state, confirmations: [...state.confirmations, confirmation] };
   const head = `ok confirmation_id=${confirmation.confirmation_id} status=${status} revision=${rev.revision_id}.`;
+  // D7: one correction pass. After it, a further correction or "can't say" ends the teach-back;
+  // the latest revision stays an unconfirmed draft and the session is incomplete.
+  const correctionPasses = state.confirmations.filter(
+    c => c.status === "corrected" && state.revisions.some(r => r.parent_revision_id === c.revision_id)
+  ).length;
+  if (status !== "confirmed" && correctionPasses >= state.interview_config.teach_back_max_corrections) {
+    next = withPhase(closeActive(next), "incomplete", "confirmation", at);
+    return {
+      ...next,
+      last_tool_result:
+        `${head} The correction pass is used up, so the teach-back ends here: do not propose another draft and ask nothing more. ` +
+        "Thank the expert in one short sentence and say the draft is saved for their review, with the open points marked as not confirmed.",
+    };
+  }
   if (status === "confirmed") {
     next = withPhase(closeActive(next), "confirmed", "confirmation", at);
     return { ...next, last_tool_result: `${head} Thank the expert in one short sentence; the session is complete.` };

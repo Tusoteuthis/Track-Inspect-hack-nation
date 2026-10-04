@@ -16,7 +16,7 @@ import { RESUME_CONTEXT_ID, resumeSummary } from "@/lib/expert/resume";
 import {
   PHASE_CONTEXT_ID,
   RECORD_CONTEXT_ID,
-  budgetStateLine,
+  stateLine,
   controlNote,
   controlRecordState,
   recordStateLine,
@@ -39,6 +39,7 @@ import {
   toSnapshot,
 } from "@/lib/expert/session";
 import { type SpeechObservation, initialSpeech, observeSpeech, quietForMs, settleSpeech } from "@/lib/expert/speech";
+import type { ExpertControl } from "@/lib/expert/controls";
 import { type ReleaseDecision, budgetState, planRelease } from "@/lib/expert/topics";
 import type { TranscriptLine } from "@/lib/voice/transcript";
 
@@ -98,7 +99,8 @@ export function useExpertSession() {
   const stateRef = useRef<SessionState | null>(null);
   const configRef = useRef<InterviewConfig>(DEFAULT_INTERVIEW_CONFIG);
   const speechRef = useRef(initialSpeech());
-  const budgetUsedUp = useRef(false);
+  /** Last `[STATE]` line sent (budget + interaction mode). */
+  const stateSent = useRef<string | null>(null);
   /** Last phase block sent as a `ws3-phase` contextual update. */
   const phaseSent = useRef<string | null>(null);
   const scenarioTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -178,7 +180,7 @@ export function useExpertSession() {
     const next = initialSession(newSessionId(now), now.toISOString(), configRef.current);
     stateRef.current = next;
     speechRef.current = initialSpeech();
-    budgetUsedUp.current = false;
+    stateSent.current = null;
     phaseSent.current = null;
     recordSent.current = "on_record";
     setState(next);
@@ -333,6 +335,18 @@ export function useExpertSession() {
         dispatch({ type: "strike_requested", trigger: "agent_tool", ...stamp() });
         return stateRef.current?.last_tool_result ?? "error no active session";
       },
+      set_interaction_mode: params => {
+        const mode = (params as { mode?: unknown } | null)?.mode;
+        if (mode !== "listen_only" && mode !== "questions") return 'error mode must be "listen_only" or "questions"';
+        dispatch({ type: "control_requested", control: mode, trigger: "agent_tool", ...stamp() });
+        return stateRef.current?.last_tool_result ?? "error no active session";
+      },
+      close_topic: params => {
+        const reason = (params as { reason?: unknown } | null)?.reason;
+        if (reason !== "skip" && reason !== "next") return 'error reason must be "skip" or "next"';
+        dispatch({ type: "control_requested", control: reason, trigger: "agent_tool", ...stamp() });
+        return stateRef.current?.last_tool_result ?? "error no active session";
+      },
     }),
     [dispatch]
   );
@@ -398,6 +412,15 @@ export function useExpertSession() {
       return result;
     },
     [dispatch, syncPhase]
+  );
+
+  /** Console mirror of the spoken controls ("just listen", "questions again", "skip that", "next"). */
+  const applyControl = useCallback(
+    (control: ExpertControl) => {
+      dispatch({ type: "control_requested", control, trigger: "console", ...stamp() });
+      return stateRef.current?.last_tool_result ?? "";
+    },
+    [dispatch]
   );
 
   /** Arms a best-effort resume: the next Start continues this session (same id, same phase). */
@@ -488,15 +511,19 @@ export function useExpertSession() {
         dispatch({ type: "topics_deferred", topic_ids: decision.topic_ids, reason: decision.reason, ...stamp() });
       }
 
-      const budget = budgetState(stateRef.current!.timing, now, cfg);
-      if (budget.exhausted !== budgetUsedUp.current) {
-        budgetUsedUp.current = budget.exhausted;
-        io.sendContextualUpdate(budgetStateLine(budget.exhausted), { contextId: STATE_CONTEXT_ID });
+      const budget = budgetState(stateRef.current!.exchanges, cfg);
+      const line = stateLine(budget.exhausted, stateRef.current!.interaction_mode);
+      if (line !== stateSent.current) {
+        stateSent.current = line;
+        io.sendContextualUpdate(line, { contextId: STATE_CONTEXT_ID });
       }
 
       setGate({
         decision: decision.kind,
-        reasons: decision.kind === "wait" ? decision.reasons : decision.kind === "defer" ? [decision.reason] : [],
+        reasons: [
+          ...(s.interaction_mode === "listen_only" ? ["listen only"] : []),
+          ...(decision.kind === "wait" ? decision.reasons : decision.kind === "defer" ? [decision.reason] : []),
+        ],
         expert_speaking: speech.speaking,
         quiet_ms: Number.isFinite(signals.quiet_ms) ? Math.round(signals.quiet_ms / 100) * 100 : -1,
         budget: { used: budget.used, max: budget.max },
@@ -551,6 +578,7 @@ export function useExpertSession() {
     startTeachBack,
     setRecordState,
     strikeLast,
+    applyControl,
     armResume,
     resumeArmed,
     autoDelete,

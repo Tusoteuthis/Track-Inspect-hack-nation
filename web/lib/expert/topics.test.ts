@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PointingEvent, Region, TimingMark, Topic } from "./contracts";
+import type { ExpertExchange, InteractionMode, PointingEvent, Region, TimingMark, Topic } from "./contracts";
 import { DEFAULT_INTERVIEW_CONFIG as C, withConfig } from "./interview-config";
 import {
   budgetState,
@@ -84,12 +84,25 @@ describe("dedup (ingestEvent)", () => {
     expect(topics[0].last_event_at_perf_ms).toBe(8000);
   });
 
-  it("window edge: exactly dedup_window_ms merges, one ms later does not", () => {
-    expect(ingestAll([[ev("a"), 0], [ev("b"), C.dedup_window_ms]]).topics).toHaveLength(1);
-    expect(ingestAll([[ev("a"), 0], [ev("b"), C.dedup_window_ms + 1]]).topics).toHaveLength(2);
+  it("has no time window: pointing again much later still merges (D3, the allowance never resets)", () => {
+    expect(ingestAll([[ev("a"), 0], [ev("b"), 10 * 60_000]]).topics).toHaveLength(1);
   });
 
-  it("the window is measured from the topic's latest event", () => {
+  it("never merges across traces, and an unknown trace never matches", () => {
+    expect(ingestAll([[ev("a"), 0], [ev("b", { trace_id: "trace-B" }), 1000]]).topics).toHaveLength(2);
+    expect(ingestAll([[ev("a", { trace_id: null }), 0], [ev("b", { trace_id: null }), 1000]]).topics).toHaveLength(2);
+  });
+
+  it("re-queues a topic the expert had moved on from without discussing it", () => {
+    const first = ingestAll([[ev("a"), 0]]);
+    const deferred = [{ ...first.topics[0], state: "deferred_to_debrief" as const, deferred_reason: "moved_on" as const }];
+    const r = ingestEvent(deferred, [...first.events, ev("b")], ev("b"), at(5000), C, SID);
+    expect(r.topics[0]).toMatchObject({ state: "queued", deferred_reason: null, queued_at_perf_ms: 5000 });
+    const budget = [{ ...first.topics[0], state: "deferred_to_debrief" as const, deferred_reason: "budget" as const }];
+    expect(ingestEvent(budget, [...first.events, ev("b")], ev("b"), at(5000), C, SID).topics[0].state).toBe("deferred_to_debrief");
+  });
+
+  it("the latest event of a topic is tracked across repeats", () => {
     const { topics } = ingestAll([
       [ev("a"), 0],
       [ev("b"), 15_000],
@@ -211,8 +224,17 @@ const mark = (name: TimingMark["mark"], perf: number): TimingMark => ({
   at_utc: at(perf).at_utc,
   at_perf_ms: perf,
 });
-const plan = (topics: Topic[], signals = quiet, now = 5000, timing: TimingMark[] = [], config = C) =>
-  planRelease({ topics, timing }, signals, now, config);
+const liveExchanges = (n: number): ExpertExchange[] =>
+  Array.from({ length: n }, (_, i) => ({ exchange_id: `ex-${i + 1}`, phase: "live" }) as ExpertExchange);
+const plan = (
+  topics: Topic[],
+  signals = quiet,
+  now = 5000,
+  timing: TimingMark[] = [],
+  config = C,
+  exchanges: ExpertExchange[] = [],
+  interaction_mode: InteractionMode = "questions"
+) => planRelease({ topics, timing, exchanges, interaction_mode }, signals, now, config);
 
 describe("planRelease: gating", () => {
   it("releases the oldest queued topic when every condition holds", () => {
@@ -311,30 +333,48 @@ describe("planRelease: released topics the agent did not ask about", () => {
     expect(plan([released], { ...quiet, agent_speaking: true }, now).kind).toBe("wait");
     expect(plan([released], quiet, now, [], withConfig({ nudge_after_ms: 0 })).kind).toBe("wait");
   });
+
+  it("D9: never nudges when the expert has spoken since pointing (silence is no reason to ask)", () => {
+    const now = 1000 + C.nudge_after_ms;
+    expect(plan([released], quiet, now, [mark("user_speech_started", 1200)]).kind).toBe("wait");
+    // speech before the gesture does not count
+    expect(plan([released], quiet, now, [mark("user_speech_started", released.last_event_at_perf_ms - 1)]).kind).toBe("nudge");
+  });
+
+  it("D9: never nudges once the live budget is used up", () => {
+    const now = 1000 + C.nudge_after_ms;
+    expect(plan([released], quiet, now, [], C, liveExchanges(C.budget_max_questions)).kind).toBe("wait");
+  });
 });
 
-describe("budget", () => {
-  const asked = (n: number, start = 0) => Array.from({ length: n }, (_, i) => mark("question_tool_called", start + i * 1000));
-
-  it("counts questions in the rolling window", () => {
-    expect(budgetState(asked(3), 10_000, C)).toEqual({ used: 3, max: C.budget_max_questions, exhausted: false });
-    expect(budgetState(asked(C.budget_max_questions), 10_000, C).exhausted).toBe(true);
-    // all asked at 0..4 s; after the window they no longer count
-    expect(budgetState(asked(C.budget_max_questions), C.budget_window_ms + 5000, C).used).toBe(0);
+describe("budget (fixed per session, D1)", () => {
+  it("counts live questions only, for the whole session", () => {
+    const orient = { exchange_id: "ex-o", phase: "orient" } as ExpertExchange;
+    const debrief = { exchange_id: "ex-d", phase: "debrief" } as ExpertExchange;
+    expect(budgetState([...liveExchanges(3), orient, debrief], C)).toEqual({ used: 3, max: C.budget_max_questions, exhausted: false });
+    expect(budgetState(liveExchanges(C.budget_max_questions), C).exhausted).toBe(true);
   });
 
   it("defers the next topic to the debrief when the budget is used up, never drops it", () => {
-    const d = plan([topic({})], quiet, 10_000, asked(C.budget_max_questions));
+    const d = plan([topic({})], quiet, 10_000, [], C, liveExchanges(C.budget_max_questions));
     expect(d).toEqual({ kind: "defer", topic_ids: ["top-001"], reason: "budget" });
   });
 
   it("budget overflow is checked before the pause gate (expert still talking)", () => {
-    const d = plan([topic({})], { ...quiet, user_speaking: true, quiet_ms: 0 }, 10_000, asked(C.budget_max_questions));
+    const d = plan([topic({})], { ...quiet, user_speaking: true, quiet_ms: 0 }, 10_000, [], C, liveExchanges(C.budget_max_questions));
     expect(d.kind).toBe("defer");
   });
 
-  it("releases again once the window frees up", () => {
-    const d = plan([topic({ queued_at_perf_ms: C.budget_window_ms })], quiet, C.budget_window_ms + 5000, asked(C.budget_max_questions));
-    expect(d.kind).toBe("release");
+  it("never frees up again with time (no rolling window)", () => {
+    const d = plan([topic({ queued_at_perf_ms: 3_600_000 })], quiet, 3_605_000, [], C, liveExchanges(C.budget_max_questions));
+    expect(d.kind).toBe("defer");
+  });
+});
+
+describe("listen-only mode", () => {
+  it("defers queued and released topics instead of releasing them (no catch-up burst later)", () => {
+    expect(plan([topic({})], quiet, 5000, [], C, [], "listen_only")).toEqual({ kind: "defer", topic_ids: ["top-001"], reason: "listen_only" });
+    const released = topic({ state: "released", released_at_perf_ms: 1000 });
+    expect(plan([released], quiet, 1500, [], C, [], "listen_only")).toEqual({ kind: "defer", topic_ids: ["top-001"], reason: "listen_only" });
   });
 });

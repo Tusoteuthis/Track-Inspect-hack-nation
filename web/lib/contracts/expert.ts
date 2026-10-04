@@ -104,7 +104,7 @@ export const ExpertExchangeSchema = z.object({
   related_event_ids: ids.default([]),
   gap_id: z.string().min(1).nullable().default(null),
   revision_id: nullableId.default(null),
-  phase: z.enum(["live", "debrief", "teach_back"]),
+  phase: z.enum(["orient", "live", "debrief", "teach_back"]),
   kind: z.enum([
     "explain",
     "reasoning",
@@ -127,6 +127,8 @@ export const ExpertExchangeSchema = z.object({
   audio_offset_secs: z.number().nullable(),
   record_state: RecordStateSchema,
   source: Ws3SourceSchema,
+  /** WS3 S5 (declined by the expert / dropped with its topic). Older producers omit it; stored as null. */
+  outcome: z.enum(["declined", "dropped"]).nullable().default(null),
 });
 
 /** WS6 ingestion shape: WS3 ExpertExchange + optional `rev` (int ≥ 1) for mutable storage. */
@@ -195,6 +197,7 @@ export const TimingMarkSchema = z.object({
     "user_speech_started",
     "user_speech_ended",
     "topic_nudged",
+    "question_declined_by_app",
   ]),
   at_utc: UtcSchema,
   at_perf_ms: z.number(),
