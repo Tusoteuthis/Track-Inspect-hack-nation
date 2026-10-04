@@ -30,6 +30,10 @@ export type VoiceSessionProps = {
   onFinalLine?: (line: TranscriptLine) => void;
   /** Fires after connect with the ElevenLabs conversation id. */
   onConnected?: (conversationId: string) => void;
+  /** Fires when the agent starts ("speaking") or stops ("listening") speaking. */
+  onAgentModeChange?: (mode: "speaking" | "listening") => void;
+  /** Fires when the conversation ends, from either side. */
+  onDisconnected?: () => void;
   /**
    * Rendered inside the conversation provider, so children can call
    * `useConversationControls()` — e.g. `sendContextualUpdate` to tell the agent
@@ -48,7 +52,13 @@ const STATE_LABEL: Record<UiState, string> = {
   error: "Error",
 };
 
-export function VoiceSession({ children, onFinalLine, ...props }: VoiceSessionProps) {
+export function VoiceSession({
+  children,
+  onFinalLine,
+  onAgentModeChange,
+  onDisconnected,
+  ...props
+}: VoiceSessionProps) {
   const [lines, setLinesState] = useState<TranscriptLine[]>([]);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -58,6 +68,11 @@ export function VoiceSession({ children, onFinalLine, ...props }: VoiceSessionPr
   const lineCounter = useRef(0);
   const finalLineCb = useRef(onFinalLine);
   finalLineCb.current = onFinalLine;
+  // Provider callbacks are bound once per session, so read the latest props via refs.
+  const modeCb = useRef(onAgentModeChange);
+  modeCb.current = onAgentModeChange;
+  const disconnectedCb = useRef(onDisconnected);
+  disconnectedCb.current = onDisconnected;
 
   const nextId = useCallback(() => `line-${++lineCounter.current}`, []);
   const setLines = useCallback((next: TranscriptLine[]) => {
@@ -94,7 +109,11 @@ export function VoiceSession({ children, onFinalLine, ...props }: VoiceSessionPr
   return (
     <ConversationProvider
       onConnect={() => setSessionError(null)}
-      onDisconnect={() => setStarting(false)}
+      onDisconnect={() => {
+        setStarting(false);
+        disconnectedCb.current?.();
+      }}
+      onModeChange={({ mode }: { mode: "speaking" | "listening" }) => modeCb.current?.(mode)}
       onError={(error: unknown) =>
         setSessionError(error instanceof Error ? error.message : String(error))
       }
@@ -115,7 +134,10 @@ export function VoiceSession({ children, onFinalLine, ...props }: VoiceSessionPr
   );
 }
 
-type VoicePanelProps = Omit<VoiceSessionProps, "children" | "onFinalLine"> & {
+type VoicePanelProps = Omit<
+  VoiceSessionProps,
+  "children" | "onFinalLine" | "onAgentModeChange" | "onDisconnected"
+> & {
   lines: TranscriptLine[];
   resetTranscript: () => void;
   sessionError: string | null;

@@ -1,0 +1,701 @@
+{
+  "llmCount": 107,
+  "llms": [
+    "gpt-4o-mini [parallel-tools]",
+    "gpt-4o [parallel-tools]",
+    "gpt-4",
+    "gpt-4-turbo [parallel-tools] [deprecation]",
+    "gpt-4.1 [parallel-tools]",
+    "gpt-4.1-mini [parallel-tools]",
+    "gpt-4.1-nano [parallel-tools]",
+    "gpt-5 [parallel-tools]",
+    "gpt-5.1 [parallel-tools]",
+    "gpt-5.2 [parallel-tools]",
+    "gpt-5.4 [parallel-tools]",
+    "gpt-5.4-mini [parallel-tools]",
+    "gpt-5.4-nano [parallel-tools]",
+    "gpt-5.5 [parallel-tools]",
+    "gpt-5.6-sol [parallel-tools]",
+    "gpt-5.6-terra [parallel-tools]",
+    "gpt-5.6-luna [parallel-tools]",
+    "gpt-6-astra [parallel-tools]",
+    "gpt-6-sol [parallel-tools]",
+    "gpt-6-luna [parallel-tools]",
+    "gpt-6.1-sol [parallel-tools]",
+    "gpt-5-mini [parallel-tools]",
+    "gpt-5-nano [parallel-tools]",
+    "gpt-3.5-turbo [deprecation]",
+    "gemini-1.5-pro [deprecation]",
+    "gemini-1.5-flash [deprecation]",
+    "gemini-2.0-flash [deprecation]",
+    "gemini-2.0-flash-lite [deprecation]",
+    "gemini-2.5-flash-lite [parallel-tools] [deprecation]",
+    "gemini-2.5-flash [parallel-tools] [deprecation]",
+    "gemini-3-pro-preview [deprecation]",
+    "gemini-3-flash-preview [parallel-tools]",
+    "gemini-3.1-pro-preview [parallel-tools]",
+    "gemini-3.1-flash-lite-preview [deprecation]",
+    "gemini-3.1-flash-lite [parallel-tools]",
+    "gemini-3.5-flash [parallel-tools]",
+    "gemini-3.5-flash-lite [parallel-tools]",
+    "gemini-3.6-flash [parallel-tools]",
+    "gemini-3.7-flash [parallel-tools]",
+    "gemini-3.8-flash [parallel-tools]",
+    "claude-sonnet-4-5 [parallel-tools]",
+    "claude-opus-4-7 [parallel-tools]",
+    "claude-opus-4-8 [parallel-tools]",
+    "claude-opus-5 [parallel-tools]",
+    "claude-opus-5-5 [parallel-tools]",
+    "claude-sonnet-4-6 [parallel-tools]",
+    "claude-sonnet-5 [parallel-tools]",
+    "claude-sonnet-5-5 [parallel-tools]",
+    "claude-sonnet-4 [parallel-tools] [deprecation]",
+    "claude-haiku-4-5 [parallel-tools]",
+    "claude-3-7-sonnet [deprecation]",
+    "claude-3-5-sonnet [deprecation]",
+    "claude-3-5-sonnet-v1 [deprecation]",
+    "claude-3-haiku [deprecation]",
+    "grok-beta",
+    "custom-llm",
+    "qwen3-4b",
+    "qwen3-30b-a3b [deprecation]",
+    "qwen36-35b-a3b [parallel-tools]",
+    "qwen35-397b-a17b [parallel-tools]",
+    "gpt-oss-20b [deprecation]",
+    "gpt-oss-120b [deprecation]",
+    "glm-45-air-fp8 [deprecation]",
+    "glm-52 [parallel-tools]",
+    "deepseek-v41-flash [parallel-tools]",
+    "watt-tool-8b [deprecation]",
+    "watt-tool-70b [deprecation]"
+  ],
+  "agentCreated": true,
+  "readBack": {
+    "defaultLlm": "qwen35-397b-a17b",
+    "temperature": 0,
+    "toolIds": [
+      "tool_4601m41y9fmkfe28mf5ttzp0c4x2"
+    ],
+    "inlineToolsReturned": [
+      {
+        "type": "client",
+        "name": "mark_question_target",
+        "expectsResponse": true,
+        "executionMode": "immediate",
+        "responseTimeoutSecs": 10
+      }
+    ],
+    "builtInTools": [],
+    "turn": {
+      "turnTimeout": 30,
+      "silenceEndCallTimeout": -1,
+      "mode": "turn",
+      "turnEagerness": "normal",
+      "spellingPatience": "auto",
+      "speculativeTurn": true,
+      "retranscribeOnTurnTimeout": false,
+      "turnModel": "turn_v3",
+      "interruptionIgnoreTerms": [],
+      "interruptionIgnoreTermLanguages": [],
+      "mergeWithDefaultIgnoreTerms": false,
+      "transcribeOnDisabledInterruptions": false,
+      "softTimeoutConfig": {
+        "timeoutSeconds": -1,
+        "message": "Hhmmmm...yeah.",
+        "additionalSoftTimeoutMessages": [],
+        "useLlmGeneratedMessage": false,
+        "randomizeFillers": false,
+        "maxSoftTimeoutsPerGeneration": 1,
+        "disableUntilFirstUserMessage": false
+      }
+    },
+    "clientEventsDefault": [
+      "audio",
+      "interruption",
+      "agent_response",
+      "user_transcript",
+      "agent_response_correction",
+      "agent_tool_response"
+    ],
+    "privacyDefault": {
+      "recordVoice": true,
+      "retentionDays": -1,
+      "deleteTranscriptAndPii": false,
+      "deleteAudio": false,
+      "applyToExistingConversations": false,
+      "zeroRetentionMode": false,
+      "nested_history_redaction": false,
+      "conversationHistoryRedaction": {
+        "enabled": false,
+        "entities": [],
+        "excluded_data_collection_ids": []
+      },
+      "user_memory": {
+        "enabled": false,
+        "scale": "balanced"
+      }
+    },
+    "overridesDefault": {
+      "conversationConfigOverride": {
+        "asr": {
+          "keywords": false
+        },
+        "turn": {
+          "softTimeoutConfig": {
+            "message": false,
+            "additionalSoftTimeoutMessages": false
+          }
+        },
+        "tts": {
+          "modelId": false,
+          "voiceId": false,
+          "supportedVoices": false,
+          "stability": false,
+          "speed": false,
+          "similarityBoost": false,
+          "pronunciationDictionaryLocators": false
+        },
+        "conversation": {
+          "textOnly": true,
+          "maxDurationSeconds": false
+        },
+        "agent": {
+          "firstMessage": false,
+          "language": false,
+          "maxConversationDurationMessage": false,
+          "prompt": {
+            "prompt": false,
+            "llm": false,
+            "toolIds": false,
+            "nativeMcpServerIds": false,
+            "knowledgeBase": false
+          }
+        }
+      },
+      "customLlmExtraBody": false,
+      "enableConversationInitiationClientDataFromWebhook": false,
+      "enableStartingWorkflowNodeIdFromClient": false,
+      "enableProcedureIdsFromClient": false
+    }
+  },
+  "autoTools": [
+    {
+      "id": "tool_4601m41y9fmkfe28mf5ttzp0c4x2",
+      "name": "mark_question_target",
+      "type": "client"
+    }
+  ],
+  "turnTimeoutTests": {
+    "60": "accepted",
+    "-1": "accepted",
+    "0.5": {
+      "status": 400,
+      "body": {
+        "detail": {
+          "type": "validation_error",
+          "code": "invalid_parameters",
+          "message": "Invalid conversation config: Value error, Turn timeout must be -1 or between 1 and 300 seconds",
+          "status": "input_invalid",
+          "request_id": "ca060cd394e5fcf2eed12ea7319d785a",
+          "param": "turn.turn_timeout"
+        }
+      }
+    }
+  },
+  "turnAfterReset": 30,
+  "simA_noMock": [
+    {
+      "role": "agent",
+      "message": "Ready.",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "user",
+      "message": "[context] POINTING EVENT evt-001: expert pointed at channel SYS1.",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "agent",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "user",
+      "message": "[/context]\nok",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "agent",
+      "message": "Understood.",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "user",
+      "message": "ok",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "agent",
+      "message": "Is there anything specific you'd like to know about channel SYS1?",
+      "toolCalls": [],
+      "toolResults": []
+    }
+  ],
+  "simB_toolMockConfig": [
+    {
+      "role": "agent",
+      "message": "Ready.",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "user",
+      "message": "[context] POINTING EVENT evt-001: expert pointed at channel SYS1.",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "agent",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "user",
+      "message": "[/context]\nok",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "agent",
+      "message": "Understood.",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "user",
+      "message": "ok",
+      "toolCalls": [],
+      "toolResults": []
+    },
+    {
+      "role": "agent",
+      "message": "Is there something specific you'd like to know about channel SYS1?",
+      "toolCalls": [],
+      "toolResults": []
+    }
+  ],
+  "simC_historyWithToolResult": [
+    {
+      "role": "user",
+      "message": "ok",
+      "toolCalls": []
+    },
+    {
+      "role": "agent",
+      "message": "Is there anything specific you'd like to know about what you're seeing?",
+      "toolCalls": []
+    }
+  ],
+  "simD_rawContextualHistory": {
+    "status": 200,
+    "turns": [
+      {
+        "role": "agent",
+        "message": "Ready.",
+        "tool_calls": [],
+        "cui": null
+      },
+      {
+        "role": "user",
+        "message": "POINTING EVENT evt-555 on channel SYS2.",
+        "tool_calls": [],
+        "cui": null
+      },
+      {
+        "role": "agent",
+        "message": "Understood.",
+        "tool_calls": [],
+        "cui": null
+      },
+      {
+        "role": "user",
+        "message": "ok",
+        "tool_calls": [],
+        "cui": null
+      },
+      {
+        "role": "agent",
+        "message": null,
+        "tool_calls": [
+          "mark_question_target {\"event_id\": \"evt-555\"}"
+        ],
+        "cui": null
+      },
+      {
+        "role": "agent",
+        "message": null,
+        "tool_calls": [],
+        "cui": null
+      },
+      {
+        "role": "agent",
+        "message": "What do you see?",
+        "tool_calls": [],
+        "cui": null
+      }
+    ]
+  },
+  "ws0_overrideWithoutPermission": {
+    "closeInfo": {
+      "code": 1008,
+      "reason": "Override for field 'prompt' is not allowed by config."
+    },
+    "events": [
+      "   974ms out {\"type\":\"conversation_initiation_client_data\",\"dynamic_variables\":{\"phase\":\"live\"},\"conversation_config_override\":{\"agent\":{\"prompt\":{\"prompt\":\"Override prompt\"}}}}",
+      "   976ms in {\"conversation_initiation_metadata_event\":{\"conversation_id\":\"conv_8901m41ya0t8f6xbs49pnsnd0ka8\",\"agent_output_audio_format\":\"pcm_16000\",\"user_input_audio_format\":\"pcm_16000\",\"persistent_session_token\":null},\"type\":\"conversation_initiation_metadata\"}"
+    ]
+  },
+  "ws1": {
+    "closeInfo": {
+      "code": 1005,
+      "reason": ""
+    },
+    "events": [
+      "   366ms out {\"type\":\"conversation_initiation_client_data\",\"dynamic_variables\":{\"phase\":\"live\"}}",
+      "   366ms in {\"conversation_initiation_metadata_event\":{\"conversation_id\":\"conv_7801m41ya25zf9x8tpyn71rb36w7\",\"agent_output_audio_format\":\"pcm_16000\",\"user_input_audio_format\":\"pcm_16000\",\"persistent_session_token\":null},\"type\":\"conversation_initiation_metadata\"}",
+      "   523ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":1,\"response_id\":\"4339707b-e818-40a7-958c-53eb07259150\"},\"type\":\"agent_chat_response_part\"}",
+      "   523ms in {\"text_response_part\":{\"text\":\"Ready.\",\"type\":\"delta\",\"event_id\":1,\"response_id\":\"4339707b-e818-40a7-958c-53eb07259150\"},\"type\":\"agent_chat_response_part\"}",
+      "   523ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":1,\"response_id\":\"4339707b-e818-40a7-958c-53eb07259150\"},\"type\":\"agent_chat_response_part\"}",
+      "   523ms in {\"agent_response_event\":{\"agent_response\":\"Ready.\",\"event_id\":1,\"response_id\":\"4339707b-e818-40a7-958c-53eb07259150\",\"in_response_to_ids\":[],\"response_type\":\"text\",\"attachments\":[]},\"type\":\"agent_response\"}",
+      "   523ms out {\"type\":\"contextual_update\",\"text\":\"POINTING EVENT evt-001: expert pointed at channel SYS1, normalized region x=0.20-0.40.\",\"context_id\":\"pointing\"}",
+      " 10524ms out {\"type\":\"user_message\",\"text\":\"Hmm, look at this part here.\"}",
+      " 11060ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":2,\"response_id\":\"9da91b19-bae3-4c8b-9c48-3a0e06bf2337\"},\"type\":\"agent_chat_response_part\"}",
+      " 11061ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":2,\"response_id\":\"9da91b19-bae3-4c8b-9c48-3a0e06bf2337\"},\"type\":\"agent_chat_response_part\"}",
+      " 11061ms in {\"client_tool_call\":{\"tool_name\":\"mark_question_target\",\"tool_call_id\":\"chatcmpl-tool-8a167dfe3679bed0\",\"parameters\":{\"event_id\":\"evt-001\"},\"event_id\":2,\"expects_response\":true},\"type\":\"client_tool_call\"}",
+      " 11061ms out {\"type\":\"client_tool_result\",\"tool_call_id\":\"chatcmpl-tool-8a167dfe3679bed0\",\"result\":\"{\\\"ok\\\":true,\\\"linked_event_id\\\":\\\"evt-001\\\"}\",\"is_error\":false}",
+      " 11218ms in {\"agent_tool_response\":{\"tool_name\":\"mark_question_target\",\"tool_call_id\":\"chatcmpl-tool-8a167dfe3679bed0\",\"tool_type\":\"client\",\"is_error\":false,\"is_blocked\":false,\"event_id\":2,\"is_called\":true,\"status\":\"success\"},\"type\":\"agent_tool_response\"}",
+      " 11401ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":2,\"response_id\":\"55f8028a-a71c-4835-94ce-99a2e1d5a45e\"},\"type\":\"agent_chat_response_part\"}",
+      " 11401ms in {\"text_response_part\":{\"text\":\"What\",\"type\":\"delta\",\"event_id\":2,\"response_id\":\"55f8028a-a71c-4835-94ce-99a2e1d5a45e\"},\"type\":\"agent_chat_response_part\"}",
+      " 11413ms in {\"text_response_part\":{\"text\":\" specifically\",\"type\":\"delta\",\"event_id\":2,\"response_id\":\"55f8028a-a71c-4835-94ce-99a2e1d5a45e\"},\"type\":\"agent_chat_response_part\"}",
+      " 11425ms in {\"text_response_part\":{\"text\":\" about channel SYS\",\"type\":\"delta\",\"event_id\":2,\"response_id\":\"55f8028a-a71c-4835-94ce-99a2e1d5a45e\"},\"type\":\"agent_chat_response_part\"}",
+      " 11438ms in {\"text_response_part\":{\"text\":\"1 caught\",\"type\":\"delta\",\"event_id\":2,\"response_id\":\"55f8028a-a71c-4835-94ce-99a2e1d5a45e\"},\"type\":\"agent_chat_response_part\"}",
+      " 11449ms in {\"text_response_part\":{\"text\":\" your attention?\",\"type\":\"delta\",\"event_id\":2,\"response_id\":\"55f8028a-a71c-4835-94ce-99a2e1d5a45e\"},\"type\":\"agent_chat_response_part\"}",
+      " 11462ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":2,\"response_id\":\"55f8028a-a71c-4835-94ce-99a2e1d5a45e\"},\"type\":\"agent_chat_response_part\"}",
+      " 11464ms in {\"agent_response_event\":{\"agent_response\":\"What specifically about channel SYS1 caught your attention?\",\"event_id\":2,\"response_id\":\"55f8028a-a71c-4835-94ce-99a2e1d5a45e\",\"in_response_to_ids\":[\"ac4bbbd9-8a45-4426-80ef-aedf9f7a6843\"],\"response_type\":\"text\",\"atta",
+      " 15466ms out {\"type\":\"contextual_update\",\"text\":\"POINTING EVENT evt-002: expert pointed at channel SYS2, region x=0.60-0.70.\",\"context_id\":\"pointing\"}",
+      " 23468ms out {\"type\":\"user_message\",\"text\":\"Give me a second, let me think.\"}",
+      " 25322ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":3,\"response_id\":\"e9236d1d-8ff3-4c15-9f2f-a58dfe1fcb48\"},\"type\":\"agent_chat_response_part\"}",
+      " 25323ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":3,\"response_id\":\"e9236d1d-8ff3-4c15-9f2f-a58dfe1fcb48\"},\"type\":\"agent_chat_response_part\"}",
+      " 25323ms in {\"client_tool_call\":{\"tool_name\":\"mark_question_target\",\"tool_call_id\":\"call_OHM7ILMViMEzkJEfWqGFvBrD\",\"parameters\":{\"event_id\":\"evt-002\"},\"event_id\":3,\"expects_response\":true},\"type\":\"client_tool_call\"}",
+      " 25323ms out {\"type\":\"client_tool_result\",\"tool_call_id\":\"call_OHM7ILMViMEzkJEfWqGFvBrD\",\"result\":\"{\\\"ok\\\":true,\\\"linked_event_id\\\":\\\"evt-002\\\"}\",\"is_error\":false}",
+      " 25483ms in {\"agent_tool_response\":{\"tool_name\":\"mark_question_target\",\"tool_call_id\":\"call_OHM7ILMViMEzkJEfWqGFvBrD\",\"tool_type\":\"client\",\"is_error\":false,\"is_blocked\":false,\"event_id\":3,\"is_called\":true,\"status\":\"success\"},\"type\":\"agent_tool_response\"}",
+      " 25679ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\"},\"type\":\"agent_chat_response_part\"}",
+      " 25679ms in {\"text_response_part\":{\"text\":\"What\",\"type\":\"delta\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\"},\"type\":\"agent_chat_response_part\"}",
+      " 25691ms in {\"text_response_part\":{\"text\":\" aspect\",\"type\":\"delta\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\"},\"type\":\"agent_chat_response_part\"}",
+      " 25706ms in {\"text_response_part\":{\"text\":\" of channel SYS\",\"type\":\"delta\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\"},\"type\":\"agent_chat_response_part\"}",
+      " 25712ms in {\"text_response_part\":{\"text\":\"2 are\",\"type\":\"delta\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\"},\"type\":\"agent_chat_response_part\"}",
+      " 25725ms in {\"text_response_part\":{\"text\":\" you considering\",\"type\":\"delta\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\"},\"type\":\"agent_chat_response_part\"}",
+      " 25743ms in {\"text_response_part\":{\"text\":\"?\",\"type\":\"delta\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\"},\"type\":\"agent_chat_response_part\"}",
+      " 25744ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\"},\"type\":\"agent_chat_response_part\"}",
+      " 25744ms in {\"agent_response_event\":{\"agent_response\":\"What aspect of channel SYS2 are you considering?\",\"event_id\":3,\"response_id\":\"6ea4c739-6f49-4f48-ab57-23b358345dd6\",\"in_response_to_ids\":[\"31aaf5cb-2790-47c7-8d8b-f99989c97f2e\"],\"response_type\":\"text\",\"attachments\":[]",
+      " 33470ms out {\"type\":\"user_message\",\"text\":\"OK. And this one here?\"}",
+      " 34380ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":4,\"response_id\":\"3cf491cc-cdb4-4496-a4dc-f42e0fa8f0ea\"},\"type\":\"agent_chat_response_part\"}",
+      " 34381ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":4,\"response_id\":\"3cf491cc-cdb4-4496-a4dc-f42e0fa8f0ea\"},\"type\":\"agent_chat_response_part\"}",
+      " 34381ms in {\"client_tool_call\":{\"tool_name\":\"mark_question_target\",\"tool_call_id\":\"chatcmpl-tool-934ffd777735d061\",\"parameters\":{\"event_id\":\"evt-002\"},\"event_id\":4,\"expects_response\":true},\"type\":\"client_tool_call\"}",
+      " 34381ms out {\"type\":\"client_tool_result\",\"tool_call_id\":\"chatcmpl-tool-934ffd777735d061\",\"result\":\"{\\\"ok\\\":true,\\\"linked_event_id\\\":\\\"evt-002\\\"}\",\"is_error\":false}",
+      " 34543ms in {\"agent_tool_response\":{\"tool_name\":\"mark_question_target\",\"tool_call_id\":\"chatcmpl-tool-934ffd777735d061\",\"tool_type\":\"client\",\"is_error\":false,\"is_blocked\":false,\"event_id\":4,\"is_called\":true,\"status\":\"success\"},\"type\":\"agent_tool_response\"}",
+      " 34785ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\"},\"type\":\"agent_chat_response_part\"}",
+      " 34785ms in {\"text_response_part\":{\"text\":\"What\",\"type\":\"delta\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\"},\"type\":\"agent_chat_response_part\"}",
+      " 34975ms in {\"text_response_part\":{\"text\":\" specifically\",\"type\":\"delta\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\"},\"type\":\"agent_chat_response_part\"}",
+      " 35149ms in {\"text_response_part\":{\"text\":\" about channel SYS\",\"type\":\"delta\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\"},\"type\":\"agent_chat_response_part\"}",
+      " 35167ms in {\"text_response_part\":{\"text\":\"2 would\",\"type\":\"delta\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\"},\"type\":\"agent_chat_response_part\"}",
+      " 35368ms in {\"text_response_part\":{\"text\":\" you like to\",\"type\":\"delta\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\"},\"type\":\"agent_chat_response_part\"}",
+      " 35377ms in {\"text_response_part\":{\"text\":\" discuss?\",\"type\":\"delta\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\"},\"type\":\"agent_chat_response_part\"}",
+      " 35377ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\"},\"type\":\"agent_chat_response_part\"}",
+      " 35377ms in {\"agent_response_event\":{\"agent_response\":\"What specifically about channel SYS2 would you like to discuss?\",\"event_id\":4,\"response_id\":\"a7ef87a0-909e-41fe-b25c-b1cdfc2038b3\",\"in_response_to_ids\":[\"c9b2d184-a410-4f84-876c-7a9fe31d46a8\"],\"response_type\":\"text\",\""
+    ]
+  },
+  "ws2_overrideWithPermission": {
+    "closeInfo": {
+      "code": 1005,
+      "reason": ""
+    },
+    "events": [
+      "   422ms out {\"type\":\"conversation_initiation_client_data\",\"dynamic_variables\":{\"phase\":\"debrief\"},\"conversation_config_override\":{\"agent\":{\"first_message\":\"Debrief starts now.\",\"prompt\":{\"prompt\":\"You are in the DEBRIEF phase (dynamic phase variable: {{phase}}). If asked ",
+      "   423ms in {\"conversation_initiation_metadata_event\":{\"conversation_id\":\"conv_4701m41yb8v4ee69kqfnfcg7y00w\",\"agent_output_audio_format\":\"pcm_16000\",\"user_input_audio_format\":\"pcm_16000\",\"persistent_session_token\":null},\"type\":\"conversation_initiation_metadata\"}",
+      "   587ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":1,\"response_id\":\"980e1431-ce63-4504-b96f-17418e4440c8\"},\"type\":\"agent_chat_response_part\"}",
+      "   587ms in {\"text_response_part\":{\"text\":\"Debrief starts now.\",\"type\":\"delta\",\"event_id\":1,\"response_id\":\"980e1431-ce63-4504-b96f-17418e4440c8\"},\"type\":\"agent_chat_response_part\"}",
+      "   587ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":1,\"response_id\":\"980e1431-ce63-4504-b96f-17418e4440c8\"},\"type\":\"agent_chat_response_part\"}",
+      "   588ms in {\"agent_response_event\":{\"agent_response\":\"Debrief starts now.\",\"event_id\":1,\"response_id\":\"980e1431-ce63-4504-b96f-17418e4440c8\",\"in_response_to_ids\":[],\"response_type\":\"text\",\"attachments\":[]},\"type\":\"agent_response\"}",
+      "   588ms out {\"type\":\"user_message\",\"text\":\"Which phase are you in?\"}",
+      "  1321ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"start\",\"event_id\":2,\"response_id\":\"ea94b819-fd22-458d-b438-e02452bb1090\"},\"type\":\"agent_chat_response_part\"}",
+      "  1321ms in {\"text_response_part\":{\"text\":\"de\",\"type\":\"delta\",\"event_id\":2,\"response_id\":\"ea94b819-fd22-458d-b438-e02452bb1090\"},\"type\":\"agent_chat_response_part\"}",
+      "  1321ms in {\"text_response_part\":{\"text\":\"brief-override\",\"type\":\"delta\",\"event_id\":2,\"response_id\":\"ea94b819-fd22-458d-b438-e02452bb1090\"},\"type\":\"agent_chat_response_part\"}",
+      "  1321ms in {\"text_response_part\":{\"text\":\"\",\"type\":\"stop\",\"event_id\":2,\"response_id\":\"ea94b819-fd22-458d-b438-e02452bb1090\"},\"type\":\"agent_chat_response_part\"}",
+      "  1321ms in {\"agent_response_event\":{\"agent_response\":\"debrief-override\",\"event_id\":2,\"response_id\":\"ea94b819-fd22-458d-b438-e02452bb1090\",\"in_response_to_ids\":[\"0bb78e4e-5a02-42eb-a461-02cb4a55e721\"],\"response_type\":\"text\",\"attachments\":[]},\"type\":\"agent_response\"}"
+    ]
+  },
+  "history1": {
+    "status": "done",
+    "hasAudio": true,
+    "startTimeUnixSecs": 1791066704,
+    "callDurationSecs": 37,
+    "transcript": [
+      {
+        "role": "agent",
+        "time_in_call_secs": 0,
+        "message": "Ready.",
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [],
+        "turn_metrics": [
+          "convai_ttf_response_since_user_message"
+        ]
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 0,
+        "interrupted": false,
+        "cui": {
+          "contextId": "pointing",
+          "isSuperseded": true
+        },
+        "tool_calls": [
+          "system:contextual_update {\"context_id\": \"pointing\"}"
+        ],
+        "tool_results": []
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 0,
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [
+          "contextual_update -> POINTING EVENT evt-001: expert pointed at channel SYS1, normalized region x=0.20-0.40. latency=0"
+        ]
+      },
+      {
+        "role": "user",
+        "time_in_call_secs": 10,
+        "message": "Hmm, look at this part here.",
+        "source_medium": "text",
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": []
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 10,
+        "interrupted": false,
+        "tool_calls": [
+          "client:mark_question_target {\"event_id\": \"evt-001\"}"
+        ],
+        "tool_results": [],
+        "turn_metrics": [
+          "convai_llm_service_ttfb",
+          "convai_llm_tool_request_generation_latency"
+        ]
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 10,
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [
+          "mark_question_target -> {\"ok\":true,\"linked_event_id\":\"evt-001\"} latency=0.16061217617243528"
+        ]
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 10,
+        "message": "What specifically about channel SYS1 caught your attention?",
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [],
+        "turn_metrics": [
+          "convai_llm_service_ttf_sentence",
+          "convai_llm_service_ttfb",
+          "convai_llm_service_tt_last_sentence",
+          "convai_ttf_response_since_user_message"
+        ]
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 10,
+        "interrupted": false,
+        "cui": {
+          "contextId": "pointing",
+          "isSuperseded": false
+        },
+        "tool_calls": [
+          "system:contextual_update {\"context_id\": \"pointing\"}"
+        ],
+        "tool_results": []
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 10,
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [
+          "contextual_update -> POINTING EVENT evt-002: expert pointed at channel SYS2, region x=0.60-0.70. latency=0"
+        ]
+      },
+      {
+        "role": "user",
+        "time_in_call_secs": 23,
+        "message": "Give me a second, let me think.",
+        "source_medium": "text",
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": []
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 24,
+        "interrupted": false,
+        "tool_calls": [
+          "client:mark_question_target {\"event_id\":\"evt-002\"}"
+        ],
+        "tool_results": [],
+        "turn_metrics": [
+          "convai_llm_service_ttfb",
+          "convai_llm_tool_request_generation_latency"
+        ]
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 25,
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [
+          "mark_question_target -> {\"ok\":true,\"linked_event_id\":\"evt-002\"} latency=0.15809402614831924"
+        ]
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 25,
+        "message": "What aspect of channel SYS2 are you considering?",
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [],
+        "turn_metrics": [
+          "convai_llm_service_ttf_sentence",
+          "convai_llm_service_ttfb",
+          "convai_llm_service_tt_last_sentence",
+          "convai_ttf_response_since_user_message"
+        ]
+      },
+      {
+        "role": "user",
+        "time_in_call_secs": 33,
+        "message": "OK. And this one here?",
+        "source_medium": "text",
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": []
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 34,
+        "interrupted": false,
+        "tool_calls": [
+          "client:mark_question_target {\"event_id\": \"evt-002\"}"
+        ],
+        "tool_results": [],
+        "turn_metrics": [
+          "convai_llm_service_ttfb",
+          "convai_llm_tool_request_generation_latency"
+        ]
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 34,
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [
+          "mark_question_target -> {\"ok\":true,\"linked_event_id\":\"evt-002\"} latency=0.1628207159228623"
+        ]
+      },
+      {
+        "role": "agent",
+        "time_in_call_secs": 34,
+        "message": "What specifically about channel SYS2 would you like to discuss?",
+        "interrupted": false,
+        "tool_calls": [],
+        "tool_results": [],
+        "turn_metrics": [
+          "convai_llm_service_ttf_sentence",
+          "convai_llm_service_ttfb",
+          "convai_llm_service_tt_last_sentence",
+          "convai_ttf_response_since_user_message"
+        ]
+      }
+    ]
+  },
+  "audioGet": "returned a stream",
+  "convDeletes": [
+    {
+      "id": "conv_8901m41ya0t8f6xbs49pnsnd0ka8",
+      "deleted": true,
+      "getAfterDeleteFails": true
+    },
+    {
+      "id": "conv_7801m41ya25zf9x8tpyn71rb36w7",
+      "deleted": true,
+      "getAfterDeleteFails": true
+    },
+    {
+      "id": "conv_4701m41yb8v4ee69kqfnfcg7y00w",
+      "deleted": true,
+      "getAfterDeleteFails": true
+    }
+  ],
+  "afterDeleteGet": {
+    "status": 404,
+    "body": {
+      "detail": {
+        "type": "not_found",
+        "code": "conversation_not_found",
+        "message": "Conversation with id conv_4701m41yb8v4ee69kqfnfcg7y00w not found.",
+        "status": "conversation_history_not_found",
+        "request_id": "370eadc17c27ba47f81bbb8b9266aad2"
+      }
+    }
+  },
+  "agentDeleted": true,
+  "agentGetAfterDelete": {
+    "status": 404,
+    "body": {
+      "detail": {
+        "type": "not_found",
+        "code": "document_not_found",
+        "message": "Document with id agent_3801m41y9dceejxazagzk1ypx7n6 not found.",
+        "status": "document_not_found",
+        "request_id": "e31c77b593231ae4f81bbb8b9266ac93"
+      }
+    }
+  },
+  "toolDeletes": [
+    {
+      "id": "tool_4601m41y9fmkfe28mf5ttzp0c4x2",
+      "error": {
+        "status": 409,
+        "body": {
+          "detail": {
+            "type": "conflict",
+            "code": "conflict",
+            "message": "Tool is still in use by: Unknown / Main. Please remove the dependency or use Force Delete.",
+            "status": "conflict",
+            "request_id": "88ae32a00f75d833f81bbb8b9266a880"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -289,7 +289,8 @@ try {
     try {
       const t: any = await client.conversationalAi.tools.get(id);
       if (t.toolConfig?.name !== "mark_question_target") { (log.toolDeletes as unknown[]).push({ id, skipped: "name mismatch" }); continue; }
-      await client.conversationalAi.tools.delete(id); (log.toolDeletes as unknown[]).push({ id, deleted: true });
+      // force: the deleted agent's orphaned "Main" branch still counts as a dependent (409 otherwise)
+      await client.conversationalAi.tools.delete(id, { force: true }); (log.toolDeletes as unknown[]).push({ id, deleted: true });
     } catch (e) { (log.toolDeletes as unknown[]).push({ id, error: errMsg(e) }); }
   }
   writeFileSync(outPath, JSON.stringify(log, null, 2) + "\n");
