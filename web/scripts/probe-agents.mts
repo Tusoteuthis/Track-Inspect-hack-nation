@@ -31,6 +31,9 @@ type Expect = {
   kind?: string | string[]; // kind param, one of these
   forbidPatterns?: string[]; // case-insensitive regexes; checked on the spoken reply and the tool's question param
   maxQuestions?: number; // max "?" in the spoken reply and max calls of toolCalled
+  toolOptional?: boolean; // staying silent (no question, no tool call) also passes
+  forbidKinds?: string[]; // kind params that must not be used
+  requirePatterns?: string[]; // case-insensitive regexes the spoken question must match (when one is asked)
 };
 type LegacyCase = { name: string; user: string[] };
 type HistoryCase = { name: string; history: { role: "user" | "agent"; text: string }[]; expect?: Expect };
@@ -170,7 +173,8 @@ function check(
     }
   });
 
-  if (expect.toolCalled) {
+  const silent = !calls.length && questionCount === 0;
+  if (expect.toolCalled && !(expect.toolOptional && silent)) {
     if (!calls.length) {
       const others = toolCalls.map(t => t.name).join(", ");
       failures.push(`${expect.toolCalled} not called${others ? ` (called: ${others})` : ""}`);
@@ -182,6 +186,17 @@ function check(
         failures.push(`event_id ${JSON.stringify(p.event_id)} ≠ ${expect.eventId}`);
       const kinds = expect.kind === undefined ? undefined : [expect.kind].flat();
       if (kinds && !kinds.includes(String(p.kind))) failures.push(`kind ${JSON.stringify(p.kind)} ∉ ${kinds.join("|")}`);
+    }
+  }
+
+  for (const p of params) {
+    if (expect.forbidKinds?.includes(String(p.kind))) failures.push(`forbidden kind ${JSON.stringify(p.kind)}`);
+  }
+
+  if (expect.requirePatterns?.length && !silent) {
+    const asked = [reply, ...params.map(p => (typeof p.question === "string" ? p.question : ""))].join(" ");
+    for (const pat of expect.requirePatterns) {
+      if (!new RegExp(pat, "i").test(asked)) failures.push(`required /${pat}/ not found`);
     }
   }
 

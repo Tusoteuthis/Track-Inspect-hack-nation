@@ -60,10 +60,12 @@ type Manifest = {
 type AgentSettings = {
   llm?: Llm;
   turnEagerness?: TurnEagerness;
+  turnTimeout?: number; // seconds of user silence before the agent re-engages (-1 or 1–300)
   speculativeTurn?: boolean;
   maxDurationSeconds?: number;
   expressiveMode?: boolean; // TTS audio-tag prompt ("[curious] …"); tags would end up in transcripts
   skipTurn?: boolean; // enable the skip_turn system tool (prompt.builtInTools.skipTurn)
+  skipTurnDescription?: string; // when the LLM should call skip_turn (replaces the default trigger text)
   clientEventsAdd?: ClientEvent[]; // merged into the current client_events, never replacing them
 };
 
@@ -242,6 +244,7 @@ for (const agent of agentNames) {
   const conversation = current.conversationConfig.conversation ?? {};
   const turnPatch = {
     ...(settings.turnEagerness ? { turnEagerness: settings.turnEagerness } : {}),
+    ...(settings.turnTimeout !== undefined ? { turnTimeout: settings.turnTimeout } : {}),
     ...(settings.speculativeTurn !== undefined ? { speculativeTurn: settings.speculativeTurn } : {}),
   };
   const conversationPatch = {
@@ -277,7 +280,7 @@ for (const agent of agentNames) {
                   skipTurn: {
                     type: "system" as const,
                     name: "skip_turn",
-                    description: "",
+                    description: settings.skipTurnDescription ?? "",
                     params: { systemToolType: "skip_turn" as const },
                   },
                 }
@@ -401,7 +404,11 @@ async function printReadBack(agentId: string) {
   console.log(`    toolIds: ${tools.length ? "" : "(none)"}`);
   for (const t of tools) console.log(`      ${t.id}  ${t.name}  [${t.type}]`);
   console.log(`    builtInTools: ${builtIn.length ? builtIn.join(", ") : "(none)"}`);
-  console.log(`    turnEagerness: ${turn.turnEagerness ?? "(unset)"}  speculativeTurn: ${turn.speculativeTurn ?? "(unset)"}`);
+  console.log(
+    `    turnEagerness: ${turn.turnEagerness ?? "(unset)"}  turnTimeout: ${turn.turnTimeout ?? "(unset)"}  speculativeTurn: ${turn.speculativeTurn ?? "(unset)"}`,
+  );
+  const skip = p.builtInTools?.skipTurn;
+  if (skip) console.log(`    skip_turn description: ${JSON.stringify(skip.description ?? "")}`);
   const tts = a.conversationConfig.tts;
   console.log(`    tts: ${tts?.modelId ?? "(default)"} voice ${tts?.voiceId ?? "(default)"}  expressiveMode: ${tts?.expressiveMode ?? "(unset)"}`);
   console.log(`    maxDurationSeconds: ${conv.maxDurationSeconds ?? "(unset)"}`);
