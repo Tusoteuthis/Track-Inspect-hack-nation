@@ -115,3 +115,18 @@ All of these are additive:
 | `getRecentEvents(sid)` | `GET /api/sessions/:sid/events` (proposed), used to resync |
 
 - **Pending rule for the controls:** each control (off-record, pause, stop) stays `*_pending` until an authoritative `SessionView` reaches its target. That view may arrive as the `Ack` value or as a `session` push, whichever comes first. A failed `Ack` keeps the previous state and shows the error. Once the session is `ended`, all pending requests are cleared.
+
+## 8. Sprint 4 additions (4 October 2026)
+
+All of these are additive:
+- **`DataOrigin`** gains `"stub"` (WS7-Q7). Stub output shows a "STUB OUTPUT" banner, so it is never presented as live.
+- **`AssessmentItem.interventions?: string[]`** and **`AssessmentView.limitations?: string[]`**. The summary never lists an item with interventions under "done independently". There is no overall score.
+- **`SourceUpdate`** gains `{type:"knowledge", entry_id, revision_id, status}` (WS6 `entry.revoked`). It is broadcast to every session. `/practice` drops citations of revoked entries and invalidates a review that cited one.
+- **New `DataSource` methods:**
+
+| Method | WS6 mapping |
+|---|---|
+| `revokeEntry(entryId, revisionId)` | `POST /api/knowledge/entries/:id/revoke {reason}` (WS6 S4, not implemented yet) |
+| `deleteEvidence(sid, eventId)` | `DELETE /api/sessions/:sid/events/:eid` (WS6 S4, not implemented yet). Revoked entries arrive as `entry.revoked`. |
+
+- **`apiSource`** (`web/lib/data/apiSource.ts`) implements every method against WS6 api-v0. The mapping rules and every mismatch are listed in `notes/ws7-sprints/handoff-sprint-4.md`.
