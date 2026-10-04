@@ -3,19 +3,19 @@
   "route": "/api/sessions/:sid/commit",
   "status": 201,
   "body": {
-    "commit_id": "cmt-20261004091734-h9r9eu",
-    "session_id": "ses-20261004091731-1xaocq",
+    "commit_id": "cmt-20261004094249-gfl96z",
+    "session_id": "ses-20261004094246-09kn4f",
     "draft_rev": 2,
-    "evaluation_id": "evl-20261004091733-90q1dt",
-    "at_utc": "2026-10-04T09:17:34.056Z",
+    "evaluation_id": "evl-20261004094249-4vzwdv",
+    "at_utc": "2026-10-04T09:42:49.201Z",
     "outcome": "ok",
     "escalated": false,
     "knowledge_revision_ids": [
-      "rev-20261004091724-fhdsn7",
-      "rev-20261004091725-x62ux1",
-      "rev-20261004091724-eqhqp2",
-      "rev-20261004091725-bvtezu"
+      "rev-20261004094239-n6eddd",
+      "rev-20261004094240-5uumcc",
+      "rev-20261004094239-hx183b",
+      "rev-20261004094240-t7nsge"
     ],
-    "idempotency_key_sha256": "dde12b91e8899f199a2be40fe94d376a7d1bf3270bea1a682c14a75fa4369414"
+    "idempotency_key_sha256": "017a0e63dddd479280e5be9dee9f1316bb05c837ed0b63b4a4a7baba30c5351d"
   }
 }

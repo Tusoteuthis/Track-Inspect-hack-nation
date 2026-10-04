@@ -3,16 +3,17 @@
   "route": "/api/sessions/:sid",
   "status": 200,
   "body": {
-    "session_id": "ses-20261004091731-1xaocq",
+    "session_id": "ses-20261004094246-09kn4f",
     "role": "newcomer",
     "lifecycle": "created",
     "record_state": "on_record",
     "recording_segments": [
       {
-        "segment_id": "seg-20261004091731-txreue",
+        "segment_id": "seg-20261004094246-1wrot7",
         "state": "on_record",
-        "started_at_utc": "2026-10-04T09:17:31.151Z",
-        "ended_at_utc": null
+        "started_at_utc": "2026-10-04T09:42:46.024Z",
+        "ended_at_utc": null,
+        "trigger": "session_start"
       }
     ],
     "case_id": "fx-n01",
@@ -20,24 +21,24 @@
     "pinned_knowledge": [
       {
         "entry_id": "ent-evt-001-step",
-        "revision_id": "rev-20261004091724-fhdsn7"
+        "revision_id": "rev-20261004094239-n6eddd"
       },
       {
         "entry_id": "ent-evt-002-exception",
-        "revision_id": "rev-20261004091725-x62ux1"
+        "revision_id": "rev-20261004094240-5uumcc"
       },
       {
         "entry_id": "ent-evt-002-guardrail",
-        "revision_id": "rev-20261004091724-eqhqp2"
+        "revision_id": "rev-20261004094239-hx183b"
       },
       {
         "entry_id": "ent-evt-002-step",
-        "revision_id": "rev-20261004091725-bvtezu"
+        "revision_id": "rev-20261004094240-t7nsge"
       }
     ],
     "knowledge_fixture_allowed": true,
     "source": "fixture",
-    "created_at_utc": "2026-10-04T09:17:31.151Z",
+    "created_at_utc": "2026-10-04T09:42:46.024Z",
     "rev": 1
   }
 }

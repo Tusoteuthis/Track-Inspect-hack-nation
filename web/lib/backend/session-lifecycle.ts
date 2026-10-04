@@ -4,7 +4,7 @@
  * state and recording segments alone: pausing is not going off the record. Re-sending an action whose target state is already reached
  * is an idempotent no-op, so retried lifecycle calls never fail.
  */
-import type { LifecycleAction, LifecycleRequest, RecordState, Session, SessionLifecycle } from "@/lib/contracts";
+import type { LifecycleAction, LifecycleRequest, RecordState, RecordStateTrigger, Session, SessionLifecycle } from "@/lib/contracts";
 import { ApiError } from "./errors";
 
 export type Applied = { changed: boolean; session: Session };
@@ -64,7 +64,14 @@ export function applyLifecycle(session: Session, req: LifecycleRequest, now: Dat
  * `sinceUtc` (off_record only, S4) backdates the new off-record segment into the current on-record
  * segment: "that last part was off the record". The caller then purges what was stored since.
  */
-export function applyRecordState(session: Session, state: RecordState, now: Date, segmentId: string, sinceUtc?: string): Applied {
+export function applyRecordState(
+  session: Session,
+  state: RecordState,
+  now: Date,
+  segmentId: string,
+  sinceUtc?: string,
+  trigger: RecordStateTrigger = "console",
+): Applied {
   if (isTerminal(session.lifecycle)) {
     throw new ApiError("invalid_transition", `Cannot change record state of a session that is ${session.lifecycle}.`, {
       from: session.lifecycle,
@@ -90,7 +97,7 @@ export function applyRecordState(session: Session, state: RecordState, now: Date
       record_state: state,
       recording_segments: [
         ...closeOpenSegments(session, at),
-        { segment_id: segmentId, state, started_at_utc: at, ended_at_utc: null },
+        { segment_id: segmentId, state, started_at_utc: at, ended_at_utc: null, trigger },
       ],
       rev: session.rev + 1,
     },

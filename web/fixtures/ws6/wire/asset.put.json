@@ -3,8 +3,8 @@
   "route": "/api/sessions/:sid/assets/:aid",
   "status": 201,
   "body": {
-    "asset_id": "ic-mutlxjok-a1",
-    "session_id": "ses-20261004091727-84c8i8",
+    "asset_id": "ic-mutmtzez-a1",
+    "session_id": "ses-20261004094242-qjahkd",
     "event_id": "evt-ic-1",
     "kind": "frame",
     "original": {
@@ -22,7 +22,7 @@
       "sha256": "498d0ef16c022f2ac6d714de0349d69ff92a080285ffe28acbc68b74c09d8360"
     },
     "coordinate_space": "original_frame_normalized",
-    "captured_at_utc": "2026-10-04T09:17:27.781Z",
+    "captured_at_utc": "2026-10-04T09:42:42.526Z",
     "record_state": "on_record",
     "source": "fixture",
     "status": "stored"

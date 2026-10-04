@@ -8,10 +8,10 @@
       "message": "A reviewed revision is no longer current; review the current one.",
       "details": {
         "stale_revision_ids": [
-          "rev-20261004091724-hymei5"
+          "rev-20261004094239-0l1j3d"
         ],
         "current_revision_ids": [
-          "rev-20261004091725-bvtezu"
+          "rev-20261004094240-t7nsge"
         ]
       }
     }

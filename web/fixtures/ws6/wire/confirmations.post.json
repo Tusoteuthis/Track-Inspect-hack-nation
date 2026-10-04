@@ -5,48 +5,48 @@
   "body": {
     "confirmations": [
       {
-        "confirmation_id": "cnf-20261004091725-ndnpvi",
-        "reviewed_revision_id": "rev-20261004091724-fhdsn7",
+        "confirmation_id": "cnf-20261004094240-6571j4",
+        "reviewed_revision_id": "rev-20261004094239-n6eddd",
         "result": "confirmed",
         "expert_response_exchange_id": "x-tb",
-        "at_utc": "2026-10-04T09:17:25.799Z",
+        "at_utc": "2026-10-04T09:42:40.267Z",
         "step_ids_reviewed": [
           "ent-evt-001-step",
           "ent-evt-002-guardrail",
           "ent-evt-002-step"
         ],
         "source": "fixture",
-        "session_id": "ses-20261004091722-a5s82o",
+        "session_id": "ses-20261004094236-ackthm",
         "entry_id": "ent-evt-001-step"
       },
       {
-        "confirmation_id": "cnf-20261004091725-d5s93x",
-        "reviewed_revision_id": "rev-20261004091724-hymei5",
+        "confirmation_id": "cnf-20261004094240-ebe3u9",
+        "reviewed_revision_id": "rev-20261004094239-0l1j3d",
         "result": "confirmed",
         "expert_response_exchange_id": "x-tb",
-        "at_utc": "2026-10-04T09:17:25.799Z",
+        "at_utc": "2026-10-04T09:42:40.267Z",
         "step_ids_reviewed": [
           "ent-evt-001-step",
           "ent-evt-002-guardrail",
           "ent-evt-002-step"
         ],
         "source": "fixture",
-        "session_id": "ses-20261004091722-a5s82o",
+        "session_id": "ses-20261004094236-ackthm",
         "entry_id": "ent-evt-002-step"
       },
       {
-        "confirmation_id": "cnf-20261004091725-ca4n8y",
-        "reviewed_revision_id": "rev-20261004091724-eqhqp2",
+        "confirmation_id": "cnf-20261004094240-p4udt3",
+        "reviewed_revision_id": "rev-20261004094239-hx183b",
         "result": "confirmed",
         "expert_response_exchange_id": "x-tb",
-        "at_utc": "2026-10-04T09:17:25.799Z",
+        "at_utc": "2026-10-04T09:42:40.267Z",
         "step_ids_reviewed": [
           "ent-evt-001-step",
           "ent-evt-002-guardrail",
           "ent-evt-002-step"
         ],
         "source": "fixture",
-        "session_id": "ses-20261004091722-a5s82o",
+        "session_id": "ses-20261004094236-ackthm",
         "entry_id": "ent-evt-002-guardrail"
       }
     ]

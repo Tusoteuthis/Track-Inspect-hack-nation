@@ -12,7 +12,7 @@ function session(lifecycle: SessionLifecycle, rev = 3): Session {
     role: "expert",
     lifecycle,
     record_state: "on_record",
-    recording_segments: [{ segment_id: "seg-1", state: "on_record", started_at_utc: t0, ended_at_utc: null }],
+    recording_segments: [{ segment_id: "seg-1", state: "on_record", started_at_utc: t0, ended_at_utc: null, trigger: "session_start" }],
     case_id: null,
     trace_ref: null,
     pinned_knowledge: null,
@@ -129,9 +129,14 @@ describe("applyRecordState", () => {
     expect(r.session.record_state).toBe("off_record");
     expect(r.session.rev).toBe(4);
     expect(r.session.recording_segments).toEqual([
-      { segment_id: "seg-1", state: "on_record", started_at_utc: t0, ended_at_utc: now.toISOString() },
-      { segment_id: "seg-2", state: "off_record", started_at_utc: now.toISOString(), ended_at_utc: null },
+      { segment_id: "seg-1", state: "on_record", started_at_utc: t0, ended_at_utc: now.toISOString(), trigger: "session_start" },
+      { segment_id: "seg-2", state: "off_record", started_at_utc: now.toISOString(), ended_at_utc: null, trigger: "console" },
     ]);
+  });
+
+  it("records the given trigger on the new segment (ws3.v1)", () => {
+    const r = applyRecordState(session("active"), "off_record", now, "seg-2", undefined, "expert_phrase");
+    expect(r.session.recording_segments.at(-1)?.trigger).toBe("expert_phrase");
   });
 
   it("same state is a no-op", () => {

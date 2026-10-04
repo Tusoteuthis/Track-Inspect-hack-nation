@@ -3,21 +3,21 @@
   "route": "/api/sessions/:sid/evaluations/:evaluation_id",
   "status": 200,
   "body": {
-    "evaluation_id": "evl-20261004091733-zu0ejx",
-    "session_id": "ses-20261004091731-1xaocq",
+    "evaluation_id": "evl-20261004094248-9qtnif",
+    "session_id": "ses-20261004094246-09kn4f",
     "draft_rev": 1,
     "knowledge_revision_ids": [
-      "rev-20261004091724-fhdsn7",
-      "rev-20261004091725-x62ux1",
-      "rev-20261004091724-eqhqp2",
-      "rev-20261004091725-bvtezu"
+      "rev-20261004094239-n6eddd",
+      "rev-20261004094240-5uumcc",
+      "rev-20261004094239-hx183b",
+      "rev-20261004094240-t7nsge"
     ],
     "status": "done",
     "outcome": "intervene",
     "cited": [
       {
         "entry_id": "ent-evt-001-step",
-        "revision_id": "rev-20261004091724-fhdsn7",
+        "revision_id": "rev-20261004094239-n6eddd",
         "exchange_ids": [
           "x-1"
         ],
@@ -27,14 +27,14 @@
     "feedback_text": "STUB TUTOR — not a judgement (ws6-stub-tutor 0.1.0). Outcome \"intervene\" comes from a test hook.\nThe expert said (x-1): \"FIXTURE e2e: here I read FIXTURE pattern A.\"",
     "guiding_question": null,
     "escalation": null,
-    "created_at_utc": "2026-10-04T09:17:33.316Z",
-    "updated_at_utc": "2026-10-04T09:17:33.349Z",
+    "created_at_utc": "2026-10-04T09:42:48.409Z",
+    "updated_at_utc": "2026-10-04T09:42:48.435Z",
     "produced_by": {
       "module": "ws6-stub-tutor",
       "version": "0.1.0",
       "source": "stub"
     },
-    "completed_at_utc": "2026-10-04T09:17:33.349Z",
+    "completed_at_utc": "2026-10-04T09:42:48.435Z",
     "stale_reason": null,
     "error_code": null,
     "uncertainty": null

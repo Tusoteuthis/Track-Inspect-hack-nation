@@ -559,3 +559,10 @@ Full rationale: [`specs/001-ws6-foundation-contracts/research.md`](../specs/001-
 | D56 (I4) | Review marks are stored requests (`review_mark.stored`) and never change knowledge status | only the expert's spoken teach-back confirms or corrects (S2 rule) |
 | D57 (I4) | `GET …/review` is one WS6-vocabulary composite (draft revisions + parents, gaps, confirmations, marks); WS7 maps it | human decision 2026-10-04 (plan §6 Q3); the adapter seam stays in WS7 |
 | D58 (I2) | Wire recordings in `fixtures/ws6/wire` are re-recorded in the same commit as any contract change; the schema test fails on undeclared fields | the two sides cannot drift unnoticed |
+| D59 (merge) | WS3 `ws3.v1` adopted:
+- Pointing events stay `ws3.v0` (`EVENT_SCHEMA_VERSION`).
+- Exchanges gain `topic_id`, `related_event_ids`, `gap_id`, `revision_id` and the kinds `teach_back`/`correction`.
+- Draft steps gain `supported`, revisions `change_exchange_ids`, coverage `resolution`, plus three new timing marks.
+- `RecordingSegment.trigger`: WS6 writes `session_start` for the first segment; record-state takes an optional `trigger` (default `console`); stored segments without one read as `console`.
+
+All new fields are optional on input with WS3's defaults. | merging WS3 S2–S4 into `voice`; older producers and stored data keep parsing; the drift checks stay exact |

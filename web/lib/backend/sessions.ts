@@ -64,7 +64,7 @@ async function writeNewSession(req: CreateSessionRequest, now: Date, prepare?: P
     role: req.role,
     lifecycle: "created",
     record_state: "on_record",
-    recording_segments: [{ segment_id: newId("seg", now), state: "on_record", started_at_utc: at, ended_at_utc: null }],
+    recording_segments: [{ segment_id: newId("seg", now), state: "on_record", started_at_utc: at, ended_at_utc: null, trigger: "session_start" }],
     ...init,
     source: req.source,
     created_at_utc: at,
@@ -113,7 +113,7 @@ export async function changeRecordState(sid: string, req: RecordStateRequest, no
   assertSafeId(sid, "session_id");
   return withSessionLock(sid, async () => {
     const segmentId = newId("seg", now);
-    const applied = applyRecordState(await getSession(sid), req.state, now, segmentId, req.since_utc);
+    const applied = applyRecordState(await getSession(sid), req.state, now, segmentId, req.since_utc, req.trigger);
     if (!applied.changed) return applied.session;
     await putMutable(sessionFile(sid), applied.session, { schema: SessionSchema });
     await appendBus(sid, "record_state.changed", { segment_id: segmentId }, now);

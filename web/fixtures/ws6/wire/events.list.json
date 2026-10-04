@@ -5,14 +5,14 @@
   "body": [
     {
       "schema_version": "ws3.v0",
-      "session_id": "ses-20261004091722-a5s82o",
+      "session_id": "ses-20261004094236-ackthm",
       "event_id": "evt-001",
       "source": "fixture",
-      "captured_at_utc": "2026-10-04T09:17:22.481Z",
+      "captured_at_utc": "2026-10-04T09:42:36.799Z",
       "session_time_ms": 5000,
       "frame_id": "frame-evt-001",
-      "image_ref": "/api/assets/mn-mutlxjok-a1/original",
-      "highlighted_image_ref": "/api/assets/mn-mutlxjok-a1/highlighted",
+      "image_ref": "/api/assets/mn-mutmtzez-a1/original",
+      "highlighted_image_ref": "/api/assets/mn-mutmtzez-a1/highlighted",
       "region": {
         "x": 0.2,
         "y": 0.15,
@@ -27,18 +27,18 @@
       "channel_id": "FIXTURE-CH1",
       "signal_interval": null,
       "record_state": "on_record",
-      "asset_id": "mn-mutlxjok-a1"
+      "asset_id": "mn-mutmtzez-a1"
     },
     {
       "schema_version": "ws3.v0",
-      "session_id": "ses-20261004091722-a5s82o",
+      "session_id": "ses-20261004094236-ackthm",
       "event_id": "evt-002",
       "source": "fixture",
-      "captured_at_utc": "2026-10-04T09:17:32.481Z",
+      "captured_at_utc": "2026-10-04T09:42:46.799Z",
       "session_time_ms": 15000,
       "frame_id": "frame-evt-002",
-      "image_ref": "/api/assets/mn-mutlxjok-a2/original",
-      "highlighted_image_ref": "/api/assets/mn-mutlxjok-a2/highlighted",
+      "image_ref": "/api/assets/mn-mutmtzez-a2/original",
+      "highlighted_image_ref": "/api/assets/mn-mutmtzez-a2/highlighted",
       "region": {
         "x": 0.2,
         "y": 0.15,
@@ -53,7 +53,7 @@
       "channel_id": "FIXTURE-CH1",
       "signal_interval": null,
       "record_state": "on_record",
-      "asset_id": "mn-mutlxjok-a2"
+      "asset_id": "mn-mutmtzez-a2"
     }
   ]
 }

@@ -3,12 +3,12 @@
   "route": "/api/sessions/:sid/draft",
   "status": 201,
   "body": {
-    "session_id": "ses-20261004091731-1xaocq",
+    "session_id": "ses-20261004094246-09kn4f",
     "draft_rev": 1,
     "decision": "FIXTURE_WRONG",
     "reason": "FIXTURE e2e learner reason",
     "visual_context": [],
-    "updated_at_utc": "2026-10-04T09:17:32.208Z",
+    "updated_at_utc": "2026-10-04T09:42:47.210Z",
     "source": "fixture"
   }
 }

@@ -1,4 +1,5 @@
-// Zod wrappers around the merged WS3 contracts (`@/lib/expert/contracts`, ws3.v0).
+// Zod wrappers around the merged WS3 contracts (`@/lib/expert/contracts`: session records ws3.v1, pointing events ws3.v0).
+// Fields WS3 added in v1 are optional on input (older producers and stored data) and filled with WS3's defaults.
 // The WS3 file stays the source of truth: types are re-exported from it, and the
 // compile-time assertions at the bottom fail typecheck if WS3 changes a shape.
 //
@@ -9,6 +10,7 @@
 // non-empty strings.
 import { z } from "zod";
 import {
+  EVENT_SCHEMA_VERSION as WS3_EVENT_SCHEMA_VERSION,
   SCHEMA_VERSION as WS3_SCHEMA_VERSION,
   type AnswerLine,
   type CoverageItem,
@@ -47,13 +49,13 @@ export type {
   RecordingSegment,
   TimingMark,
 } from "@/lib/expert/contracts";
-export { WS3_SCHEMA_VERSION };
+export { WS3_EVENT_SCHEMA_VERSION, WS3_SCHEMA_VERSION };
 
 const nullableId = IdSchema.nullable();
 const ids = z.array(IdSchema);
 
 export const PointingEventSchema = z.object({
-  schema_version: z.literal(WS3_SCHEMA_VERSION),
+  schema_version: z.literal(WS3_EVENT_SCHEMA_VERSION),
   session_id: IdSchema,
   event_id: IdSchema,
   source: Ws3SourceSchema,
@@ -97,8 +99,24 @@ export const ExpertExchangeSchema = z.object({
   exchange_id: IdSchema,
   session_id: IdSchema,
   event_id: nullableId,
+  /** ws3.v1 (topic merging, debrief gaps, teach-back): optional on input for older producers. */
+  topic_id: nullableId.default(null),
+  related_event_ids: ids.default([]),
+  gap_id: z.string().min(1).nullable().default(null),
+  revision_id: nullableId.default(null),
   phase: z.enum(["live", "debrief", "teach_back"]),
-  kind: z.enum(["explain", "reasoning", "distinction", "context", "guardrail", "exception", "clarify_reference", "gap"]),
+  kind: z.enum([
+    "explain",
+    "reasoning",
+    "distinction",
+    "context",
+    "guardrail",
+    "exception",
+    "clarify_reference",
+    "gap",
+    "teach_back",
+    "correction",
+  ]),
   question: z.string(),
   /** WS3 S1. Older producers omit it; it is then stored as null. */
   question_planned: z.string().nullable().default(null),
@@ -121,6 +139,7 @@ export const CoverageItemSchema = z.object({
   status: z.enum(["missing", "partial", "covered"]),
   supporting_exchange_ids: ids,
   note: z.string().nullable(),
+  resolution: z.enum(["answered", "unknown_escalate"]).nullable().default(null),
 });
 
 export const OpenQuestionSchema = z.object({
@@ -138,6 +157,8 @@ export const DraftStepSchema = z.object({
   kind: z.enum(["step", "decision", "guardrail", "exception"]),
   supporting_event_ids: ids,
   supporting_exchange_ids: ids,
+  /** ws3.v1: false = missing evidence, never taught as fact. */
+  supported: z.boolean(),
 });
 
 export const DraftRevisionSchema = z.object({
@@ -147,6 +168,7 @@ export const DraftRevisionSchema = z.object({
   parent_revision_id: nullableId,
   steps: z.array(DraftStepSchema),
   change_reason: z.string().nullable(),
+  change_exchange_ids: ids.default([]),
 });
 
 export const ExpertConfirmationSchema = z.object({
@@ -170,16 +192,24 @@ export const TimingMarkSchema = z.object({
     "agent_speech_started",
     "answer_started",
     "answer_ended",
+    "user_speech_started",
+    "user_speech_ended",
+    "topic_nudged",
   ]),
   at_utc: UtcSchema,
   at_perf_ms: z.number(),
 });
 
+export const RecordStateTriggerSchema = z.enum(["session_start", "agent_tool", "console", "expert_phrase", "capture_event", "resume"]);
+export type RecordStateTrigger = z.output<typeof RecordStateTriggerSchema>;
+
+/** ws3.v1 added `trigger`. Segments stored before it carry none and read as `console`. */
 export const RecordingSegmentSchema = z.object({
   segment_id: IdSchema,
   state: RecordStateSchema,
   started_at_utc: UtcSchema,
   ended_at_utc: UtcSchema.nullable(),
+  trigger: RecordStateTriggerSchema.default("console"),
 });
 
 export const parsePointingEvent = makeParser(PointingEventSchema);

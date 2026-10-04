@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { IdSchema, KnowledgeRefSchema, RecordStateSchema, SourceSchema, UtcSchema } from "./common";
-import { RecordingSegmentSchema } from "./expert";
+import { RecordStateTriggerSchema, RecordingSegmentSchema } from "./expert";
 import { makeParser } from "./parse";
 
 export const SessionRoleSchema = z.enum(["expert", "newcomer"]);
@@ -82,7 +82,8 @@ export const parseLifecycleRequest = makeParser(LifecycleRequestSchema);
  * stored since then. It must lie inside the current on-record segment.
  */
 export const RecordStateRequestSchema = z
-  .strictObject({ state: RecordStateSchema, since_utc: UtcSchema.optional() })
+  // `trigger` (ws3.v1) records what caused the change on the new segment; default `console`.
+  .strictObject({ state: RecordStateSchema, since_utc: UtcSchema.optional(), trigger: RecordStateTriggerSchema.optional() })
   .refine(r => r.since_utc === undefined || r.state === "off_record", { path: ["since_utc"], message: "only with state off_record" });
 export type RecordStateRequest = z.output<typeof RecordStateRequestSchema>;
 export const parseRecordStateRequest = makeParser(RecordStateRequestSchema);

@@ -6,7 +6,8 @@
 
 **Merged into `voice` on 2026-10-04** (human decision: WS6 only). That is `006-ws6-trust-demo` (S0–S4) plus the integration-route commits from `007`, cherry-picked without WS7.
 - **Not on `voice`:** WS7 sprints 3–4. They are still being merged separately by WS7.
-- **Gate on the merge branch:** typecheck, vitest 99 files / 1322 tests, e2e 52/52, Playwright 22/22.
+- **Merge with WS3 S2–S4:** the merge branch also took `voice` with WS3 S2–S4. The WS6 schemas were adapted to `ws3.v1` (D59) and the wire recordings re-recorded.
+- **Final gate:** typecheck, vitest 117 files / 1716 tests, e2e 52/52, Playwright 22/22.
 - **Closed:** the `ws06-backend` and `integration-ws6-ws7` worktrees. Their branches are kept.
 - **Superseded branches:** `007-ws6-integration-routes` and `integration-ws6-ws7` still contain the WS7 S3–S4 merge; don't merge them into `voice`.
 

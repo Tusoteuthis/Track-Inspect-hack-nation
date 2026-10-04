@@ -6,7 +6,7 @@
     "deleted": {
       "session_ids": [],
       "asset_ids": [
-        "ic-mutlxjok-a1"
+        "ic-mutmtzez-a1"
       ],
       "event_ids": [
         "evt-ic-1"
@@ -17,7 +17,7 @@
     "revoked_revision_ids": [],
     "stale_evaluation_ids": [],
     "affected_session_ids": [
-      "ses-20261004091727-84c8i8"
+      "ses-20261004094242-qjahkd"
     ]
   }
 }

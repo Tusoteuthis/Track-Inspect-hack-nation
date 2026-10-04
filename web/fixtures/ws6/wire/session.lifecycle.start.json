@@ -3,23 +3,24 @@
   "route": "/api/sessions/:sid/lifecycle",
   "status": 200,
   "body": {
-    "session_id": "ses-20261004091727-84c8i8",
+    "session_id": "ses-20261004094242-qjahkd",
     "role": "expert",
     "lifecycle": "active",
     "record_state": "on_record",
     "recording_segments": [
       {
-        "segment_id": "seg-20261004091727-b8lioq",
+        "segment_id": "seg-20261004094242-sbgdj4",
         "state": "on_record",
-        "started_at_utc": "2026-10-04T09:17:27.745Z",
-        "ended_at_utc": null
+        "started_at_utc": "2026-10-04T09:42:42.483Z",
+        "ended_at_utc": null,
+        "trigger": "session_start"
       }
     ],
     "case_id": "fx-e01",
     "trace_ref": "/api/cases/fx-e01/trace",
     "pinned_knowledge": null,
     "source": "fixture",
-    "created_at_utc": "2026-10-04T09:17:27.745Z",
+    "created_at_utc": "2026-10-04T09:42:42.483Z",
     "rev": 2
   }
 }

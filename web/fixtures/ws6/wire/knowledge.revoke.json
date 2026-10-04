@@ -5,13 +5,13 @@
   "body": {
     "entry": {
       "entry_id": "ent-evt-001-step",
-      "current_revision_id": "rev-20261004091724-fhdsn7",
+      "current_revision_id": "rev-20261004094239-n6eddd",
       "current_revision_no": 1,
       "status": "revoked",
-      "updated_at_utc": "2026-10-04T09:17:36.844Z",
+      "updated_at_utc": "2026-10-04T09:42:52.124Z",
       "rev": 3
     },
-    "revoked_revision_id": "rev-20261004091724-fhdsn7",
+    "revoked_revision_id": "rev-20261004094239-n6eddd",
     "cascade": {
       "deleted": {
         "session_ids": [],
@@ -21,16 +21,16 @@
       },
       "trimmed_exchange_ids": [],
       "revoked_revision_ids": [
-        "rev-20261004091724-fhdsn7"
+        "rev-20261004094239-n6eddd"
       ],
       "stale_evaluation_ids": [
-        "evl-20261004091733-90q1dt",
-        "evl-20261004091736-cy3vjo"
+        "evl-20261004094249-4vzwdv",
+        "evl-20261004094251-a9wleh"
       ],
       "affected_session_ids": [
-        "ses-20261004091722-a5s82o",
-        "ses-20261004091731-1xaocq",
-        "ses-20261004091736-pcqqph"
+        "ses-20261004094236-ackthm",
+        "ses-20261004094246-09kn4f",
+        "ses-20261004094251-xnbp3z"
       ]
     }
   }

@@ -3,11 +3,11 @@
   "route": "/api/sessions/:sid/review-marks",
   "status": 201,
   "body": {
-    "mark_id": "mrk-20261004091729-o04b8p",
-    "session_id": "ses-20261004091722-a5s82o",
+    "mark_id": "mrk-20261004094243-acv28l",
+    "session_id": "ses-20261004094236-ackthm",
     "entry_id": "ent-evt-001-step",
-    "revision_id": "rev-20261004091724-fhdsn7",
+    "revision_id": "rev-20261004094239-n6eddd",
     "kind": "correction_requested",
-    "at_utc": "2026-10-04T09:17:29.068Z"
+    "at_utc": "2026-10-04T09:42:43.906Z"
   }
 }

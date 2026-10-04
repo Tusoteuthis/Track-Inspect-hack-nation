@@ -3,14 +3,14 @@
   "route": "/api/sessions/:sid/evaluations/:evaluation_id",
   "status": 200,
   "body": {
-    "evaluation_id": "evl-20261004091733-90q1dt",
-    "session_id": "ses-20261004091731-1xaocq",
+    "evaluation_id": "evl-20261004094249-4vzwdv",
+    "session_id": "ses-20261004094246-09kn4f",
     "draft_rev": 2,
     "knowledge_revision_ids": [
-      "rev-20261004091724-fhdsn7",
-      "rev-20261004091725-x62ux1",
-      "rev-20261004091724-eqhqp2",
-      "rev-20261004091725-bvtezu"
+      "rev-20261004094239-n6eddd",
+      "rev-20261004094240-5uumcc",
+      "rev-20261004094239-hx183b",
+      "rev-20261004094240-t7nsge"
     ],
     "status": "done",
     "outcome": "ok",
@@ -18,14 +18,14 @@
     "feedback_text": "STUB TUTOR — not a judgement (ws6-stub-tutor 0.1.0). Outcome \"ok\" comes from a test hook.",
     "guiding_question": null,
     "escalation": null,
-    "created_at_utc": "2026-10-04T09:17:33.909Z",
-    "updated_at_utc": "2026-10-04T09:17:33.926Z",
+    "created_at_utc": "2026-10-04T09:42:49.054Z",
+    "updated_at_utc": "2026-10-04T09:42:49.071Z",
     "produced_by": {
       "module": "ws6-stub-tutor",
       "version": "0.1.0",
       "source": "stub"
     },
-    "completed_at_utc": "2026-10-04T09:17:33.926Z",
+    "completed_at_utc": "2026-10-04T09:42:49.071Z",
     "stale_reason": null,
     "error_code": null,
     "uncertainty": null

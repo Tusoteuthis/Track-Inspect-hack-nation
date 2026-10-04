@@ -8,16 +8,25 @@
       "step_id": "fixture-step-001",
       "text": "FIXTURE draft step 1",
       "kind": "step",
-      "supporting_event_ids": ["fixture-event-001"],
-      "supporting_exchange_ids": ["fixture-exchange-001"]
+      "supporting_event_ids": [
+        "fixture-event-001"
+      ],
+      "supporting_exchange_ids": [
+        "fixture-exchange-001"
+      ],
+      "supported": true
     },
     {
       "step_id": "fixture-step-002",
       "text": "FIXTURE decision",
       "kind": "decision",
       "supporting_event_ids": [],
-      "supporting_exchange_ids": ["fixture-exchange-001"]
+      "supporting_exchange_ids": [
+        "fixture-exchange-001"
+      ],
+      "supported": false
     }
   ],
-  "change_reason": null
+  "change_reason": null,
+  "change_exchange_ids": []
 }
