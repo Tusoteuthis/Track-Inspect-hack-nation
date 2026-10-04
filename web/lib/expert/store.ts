@@ -4,7 +4,9 @@
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { type SessionSnapshot, isValidSessionId } from "./contracts";
+import { type ElevenLabsDeletionReport, type SessionSnapshot, isValidSessionId, validateSessionSnapshot } from "./contracts";
+import { deriveCompletion, renderCompletionMd } from "./completion";
+import { type ChecklistRow, demoChecklist, renderDemoEvidenceMd } from "./demo-evidence";
 import { renderKnowledgeDraftMd, renderRevisionMd } from "./knowledge-render";
 import { renderExchangesMd, renderTranscriptMd } from "./render";
 import { liveCounters, renderTimingReportMd } from "./timing";
@@ -21,9 +23,19 @@ export const SESSION_FILES = [
   "knowledge-draft.md",
 ] as const;
 
+/** Written once the session has ended (removed again if it is resumed). */
+export const END_FILES = ["completion.json", "completion.md", "demo-evidence.md"] as const;
+export const DELETION_FILE = "elevenlabs-deletion.json";
+
 export interface ExpertSessionStore {
   /** Writes the whole session; saving the same snapshot again yields the same files. */
   saveSnapshot(snapshot: SessionSnapshot): Promise<{ dir: string; files: string[] }>;
+  /** Reads a saved session back from its files; null when there is none. Throws if the files are invalid. */
+  loadSnapshot(sessionId: string): Promise<SessionSnapshot | null>;
+  /** Re-derives demo-evidence.md from the saved files and writes it. */
+  exportDemoEvidence(sessionId: string): Promise<{ markdown: string; checklist: ChecklistRow[] } | null>;
+  /** Appends an ElevenLabs deletion report to elevenlabs-deletion.json. */
+  saveDeletionReport(report: ElevenLabsDeletionReport): Promise<void>;
 }
 
 /** `KNOWLEDGE_DIR` (absolute, or relative to the web dir), default `<web>/../knowledge`. */
@@ -33,23 +45,67 @@ export function knowledgeRoot(env: Record<string, string | undefined> = process.
 
 export function createFileStore(root: string, options: { publicDir?: string } = {}): ExpertSessionStore {
   const sessionsDir = resolve(root, "sessions");
-  return {
-    async saveSnapshot(snapshot) {
-      // Second line of defence after route validation: the id becomes a directory name.
-      const id = snapshot.session_id;
-      const dir = resolve(sessionsDir, id);
-      if (!isValidSessionId(id) || dirname(dir) !== sessionsDir) throw new Error(`unsafe session id ${JSON.stringify(id)}`);
+  // Second line of defence after route validation: the id becomes a directory name.
+  const sessionDir = (id: string) => {
+    const dir = resolve(sessionsDir, id);
+    if (!isValidSessionId(id) || dirname(dir) !== sessionsDir) throw new Error(`unsafe session id ${JSON.stringify(id)}`);
+    return dir;
+  };
+  const hrefFor = (dir: string) =>
+    options.publicDir ? (ref: string) => relative(dir, join(options.publicDir!, ref)).split(sep).join("/") : undefined;
 
-      const imageHref = options.publicDir
-        ? (ref: string) => relative(dir, join(options.publicDir!, ref)).split(sep).join("/")
-        : undefined;
+  const store: ExpertSessionStore = {
+    async saveSnapshot(snapshot) {
+      const dir = sessionDir(snapshot.session_id);
+      const imageHref = hrefFor(dir);
       const contents = sessionFiles(snapshot, imageHref);
       await mkdir(dir, { recursive: true });
       const revisionFiles = await writeRevisions(dir, snapshot);
       for (const name of SESSION_FILES) await writeAtomic(join(dir, name), contents[name]);
-      return { dir, files: [...SESSION_FILES, ...revisionFiles] };
+      if (snapshot.ended_at_utc === null) {
+        for (const name of END_FILES) await rm(join(dir, name), { force: true });
+        return { dir, files: [...SESSION_FILES, ...revisionFiles] };
+      }
+      const completion = deriveCompletion(snapshot);
+      await writeAtomic(join(dir, "completion.json"), JSON.stringify(completion, null, 2) + "\n");
+      await writeAtomic(join(dir, "completion.md"), renderCompletionMd(completion));
+      await writeAtomic(join(dir, "demo-evidence.md"), renderDemoEvidenceMd(snapshot, { imageHref }));
+      return { dir, files: [...SESSION_FILES, ...revisionFiles, ...END_FILES] };
+    },
+
+    async loadSnapshot(sessionId) {
+      const dir = sessionDir(sessionId);
+      const read = async (name: string): Promise<unknown> => JSON.parse(await readFile(join(dir, name), "utf8"));
+      let session: Record<string, unknown>;
+      try {
+        session = (await read("session.json")) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+      const { counts: _counts, ...rest } = session;
+      const snapshot = { ...rest, events: await read("events.json"), exchanges: await read("exchanges.json"), timing: await read("timing.json") };
+      const valid = validateSessionSnapshot(snapshot);
+      if (!valid.ok) throw new Error(`saved session ${sessionId} is invalid: ${valid.errors.slice(0, 5).join("; ")}`);
+      return valid.value;
+    },
+
+    async exportDemoEvidence(sessionId) {
+      const snapshot = await store.loadSnapshot(sessionId);
+      if (!snapshot) return null;
+      const dir = sessionDir(sessionId);
+      const imageHref = hrefFor(dir);
+      const markdown = renderDemoEvidenceMd(snapshot, { imageHref });
+      await writeAtomic(join(dir, "demo-evidence.md"), markdown);
+      return { markdown, checklist: demoChecklist(snapshot, { imageHref }) };
+    },
+
+    async saveDeletionReport(report) {
+      const path = join(sessionDir(report.session_id), DELETION_FILE);
+      const existing = await readFile(path, "utf8").then(t => JSON.parse(t) as ElevenLabsDeletionReport[]).catch(() => []);
+      await writeAtomic(path, JSON.stringify([...existing, report], null, 2) + "\n");
     },
   };
+  return store;
 }
 
 function sessionFiles(
