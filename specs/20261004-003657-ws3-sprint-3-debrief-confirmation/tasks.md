@@ -10,17 +10,17 @@ TDD: each logic task writes its vitest file first.
 
 ## Phase 3: US1 Debrief
 - [X] T003 [US1] Test-first: coverage grid, monotonic applyCoverage, selectGaps (excludes covered/asked, deferred → open question, priority) in web/lib/expert/coverage.ts + coverage.test.ts
-- [ ] T004 [US1] Reducer: phase, signal_task_complete/debrief_started, begin_question phase/gap_id, record_coverage, unknown_escalate in web/lib/expert/debrief.ts + session.ts (+ debrief.test.ts)
-- [ ] T005 [US1] [PHASE debrief] block and control nudges in web/lib/expert/context-update.ts
-- [ ] T006 [US1] Debrief counters in web/lib/expert/timing.ts
+- [X] T004 [US1] Reducer: phase, signal_task_complete/debrief_started, begin_question phase/gap_id, record_coverage, unknown_escalate in web/lib/expert/debrief.ts + session.ts (+ debrief.test.ts)
+- [X] T005 [US1] [PHASE debrief] block and control nudges in web/lib/expert/context-update.ts
+- [X] T006 [US1] Debrief counters in web/lib/expert/timing.ts
 
 ## Phase 4: US2 Teach-back revisions
 - [X] T007 [US2] Test-first: proposal validation, quote check, unsupported flag, stable step ids, diff, stepsToTeach, fallback draft in web/lib/expert/draft.ts + draft.test.ts
 - [X] T008 [US2] synthesis interface getGaps/buildDraft in web/lib/expert/synthesis.ts
-- [ ] T009 [US2] propose_draft action + teach-back exchange + [TEACH_BACK rev-n] block in web/lib/expert/debrief.ts
+- [X] T009 [US2] propose_draft action + teach-back exchange + [TEACH_BACK rev-n] block in web/lib/expert/debrief.ts
 
 ## Phase 5: US3 Correction & confirmation
-- [ ] T010 [US3] confirm_revision (stale, explicit response, corrected → rev-n+1 with change_exchange_ids), session_ended → incomplete in web/lib/expert/debrief.ts
+- [X] T010 [US3] confirm_revision (stale, explicit response, corrected → rev-n+1 with change_exchange_ids), session_ended → incomplete in web/lib/expert/debrief.ts
 - [ ] T011 [US3] Persistence: revisions/rev-n.json|md (immutable), confirmations.json, knowledge-draft.md, exchanges.md in web/lib/expert/store.ts, knowledge-render.ts, render.ts
 - [ ] T012 [US3] End-to-end fixture session in web/lib/expert/debrief-run.test.ts
 

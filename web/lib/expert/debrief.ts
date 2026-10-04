@@ -193,8 +193,8 @@ export function recordCoverage(state: SessionState, params: unknown): SessionSta
   const { exchange_id, dimensions } = parsed.value;
   const x = state.exchanges.find(e => e.exchange_id === exchange_id);
   if (!x) return fail(state, `unknown exchange_id ${exchange_id}`);
-  if (x.kind === "clarify_reference") return fail(state, `${exchange_id} only identified a region; it covers nothing`);
   if (x.answer_lines.length === 0) return fail(state, `${exchange_id} has no answer from the expert yet; call record_coverage after they answer`);
+  if (x.kind === "clarify_reference") return fail(state, `${exchange_id} only identified a region; it covers nothing`);
 
   let coverage = state.coverage;
   for (const d of dimensions) {

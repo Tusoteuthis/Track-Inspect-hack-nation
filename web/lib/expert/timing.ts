@@ -88,10 +88,16 @@ export type LiveCounters = {
   interruptions: number;
   /** Extra questions of the same kind on the same topic. */
   duplicate_questions: number;
+  /** Spoken debrief questions; never counted as live questions (and the reverse). */
+  debrief_questions: number;
+  /** Debrief questions whose gap was missing or partial when the debrief started (all, by construction). */
+  debrief_gap_questions: number;
+  teach_backs: number;
 };
 
 export function liveCounters(snap: SessionSnapshot): LiveCounters {
   const spoken = snap.exchanges.filter(x => x.phase === "live" && x.question !== "");
+  const debrief = snap.exchanges.filter(x => x.phase === "debrief" && x.question !== "");
   const perTopicKind = new Map<string, number>();
   for (const x of spoken) {
     if (x.topic_id === null) continue;
@@ -105,6 +111,9 @@ export function liveCounters(snap: SessionSnapshot): LiveCounters {
     unlinked_agent_questions: snap.unlinked_agent_questions.length,
     interruptions: countInterruptions(snap.timing).count,
     duplicate_questions: [...perTopicKind.values()].reduce((sum, n) => sum + n - 1, 0),
+    debrief_questions: debrief.length,
+    debrief_gap_questions: debrief.filter(x => snap.debrief_agenda.some(g => g.gap_id === x.gap_id)).length,
+    teach_backs: snap.exchanges.filter(x => x.kind === "teach_back" && x.question !== "").length,
   };
 }
 
@@ -155,6 +164,7 @@ export function renderTimingReportMd(snap: SessionSnapshot): string {
     `- Deferred topics: ${counters.deferred_topics}`,
     `- Unlinked agent questions: ${counters.unlinked_agent_questions}`,
     `- Duplicate questions: ${counters.duplicate_questions}`,
+    `- Debrief questions: ${counters.debrief_questions}`,
     "",
     "## Topics",
     "",

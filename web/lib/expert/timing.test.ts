@@ -147,6 +147,9 @@ describe("liveCounters", () => {
       unlinked_agent_questions: 0,
       interruptions: 0,
       duplicate_questions: 0,
+      debrief_questions: 0,
+      debrief_gap_questions: 0,
+      teach_backs: 0,
     });
   });
 
