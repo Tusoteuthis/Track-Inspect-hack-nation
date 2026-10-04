@@ -68,7 +68,7 @@ import Foundation
         case .alreadyRegistered:
             return GlassesRegistrationStatus.registered.message
         case .configurationInvalid:
-            return String(localized: "Meta registration configuration is invalid. Check this app's Meta app ID, client token, Apple team, bundle ID ai.track-inspect.app and trackinspect:// return link, then rebuild.")
+            return String(localized: "Meta registration configuration is invalid. Check this app's Meta app ID, client token, Apple team, bundle ID ai.trackinspect.app and trackinspect:// return link, then rebuild.")
         case .metaAINotInstalled:
             return String(localized: "Install or update Meta AI on this iPhone, pair your glasses there, then return to TrackInspect and try pairing again.")
         case .networkUnavailable:

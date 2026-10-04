@@ -6,7 +6,7 @@
 Use Swift 6 strict concurrency, SwiftUI and Observation on iOS 17+. Views call ViewModels; ViewModels call protocol-defined services. Meta and ElevenLabs SDK types stay inside their adapters. XcodeGen and SPM define reproducible builds. SDK-specific Combine bridges are allowed inside adapters, not as a second application architecture.
 
 ### II. Privacy by Default
-Video and image inference MUST remain on the iPhone. The single exception is the annotated pointing-target screenshot, which MAY be sent to the operator's own Passiv gateway for description, only while its dedicated switch is on and a Passiv key is configured; the switch is on by default at the owner's direction and the user can turn it off. No other frame is uploaded. Cloud microphone transmission requires explicit consent. Sending local findings as text requires separate opt-in, disabled by default. No recordings or transcripts are persisted by the prototype. Stop capture when backgrounded; no automatic recording on return.
+Video and image inference MUST remain on the iPhone. The single exception is the annotated pointing-target screenshot, which MAY be sent to the operator's own Passiv gateway for description, only while its dedicated switch is on and a Passiv key is configured; the switch is on by default at the owner's direction and the user can turn it off. In builds that carry a backend access token, the same switch also stores that pointing frame, its annotated copy and the description in the project's own backend. No other frame is uploaded. Cloud microphone transmission requires explicit consent. Sending local findings as text requires separate opt-in, disabled by default. No recordings or transcripts are persisted by the prototype. Stop capture when backgrounded; no automatic recording on return.
 
 ### III. Bounded and Cancel-Safe Processing
 Inference runs off the main actor with at most one active request and no unbounded frame queue. Capture and conversation startup must be cancellable. Errors, denied permissions, disconnection and stalled streams must lead to recoverable UI states. Test lifecycle transitions.
@@ -34,7 +34,9 @@ Use Spec Kit for planning: specification → clarification when necessary → re
 
 This constitution governs TrackInspect only. Amendments require a rationale and corresponding updates to plans/templates. Existing prototype code predates Spec Kit adoption; its current status is baselined in `specs/001-glasses-inspection/` rather than represented as prior spec-driven work.
 
-**Version**: 1.2.0 | **Ratified**: 2026-10-03 | **Last Amended**: 2026-10-04
+**Version**: 1.3.0 | **Ratified**: 2026-10-03 | **Last Amended**: 2026-10-04
+
+Amendment 1.3.0 (2026-10-04): described pointing events may be stored in the project backend (owner asked to integrate it and for the agent to see the description). Inactive until a token is configured.
 
 Amendment 1.2.0 (2026-10-04): the pointing-screenshot upload is on by default, as the owner asked ("make cloud default"); this weakens privacy-by-default for that one image and is stated in the UI.
 

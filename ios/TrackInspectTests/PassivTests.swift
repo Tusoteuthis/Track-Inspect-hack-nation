@@ -62,11 +62,16 @@ final class PassivTests: XCTestCase {
         model.startVoice(agentID: "test")
         for _ in 0..<100 where model.isVoiceBusy { try await Task.sleep(for: .milliseconds(10)) }
         model.analyzePhoto(frame)
-        for _ in 0..<100 where voice.texts.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
+        for _ in 0..<100 where voice.contexts.isEmpty { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertEqual(model.pointingCapture?.description, "A rail clip.")
-        XCTAssertEqual(voice.texts.count, 1)
-        XCTAssertTrue(voice.texts[0].contains("unverified): A rail clip."))
-        XCTAssertTrue(voice.contexts.isEmpty)
+        XCTAssertEqual(voice.contexts.count, 1)
+        XCTAssertTrue(voice.contexts[0].hasPrefix("[POINTING_EVENT] event_id="))
+        XCTAssertTrue(voice.contexts[0].contains("as: \"A rail clip.\" This is a machine guess"))
+        XCTAssertEqual(model.transcript.map(\.speaker), ["camera"])
+        XCTAssertEqual(model.transcript.first?.text, "Pointing event sent to the agent: A rail clip.")
+        // Later speech from the SDK keeps the note in place instead of wiping it.
+        voice.onTranscript?([TranscriptLine(id: "m1", speaker: "agent", text: "What do you see there?")])
+        XCTAssertEqual(model.transcript.map(\.speaker), ["camera", "agent"])
 
         // A new photo is a fresh run and is described again.
         clock += 1
@@ -105,9 +110,29 @@ final class PassivTests: XCTestCase {
         for _ in 0..<100 where model.pointingCapture?.description == nil { try await Task.sleep(for: .milliseconds(10)) }
         calls = await describer.calls
         XCTAssertEqual(calls, 1)
-        XCTAssertTrue(voice.texts.isEmpty, "A hand the model calls non-pointing is not sent to the agent")
+        XCTAssertTrue(voice.contexts.isEmpty, "A hand the model calls non-pointing is not sent to the agent")
         XCTAssertEqual(model.pointingCapture?.description, "Not a deliberate point. Nothing was sent to the agent.")
         await model.stopAll()
+    }
+
+    @MainActor func testDescribedPointIsRecordedUnderTheEventIdGivenToTheAgent() async throws {
+        let voice = RecordingVoice()
+        let recorder = MemoryRecorder()
+        let model = InspectionViewModel(video: IdleVideo(), analyzer: SnapshotAnalyzer(snapshot: frame.jpegData(compressionQuality: 0.8)!),
+                                        voice: voice, describer: RecordingDescriber(), recorder: recorder)
+        model.startVoice(agentID: "test")
+        for _ in 0..<100 where model.isVoiceBusy { try await Task.sleep(for: .milliseconds(10)) }
+        model.analyzePhoto(frame)
+        for _ in 0..<100 where model.pointingCapture?.backendStatus == nil { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(model.pointingCapture?.backendStatus, "Saved to the inspection backend.")
+        let records = await recorder.records
+        XCTAssertEqual(records.count, 1)
+        XCTAssertEqual(records[0].description, "A rail clip.")
+        XCTAssertTrue(voice.contexts[0].contains("event_id=\(records[0].eventID) "))
+        await model.stopAll()
+        for _ in 0..<100 { if await recorder.ended { break }; try await Task.sleep(for: .milliseconds(10)) }
+        let ended = await recorder.ended
+        XCTAssertTrue(ended)
     }
 
     private var frame: UIImage {
@@ -132,6 +157,13 @@ private actor RecordingDescriber: TargetDescriptionService {
         calls += 1
         return text
     }
+}
+
+private actor MemoryRecorder: PointingRecorder {
+    private(set) var records: [PointingRecord] = []
+    private(set) var ended = false
+    func record(_ record: PointingRecord) async throws { records.append(record) }
+    func endSession() async { ended = true }
 }
 
 private struct SnapshotAnalyzer: AnalysisService {
@@ -165,7 +197,5 @@ private struct SnapshotAnalyzer: AnalysisService {
     func start(agentID: String) async throws { onStatus?("Connected") }
     func stop() async {}
     func setMuted(_ muted: Bool) async throws {}
-    var texts: [String] = []
     func updateContext(_ text: String) async throws { contexts.append(text) }
-    func sendText(_ text: String) async throws { texts.append(text) }
 }

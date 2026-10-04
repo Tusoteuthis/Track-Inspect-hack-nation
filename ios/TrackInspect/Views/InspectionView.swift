@@ -6,6 +6,7 @@ struct InspectionView: View {
     @Bindable var mentra: MentraGlassesService
     @AppStorage("elevenLabsAgentID") private var agentID = AgentPreset.expert.agentID
     @AppStorage("videoSource") private var videoSource = VideoSource.glasses
+    @AppStorage("voiceConnection") private var voiceConnection = VoiceConnection.direct
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var showSettings = false
     @State private var confirmVoice = false
@@ -64,7 +65,8 @@ struct InspectionView: View {
                 }
             }
             .sheet(isPresented: $showSettings) {
-                InspectionSettingsView(agentID: $agentID, mentra: mentra, videoSource: $videoSource, registrationStatus: model.glassesRegistration,
+                InspectionSettingsView(agentID: $agentID, mentra: mentra, videoSource: $videoSource,
+                                       voiceConnection: $voiceConnection, canUseBackendVoice: model.canUseBackendVoice, registrationStatus: model.glassesRegistration,
                                        isPairing: model.isPairing,
                                        connectionStatus: model.glassesConnection,
                                        refreshConnection: { model.refreshGlassesConnection() },
@@ -77,13 +79,14 @@ struct InspectionView: View {
             }
             .alert("Start cloud voice?", isPresented: $confirmVoice) {
                 Button("Cancel", role: .cancel) {}
-                Button("Start voice") { model.startVoice(agentID: agentID) }
+                Button("Start voice") { model.startVoice(agentID: agentID, connection: voiceConnection) }
             } message: {
                 Text("Microphone audio will be streamed to ElevenLabs and its voice infrastructure. Video is never uploaded. Check your agent's retention settings before use.")
             }
             .alert("Attention", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
                 Button("OK") { model.error = nil }
             } message: { Text(model.error ?? "") }
+            .onAppear { agentID = AgentPreset.current(for: agentID) }
             .onChange(of: videoSource) {
                 if model.isVideoRunning { Task { await model.stopVideo() } }
             }
@@ -270,7 +273,7 @@ struct InspectionView: View {
                     .accessibilityIdentifier("describeTargets")
                     .accessibilityHint("Uploads the annotated screenshot to the Passiv gateway.")
                 Text(model.canDescribeTargets
-                     ? "On by default. Each time you point, the annotated screenshot is uploaded to the Passiv gateway and the description is sent to the voice agent as text while a call is active. Sent images cannot be recalled."
+                     ? "On by default. When you hold a point, the annotated screenshot is uploaded to the Passiv gateway and the description is given to the voice agent as a pointing event while a call is active. Builds with a backend token also store the frame and event in the inspection backend. Sent images cannot be recalled."
                      : "No Passiv key in this build. Add PASSIV_API_KEY to Secrets.xcconfig and rebuild.")
                     .font(.caption).foregroundStyle(InspectionTheme.secondary)
             }.fixedSize(horizontal: false, vertical: true).padding(16)
@@ -295,6 +298,10 @@ struct InspectionView: View {
                 if let description = capture.description {
                     Label(description, systemImage: "cloud").font(.subheadline).textSelection(.enabled)
                         .accessibilityIdentifier("targetDescription")
+                    if let status = capture.backendStatus {
+                        Text(status).font(.caption).foregroundStyle(InspectionTheme.secondary)
+                            .accessibilityIdentifier("backendStatus")
+                    }
                 } else if model.isDescribingTarget {
                     HStack(spacing: 8) {
                         ProgressView()

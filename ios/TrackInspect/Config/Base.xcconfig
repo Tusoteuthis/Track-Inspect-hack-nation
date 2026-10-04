@@ -4,4 +4,7 @@ MWDAT_CLIENT_TOKEN =
 PASSIV_GATEWAY_HOST = gateway.mezzanin.eu
 PASSIV_MODEL = claude-sonnet
 PASSIV_API_KEY =
+// TrackInspect web backend (pointing-event ingest). Recording stays off without a token.
+BACKEND_HOST = track-inspect.matthiass1.workers.dev
+BACKEND_ACCESS_TOKEN =
 #include? "Secrets.xcconfig"
