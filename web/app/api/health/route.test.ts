@@ -38,8 +38,19 @@ describe("GET /api/health", () => {
       schema_version: "ws6.v0",
       knowledge_dir_writable: true,
       runtime_dir_writable: true,
-      modules: {},
+      modules: { synthesis: { id: "ws5-synthesis", version: "0.2.0", source: "live" } },
     });
+  });
+
+  it("reports the stub when WS5_MODULES=stub", async () => {
+    setConfigForTests({ knowledgeDir: path.join(dir, "knowledge"), runtimeDir: path.join(dir, "runtime") });
+    process.env.WS5_MODULES = "stub";
+    try {
+      const body = await (await GET()).json();
+      expect(body.modules).toEqual({ synthesis: { id: "ws6-stub-synthesis", version: "0.1.0", source: "stub" } });
+    } finally {
+      delete process.env.WS5_MODULES;
+    }
   });
 
   it("returns 503 when the knowledge dir cannot be created", async () => {

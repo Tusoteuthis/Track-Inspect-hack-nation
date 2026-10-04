@@ -27,6 +27,7 @@ import {
   type StatusTransition,
 } from "@/lib/contracts";
 import { getConfig } from "./config";
+import { ApiError } from "./errors";
 import { assertSafeId, isValidId, newId, safeJoin } from "./ids";
 import { withLock } from "./locks";
 import { readJson, writeFileAtomic, writeJsonAtomic } from "./store";
@@ -428,4 +429,24 @@ export async function unresolvedLocalLinks(entryId: string, markdown: string): P
     if (!exists) out.push(target);
   }
   return out;
+}
+
+// --- views ------------------------------------------------------------------------
+
+/** `GET /api/knowledge/entries/:id`: current.json plus every revision with its status now. */
+export async function getEntryView(entryId: string) {
+  const entry = await loadEntry(entryId);
+  if (!entry) throw new ApiError("not_found", "Entry not found.", { entry_id: entryId });
+  const log = await readStatusLog(entryId);
+  const revisions = [];
+  for (const r of await listRevisions(entryId)) {
+    revisions.push({ revision_id: r.revision_id, revision_no: r.revision_no, status: await revisionStatus(r, log), created_at_utc: r.created_at_utc });
+  }
+  return { ...entry, revisions };
+}
+
+export async function getRevisionView(entryId: string, revisionId: string) {
+  const found = await readRevision(entryId, revisionId);
+  if (!found) throw new ApiError("not_found", "Revision not found.", { entry_id: entryId, revision_id: revisionId });
+  return { revision: found.revision, status: await revisionStatus(found.revision), markdown: found.markdown };
 }
