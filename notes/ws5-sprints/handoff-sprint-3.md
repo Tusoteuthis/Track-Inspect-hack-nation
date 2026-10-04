@@ -197,3 +197,12 @@ All commands run in `/Users/matthiassammer/Documents/Projects/Track-Inspect-hack
 - The voice tutor should speak `feedback_text` in its natural order: question first, then the quotes. It may quote only `cited[].quote`.
 - `buildTimeline(..., deliveries)` takes the moments the voice actually spoke the guidance. Sprint 4's assessment should use `intervention: "caught_before_save"` and must not claim mastery from a single coached correction.
 - If the judge prompt needs tuning after the first harness run, change `JUDGE_SYSTEM_PROMPT` only. The guards don't change.
+
+## Addendum — tutor ElevenLabs agent created (2026-10-04, at the human's request)
+
+- **New agent:** `Track Inspect – Tutor` = `agent_6401m424ywywecnrxne0rtp3frwx`. Before this, no tutor agent existed; the only agent was the expert, `agent_3701m420qeqff2ysp5xh34vfkt5a`.
+- **Settings:** the same voice (`cjVigY5qzO86Huf0OWal`, `eleven_v4_turbo`), LLM (`claude-sonnet-5`) and platform settings as the expert. The prompt and first message are the **interim** ones in `agents/tutor/`; the full tutor prompt and probes are Sprint 4. The expert's `begin_question` tool and knowledge docs were not copied. The only tool is the built-in `skip_turn`.
+- **How it was created:** with a one-off REST call. `npm run sync-agents -- --create-missing` could not be used, because the installed `@elevenlabs/elevenlabs-js` rejects the expert's TTS model `eleven_v4_turbo` in client-side validation. **WS3:** `sync-agents` will hit the same error when it updates an agent with that model.
+- **Where the ID is set:** `ELEVENLABS_AGENT_ID_TUTOR` in this worktree's `web/.env` and in the main checkout's `web/.env` (gitignored).
+- **Stale key:** `ELEVENLABS_API_KEY` in the main `web/.env` returns 401. The working key is `ELEVEN_LABS_KEY` in the repo-root `.env`. The main `web/.env` also has an empty `ELEVENLABS_AGENT_ID_EXPERT`.
+- **Manifest:** `agents/manifest.json`'s tutor entry still has no `systemPrompt` or `firstMessage` paths. Sprint 4 should add them (`tutor/system-prompt.md`, `tutor/first-message.md`) before running `sync-agents --agent tutor`.
