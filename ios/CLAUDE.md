@@ -39,6 +39,6 @@ Finger pointing detector: `specs/010-finger-pointing/` (`PointingDetector.swift`
 App icon feature: `specs/003-app-icon/`; asset generator `scripts/generate-app-icon.swift`, validation/build notes `docs/APP-ICON.md`. Icon is included in the installed build 4.
 Latest presentation feature: `specs/002-linear-style/` (build 2), with shared styling in `InspectionTheme.swift`; included in installed build 4. See `docs/LINEAR-STYLE.md`.
 Latest fix: `specs/004-registration-recovery/`; build 0.1.0 (4) installed/launched on the original phone. DAT registration error 0 means alreadyRegistered, handled as success; see `docs/REGISTRATION-FIX.md`.
-Current baseline: `specs/001-glasses-inspection/`; see `execution.md` for the full local run. App ID: `ai.trackinspect.app`; Meta callback: `trackinspect://`. This identifier is not a backend endpoint. Keep implemented code separate from pending hardware acceptance; never claim glasses A/V works from simulator tests alone.
+Current baseline: `specs/001-glasses-inspection/`; see `execution.md` for the full local run. App ID: `ai.track-inspect.app`; Meta callback: `trackinspect://`. This identifier is not a backend endpoint. Keep implemented code separate from pending hardware acceptance; never claim glasses A/V works from simulator tests alone.
 No Git repository currently exists here; use `SPECIFY_FEATURE` for local workflow scripts. Do not rerun setup-plan on a filled plan unintentionally.
 <!-- MANUAL ADDITIONS END -->
