@@ -1,7 +1,11 @@
 # Storage port to R2 + Durable Objects — status
 
-Branch `ws-cf-storage` (worktree `.claude/worktrees/ws-cf-storage`), from `voice` 811309f. Not merged, not pushed,
-not deployed. Off the demo path: Terminal A's Containers deploy runs `voice` unchanged.
+Built on branch `ws-cf-storage` (from `voice` 811309f) and **merged into `voice` as `80b78ab`**. That branch and its
+worktree are gone. Pushed with `voice`; the user merges `voice` → `main` by hand.
+**Runtime impact today: none.** The default is `STORAGE_BACKEND=fs`, which writes the same files as before. The
+Containers deploy (Terminal A) needs no config change. R2 only activates with `STORAGE_BACKEND=r2` plus a bucket
+binding, and neither is wired yet.
+Start-here overview for all deploy work: [HANDOFF.md](HANDOFF.md).
 Inventory of what was ported: [storage-port-inventory.md](storage-port-inventory.md).
 
 ## Done
@@ -64,6 +68,28 @@ session. Every `appendBus` for a session and every `GET /api/sessions/:sid/strea
 Worker forwards the request and the DO returns the streaming `Response` from `sessionStream` unchanged.
 The bus's `globalThis` state is then per-DO, which is exactly per-session. A later improvement is
 hibernatable WebSockets, so idle streams don't keep the DO billed.
+
+## How to use / extend (for the next agent)
+
+- **New persistence code** must go through `getBlobStore()` (or `readJson` / `writeJsonAtomic` / `putImmutable` /
+  `putMutable` in `store.ts`), never `node:fs` directly. Otherwise it silently won't work on R2.
+- **Paths**: keep building them with `paths.ts`. For R2, a path is only valid under `KNOWLEDGE_DIR`, `RUNTIME_DIR` or
+  `CASES_DIR`, and never inside `EVALUATOR_DIR`.
+- **Tests**: `lib/backend/blobstore.test.ts` runs one contract suite against both backends. Add a case there when
+  you add a `BlobStore` method.
+- **Locks / jobs**: `setLockProvider()` (`locks.ts`) and `setJobTracker()` (`synthesis.ts`) are the swap points.
+  The defaults are the old in-memory behavior.
+
+## Open points (not done)
+
+- [ ] **Not exercised against real R2 or Durable Objects.** Only an in-memory fake bucket is tested.
+- [ ] `durable.ts` is an unwired sketch: `LockDurableObject` / `DurableLockProvider` / `SessionDurableObject`.
+- [ ] Workers deploy path: OpenNext adapter, R2 + DO bindings, entry wiring (steps 1–7 below).
+- [ ] Diag log on R2: each `diag()` call would rewrite the day file. Route it to Workers Logs first.
+- [ ] fs → R2 data migration script.
+- [ ] `config.ts` still calls `existsSync` at startup (needs `nodejs_compat`, or make it lazy).
+- [ ] Optional: redeploy the Containers app from `voice` so the live build includes this refactor. It should
+      behave the same; see HANDOFF open point 1.
 
 ## Left for an actual Workers deploy
 
