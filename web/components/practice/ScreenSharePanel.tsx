@@ -13,14 +13,21 @@ const COPY: Record<CaptureState["status"], { icon: string; text: string }> = {
   error: { icon: "✖", text: "Screen sharing failed." },
 };
 
-type Props = { state: CaptureState; onStart: () => void; onStop: () => void };
+type Props = {
+  state: CaptureState;
+  onStart: () => void;
+  onStop: () => void;
+  /** Overrides for other audiences (e.g. the expert companion). */
+  heading?: string;
+  copy?: Partial<Record<CaptureState["status"], { icon: string; text: string }>>;
+};
 
-export function ScreenSharePanel({ state, onStart, onStop }: Props) {
-  const copy = COPY[state.status];
+export function ScreenSharePanel({ state, onStart, onStop, heading = "Screen for the tutor", copy: overrides }: Props) {
+  const copy = overrides?.[state.status] ?? COPY[state.status];
   const sharing = state.status === "active";
   return (
     <section className={styles.panel} aria-labelledby="screen-heading">
-      <h2 id="screen-heading">Screen for the tutor</h2>
+      <h2 id="screen-heading">{heading}</h2>
       <p className={styles.status} role="status" data-status={state.status} data-testid="screen-status">
         <span aria-hidden="true" className={styles.statusIcon}>
           {copy.icon}
