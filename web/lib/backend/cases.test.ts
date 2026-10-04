@@ -165,7 +165,8 @@ describe("evaluator separation", () => {
     };
     walk(path.join(web, "app", "api"));
     walk(path.join(web, "lib", "backend"));
-    const allowed = new Set(["lib/backend/config.ts", "lib/backend/paths.ts", "lib/backend/assets.ts"].map(f => path.join(web, f)));
+    // blobstore.ts: `toKey` is the R2 path guard (refuses keys inside the evaluator dir).
+    const allowed = new Set(["lib/backend/config.ts", "lib/backend/paths.ts", "lib/backend/assets.ts", "lib/backend/blobstore.ts"].map(f => path.join(web, f)));
     const offenders = files.filter(f => !allowed.has(f) && /evaluatorDir|EVALUATOR_DIR|\.runtime\/evaluator/.test(readFileSync(f, "utf8")));
     expect(offenders.map(f => path.relative(web, f))).toEqual([]);
     expect(files.length).toBeGreaterThan(30);

@@ -27,6 +27,7 @@ const answer = (over: Partial<ExpertExchange> & { exchange_id: string; text: str
   audio_offset_secs: null,
   record_state: "on_record",
   source: "fixture",
+  outcome: null,
   answer_lines: [{ text: over.text, at_utc: "2026-10-03T10:20:03.000Z", transcript_line_id: `${over.exchange_id}-1` }],
   ...over,
 });

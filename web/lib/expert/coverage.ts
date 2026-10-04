@@ -16,7 +16,8 @@ import {
   type Topic,
 } from "./contracts";
 
-export const DEBRIEF_MAX_GAPS = 5;
+/** Default debrief cap (strategy §6/§11, D6); the session's `interview_config.debrief_max_gaps` wins. */
+export const DEBRIEF_MAX_GAPS = 3;
 
 /** A question of this kind, once answered, addresses that dimension of its region. */
 export const KIND_DIMENSION: Partial<Record<ExchangeKind, CoverageDimension>> = {
@@ -219,9 +220,19 @@ export function selectGaps(snap: GapSnap): Gap[] {
     .map(r => r.gap);
 }
 
-/** The frozen agenda for the debrief: the top gaps, all still open. */
-export function debriefAgenda(snap: GapSnap, max = DEBRIEF_MAX_GAPS): DebriefItem[] {
-  return selectGaps(snap)
-    .slice(0, max)
-    .map(g => ({ ...g, state: "open" as const, exchange_ids: [] }));
+/**
+ * The frozen agenda: the top `max` gaps are open; the rest are kept as `dropped` (unresolved,
+ * never asked). With `guardrailFirst` (no guardrail question answered live, D6) the best guardrail
+ * gap takes the first slot so the challenge's guardrail is covered without an extra question.
+ */
+export function agendaFromGaps(gaps: Gap[], max: number, guardrailFirst: boolean): DebriefItem[] {
+  const ordered = [...gaps];
+  const g = guardrailFirst ? ordered.findIndex(x => x.dimension === "guardrails") : -1;
+  if (g > 0) ordered.unshift(...ordered.splice(g, 1));
+  return ordered.map((gap, i) => ({ ...gap, state: i < max ? ("open" as const) : ("dropped" as const), exchange_ids: [] }));
+}
+
+/** The frozen agenda for the debrief, from this module's own gap selector. */
+export function debriefAgenda(snap: GapSnap, max = DEBRIEF_MAX_GAPS, guardrailFirst = false): DebriefItem[] {
+  return agendaFromGaps(selectGaps(snap), max, guardrailFirst);
 }

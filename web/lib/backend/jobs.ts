@@ -1,11 +1,11 @@
 /** Job records in `RUNTIME_DIR/jobs/<job_id>.json` (IDs, statuses and error codes only). */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { JobSchema, type Job } from "@/lib/contracts";
 import { getConfig } from "./config";
 import { ApiError } from "./errors";
 import { assertSafeId, isValidId, safeJoin } from "./ids";
 import { readJson, writeJsonAtomic } from "./store";
+import { getBlobStore } from "./blobstore";
 
 const jobsDir = () => path.join(getConfig().runtimeDir, "jobs");
 const jobFile = (jobId: string) => safeJoin(jobsDir(), jobId) + ".json";
@@ -28,13 +28,7 @@ export async function getJob(jobId: string): Promise<Job> {
 }
 
 export async function listSessionJobs(sid: string): Promise<Job[]> {
-  let files: string[];
-  try {
-    files = await fs.readdir(jobsDir());
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw err;
-  }
+  const files = (await getBlobStore().list(jobsDir())).map((e) => e.name);
   const out: Job[] = [];
   for (const f of files) {
     const id = f.endsWith(".json") ? f.slice(0, -5) : "";

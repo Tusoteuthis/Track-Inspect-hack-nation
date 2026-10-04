@@ -3,11 +3,11 @@
  * Lines are rebuilt from an allow-list, so a caller passing extra fields (question text,
  * answer lines, image bytes…) cannot leak them. Writing never throws.
  */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { ErrorCodeSchema, type ErrorCode } from "@/lib/contracts";
 import { getConfig } from "./config";
 import { isValidId } from "./ids";
+import { getBlobStore } from "./blobstore";
 
 export type DiagOutcome = "ok" | "error";
 
@@ -54,8 +54,7 @@ export async function diag(input: DiagInput, now: Date = new Date()): Promise<Di
   const line = sanitizeDiag(input, now);
   try {
     const dir = path.join(getConfig().runtimeDir, "diag");
-    await fs.mkdir(dir, { recursive: true });
-    await fs.appendFile(path.join(dir, `${line.at_utc.slice(0, 10)}.ndjson`), JSON.stringify(line) + "\n");
+    await getBlobStore().append(path.join(dir, `${line.at_utc.slice(0, 10)}.ndjson`), JSON.stringify(line) + "\n");
   } catch {
     // Diagnostics must never break a request.
   }

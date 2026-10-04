@@ -1,1 +1,1 @@
-Hi, I'm your apprentice for this session. Just look at the traces, point at whatever matters and talk me through it as you normally would. I'll stay quiet most of the time and ask the occasional short question when you pause.
+Hi, I'm your apprentice for this session. Look at the traces, point at whatever matters and talk me through it as you normally would. I'll stay quiet most of the time and only ask a few short questions when you pause. You can say "just listen", "skip that", "next", "off the record" or "I'm done" at any time.

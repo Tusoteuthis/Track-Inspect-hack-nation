@@ -1,12 +1,17 @@
 import type { InterviewConfig } from "./contracts";
 
-/** Sprint 2 defaults; `pause_ms` is tuned in the human gate (see handoff-sprint-2.md). */
+/**
+ * Sprint 2 timing defaults (`pause_ms` tuned in the human gate) and the Sprint 5 budgets from
+ * notes/voice-agent-strategy-handoff.md (user decisions D1–D7 in sprint-5-strategy-alignment.md).
+ */
 export const DEFAULT_INTERVIEW_CONFIG: InterviewConfig = {
-  dedup_window_ms: 20_000,
   dedup_min_iou: 0.5,
   stale_after_ms: 30_000,
   budget_max_questions: 5,
-  budget_window_ms: 600_000,
+  topic_max_followups: 1,
+  orient_max_questions: 2,
+  debrief_max_gaps: 3,
+  teach_back_max_corrections: 1,
   pause_ms: 1200,
   release_timeout_ms: 30_000,
   nudge_after_ms: 2500,

@@ -130,6 +130,22 @@ test("entry offers Expert session and Newcomer practice", async ({ page }) => {
   await expect(page.getByRole("main").getByRole("link", { name: /Newcomer practice/ })).toHaveAttribute("href", "/practice");
 });
 
+test("single screen: Start session plays the video inline, it holds and the companion gets the hold's evidence", async ({
+  page,
+}) => {
+  await page.goto("/expert?fixture_latency=300");
+  await expect(page.getByRole("radio", { name: /Wheel sensor pass/ })).toBeChecked();
+  await page.getByRole("button", { name: "Start session" }).click();
+  const player = page.getByTestId("inline-video");
+  await expect(player).toHaveAttribute("data-status", "playing");
+  await expect(player).toHaveAttribute("data-status", "held", { timeout: 15_000 });
+  await expect(player.getByRole("status")).toContainText("Hold 1 of 4");
+  await expect(page.getByTestId("recent-event")).toHaveCount(1);
+  await shot(page, "13-companion-inline-video-hold");
+  await player.getByRole("button", { name: "Resume" }).click();
+  await expect(player).toHaveAttribute("data-status", "playing");
+});
+
 test("monitor video: Space plays, it holds for pointing, the companion mirrors it and gets the hold's evidence", async ({
   context,
 }) => {

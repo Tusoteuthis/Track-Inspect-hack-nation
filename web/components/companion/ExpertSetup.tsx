@@ -98,7 +98,7 @@ export function ExpertSetup({ agent, onStarted, selectedId, onSelect, renderMoni
         <h2 id="display-heading">2. Put the trace on the demo monitor</h2>
         <p className={styles.hint}>
           {chosen?.media
-            ? "Opens the inspection player full-screen. The expert drives it at the monitor: Space plays, it holds at each marked moment for pointing, PgUp goes back. Move the window to the demo monitor."
+            ? "The video plays on this page as soon as the session starts and holds at each marked moment for pointing. Optional, for a second screen: open the full-screen player (Space plays, PgUp goes back) and move it to the demo monitor."
             : "Opens the trace full-screen at the largest legible size, for reading through the glasses. Move the window to the demo monitor."}
         </p>
         {chosen && renderMonitor ? renderMonitor(chosen) : null}

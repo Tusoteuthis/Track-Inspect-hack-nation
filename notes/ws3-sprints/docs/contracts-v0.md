@@ -6,6 +6,29 @@
 - Session records (snapshot, `session.json`, `completion.json`): **`ws3.v1`** (`SCHEMA_VERSION`).
 - `PointingEvent` (WS2 → WS3): **`ws3.v0`**, unchanged (`EVENT_SCHEMA_VERSION`). WS2 keeps sending `ws3.v0`.
 
+## Additive changes in Sprint 5 (still `ws3.v1`; older producers stay valid)
+
+Sprint 5 enforces the bounded-questioning policy from `notes/voice-agent-strategy-handoff.md` (decisions D1–D11 in `notes/ws3-sprints/sprint-5-strategy-alignment.md`). All changes are additive, so `SCHEMA_VERSION` stays `ws3.v1`, and validators accept a missing new field. WS6's Zod mirror (`web/lib/contracts/expert.ts`) defaults `outcome` to `null`.
+
+- **`ExpertExchange.outcome`**: `"declined" | "dropped" | null`.
+  - `declined`: the expert said "skip that".
+  - `dropped`: the topic was closed by "next" before an answer came.
+  - WS5: a declined exchange carries no knowledge, and the question must never be asked again.
+- **`Phase`** gains `"orient"`. These are setup questions asked before anything is pointed at. They have `event_id` null, are never screen-grounded, and never count as live questions.
+- **`TopicState`** gains `"closed"` (set by the expert's "next"). **`DeferredReason`** gains `"listen_only"`.
+- **`DebriefItemState`** gains `"dropped"`. A dropped item was selected as a gap but cut by the 3-gap cap or skipped by the expert. It is kept as unresolved and never asked. `completion.open_gap_ids` includes dropped items.
+- **`SessionSnapshot.interaction_mode`**: `"questions" | "listen_only"`.
+- **`TimingMarkName`** gains `"question_declined_by_app"`.
+- **`InterviewConfig`**:
+  - Removed: `dedup_window_ms` (repeat gestures merge with no time window) and `budget_window_ms` (the budget is a fixed per-session cap).
+  - Added: `topic_max_followups` (1), `orient_max_questions` (2), `debrief_max_gaps` (3), `teach_back_max_corrections` (1).
+- **`SessionCompletion.unfinished`** also lists challenge shortfalls:
+  - fewer than 3 live questions
+  - no live guardrail question
+  - questions not routed through `begin_question`
+  - the unconfirmed steps of an unconfirmed latest revision
+- **Client tools:** `set_interaction_mode({ mode })` and `close_topic({ reason: "skip" | "next" })`. `begin_question.phase` accepts `"orient"`. `begin_question` may return `declined <reason>: …`, where the reason is one of `listen_only`, `session_budget`, `topic_followup_used`, `topic_closed`, `repeat` or `phase_budget`.
+
 ## Changes in ws3.v1 (Sprint 4)
 
 | Where | Change |
@@ -187,7 +210,7 @@ Something the expert pointed at that the apprentice may ask about.
 
 ### InterviewConfig — Sprint 2 (`interview_config` in `session.json`)
 
-`dedup_window_ms` 20000, `dedup_min_iou` 0.5, `stale_after_ms` 30000, `budget_max_questions` 5 per `budget_window_ms` 600000, `pause_ms` 1200, `release_timeout_ms` 30000, `nudge_after_ms` 2500 (0 = off), `speech_hold_ms` 400, `vad_threshold` 0.5, `mic_threshold` 0.04. The values used are stored with each session.
+`dedup_min_iou` 0.5 (same trace and channel, no time window, since Sprint 5), `stale_after_ms` 30000, `budget_max_questions` 5 per session (since Sprint 5), `topic_max_followups` 1, `orient_max_questions` 2, `debrief_max_gaps` 3, `teach_back_max_corrections` 1, `pause_ms` 1200, `release_timeout_ms` 30000, `nudge_after_ms` 2500 (0 = off), `speech_hold_ms` 400, `vad_threshold` 0.5, `mic_threshold` 0.04. The values used are stored with each session.
 
 ### RecordingSegment — written since Sprint 4
 

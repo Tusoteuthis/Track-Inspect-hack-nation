@@ -11,7 +11,6 @@
  * revokes and redacts revisions, invalidates evaluations and emits SSE. Every step is idempotent,
  * so re-running an interrupted deletion completes it.
  */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { CascadeSummary, ExchangePut, RecordStateRequest, Session } from "@/lib/contracts";
 import { nextStatus } from "@/lib/knowledge";
@@ -41,6 +40,7 @@ import { assessmentsDir, assetDir, imagesRoot, learnerDir, sessionDir, sessionRe
 import { bumpGenerationLocked, changeRecordState, getSession, loadSession, withSessionLock } from "./sessions";
 import { writeJsonAtomic } from "./store";
 import { readTombstone, writeTombstone } from "./tombstones";
+import { getBlobStore, listNames } from "./blobstore";
 
 // --- pure -------------------------------------------------------------------------
 
@@ -170,12 +170,12 @@ export function computeCascade(graph: CascadeGraph, roots: readonly CascadeRoot[
 const sessionsRoot = () => path.dirname(sessionDir("x"));
 
 async function listSessionIds(): Promise<string[]> {
-  const names = await fs.readdir(sessionsRoot()).catch(() => [] as string[]);
+  const names = await listNames(sessionsRoot()).catch(() => [] as string[]);
   return names.filter(isValidId).sort();
 }
 
 async function listAssetIds(): Promise<string[]> {
-  const names = await fs.readdir(imagesRoot()).catch(() => [] as string[]);
+  const names = await listNames(imagesRoot()).catch(() => [] as string[]);
   return names.filter(isValidId).sort();
 }
 
@@ -233,7 +233,7 @@ export type ApplyOptions = {
   now?: Date;
 };
 
-const rmrf = (p: string) => fs.rm(p, { recursive: true, force: true });
+const rmrf = (p: string) => getBlobStore().deleteTree(p);
 
 function emptySummary(): CascadeSummary {
   return {
@@ -394,7 +394,7 @@ async function notStoredOrGone(kind: "event" | "exchange", sid: string, id: stri
 export async function deleteEvent(sid: string, eid: string): Promise<CascadeSummary> {
   assertSafeId(eid, "event_id");
   await getSession(sid);
-  const exists = await fs.stat(sessionRecordFile(sid, "events", eid)).then(() => true, () => false);
+  const exists = (await getBlobStore().stat(sessionRecordFile(sid, "events", eid))) !== null;
   if (!exists) return notStoredOrGone("event", sid, eid);
   return runCascade([{ kind: "event", id: eid, session_id: sid }], { reason: `deleted:event:${eid}`, dropped: false, redact: true });
 }
@@ -402,7 +402,7 @@ export async function deleteEvent(sid: string, eid: string): Promise<CascadeSumm
 export async function deleteExchange(sid: string, xid: string): Promise<CascadeSummary> {
   assertSafeId(xid, "exchange_id");
   await getSession(sid);
-  const exists = await fs.stat(sessionRecordFile(sid, "exchanges", xid)).then(() => true, () => false);
+  const exists = (await getBlobStore().stat(sessionRecordFile(sid, "exchanges", xid))) !== null;
   if (!exists) return notStoredOrGone("exchange", sid, xid);
   return runCascade([{ kind: "exchange", id: xid, session_id: sid }], { reason: `deleted:exchange:${xid}`, dropped: false, redact: true });
 }

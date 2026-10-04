@@ -96,7 +96,8 @@
             "fastening",
             "anomal",
             "\\bimpact"
-          ]
+          ],
+          "toolOptional": true
         }
       },
       {
@@ -232,7 +233,7 @@
         "history": [
           {
             "role": "user",
-            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it. No guardrail question yet: once the expert has explained what they see here, ask when they would stop, escalate or not trust it."
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it. No guardrail question yet: if a follow-up is worth asking once the expert has explained what they see here, prefer asking when they would stop, escalate or not trust it."
           },
           {
             "role": "user",
@@ -301,7 +302,7 @@
         "history": [
           {
             "role": "user",
-            "text": "[POINTING_EVENT] event_id=evt-004 mapping_status=ambiguous channel=unknown trace=trace-A record_state=on_record source=fixture. The pointed region is not clear. When there is a natural pause, first ask which region they mean. No guardrail question yet: once the expert has explained what they see here, ask when they would stop, escalate or not trust it."
+            "text": "[POINTING_EVENT] event_id=evt-004 mapping_status=ambiguous channel=unknown trace=trace-A record_state=on_record source=fixture. The pointed region is not clear. When there is a natural pause, first ask which region they mean. No guardrail question yet: if a follow-up is worth asking once the expert has explained what they see here, prefer asking when they would stop, escalate or not trust it."
           },
           {
             "role": "user",
@@ -343,7 +344,7 @@
         "history": [
           {
             "role": "user",
-            "text": "[POINTING_EVENT] event_id=evt-002 mapping_status=resolved channel=SYS2 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it. No guardrail question yet: once the expert has explained what they see here, ask when they would stop, escalate or not trust it."
+            "text": "[POINTING_EVENT] event_id=evt-002 mapping_status=resolved channel=SYS2 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it. No guardrail question yet: if a follow-up is worth asking once the expert has explained what they see here, prefer asking when they would stop, escalate or not trust it."
           },
           {
             "role": "user",
@@ -403,7 +404,7 @@
         "history": [
           {
             "role": "user",
-            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it. No guardrail question yet: once the expert has explained what they see here, ask when they would stop, escalate or not trust it."
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it. No guardrail question yet: if a follow-up is worth asking once the expert has explained what they see here, prefer asking when they would stop, escalate or not trust it."
           },
           {
             "role": "user",
@@ -488,7 +489,7 @@
           },
           {
             "role": "user",
-            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it. stale=yes: the expert pointed at this a while ago and may have moved on. Refer to it explicitly, for example \"the region you pointed at a moment ago on SYS1\". No guardrail question yet: once the expert has explained what they see here, ask when they would stop, escalate or not trust it."
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it. stale=yes: the expert pointed at this a while ago and may have moved on. Refer to it explicitly, for example \"the region you pointed at a moment ago on SYS1\". No guardrail question yet: if a follow-up is worth asking once the expert has explained what they see here, prefer asking when they would stop, escalate or not trust it."
           },
           {
             "role": "user",
@@ -621,7 +622,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -761,7 +762,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -803,7 +804,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -976,7 +977,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -1018,7 +1019,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -1166,7 +1167,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -1208,7 +1209,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -1340,7 +1341,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -1382,7 +1383,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -1508,7 +1509,7 @@
           },
           {
             "role": "user",
-            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do. | gap-session-guardrails (event_id=none): When you would stop, escalate or not trust the traces in this task as a whole. | gap-session-alternatives (event_id=none): Which situations in this task could be confused with each other, and how you tell them apart."
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
           },
           {
             "role": "user",
@@ -1550,7 +1551,7 @@
                   }
                 ]
               },
-              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
             }
           },
           {
@@ -2022,6 +2023,524 @@
             "fastening",
             "anomal",
             "\\bimpact"
+          ]
+        }
+      },
+      {
+        "name": "full-explanation-no-followup",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "This spike on the upper channel is the wheel set passing the sensor gap. I know it because it's narrow, about twice the baseline, and it drops straight back. It's always like that unless both channels jump at the same moment; then I don't trust it and I call the measurement team. That's all for this one."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "toolOptional": true,
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "\\bwhat('s| is) (this|that|it)\\b(?! about)",
+            "what do you see",
+            "what are you (looking at|seeing)",
+            "what do you recogni[sz]e",
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact"
+          ]
+        }
+      },
+      {
+        "name": "declined-by-app",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          }
+        ],
+        "toolMocks": {
+          "begin_question": "declined session_budget: the live question budget (5) is used up; remaining topics go to the debrief. Do not ask it and do not rephrase it; call skip_turn and say nothing."
+        },
+        "expect": {
+          "maxWords": 0,
+          "forbidTools": [
+            {
+              "name": "begin_question",
+              "paramsPattern": "\"kind\": ?\"(reasoning|distinction|context|guardrail|exception)\""
+            }
+          ]
+        }
+      },
+      {
+        "name": "skip-that",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          },
+          {
+            "role": "agent",
+            "text": "What do you recognise in this region?"
+          },
+          {
+            "role": "user",
+            "text": "Skip that."
+          }
+        ],
+        "toolMocks": {
+          "close_topic": "ok question dropped. Never ask it again, not even reworded. Say nothing, or only \"Okay.\", and let the expert continue."
+        },
+        "expect": {
+          "requireTools": [
+            {
+              "name": "close_topic",
+              "paramsPattern": "skip"
+            }
+          ],
+          "forbidTools": [
+            {
+              "name": "begin_question"
+            }
+          ],
+          "maxQuestions": 0,
+          "maxWords": 3
+        }
+      },
+      {
+        "name": "next-moves-on",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          },
+          {
+            "role": "agent",
+            "text": "What do you recognise in this region?"
+          },
+          {
+            "role": "user",
+            "text": "That's the spike I look for, twice the normal amplitude and only a few samples wide."
+          },
+          {
+            "role": "user",
+            "text": "Next."
+          }
+        ],
+        "toolMocks": {
+          "close_topic": "ok topic closed. Ask nothing more about that region. Say nothing, or only \"Okay.\", and let the expert continue."
+        },
+        "expect": {
+          "requireTools": [
+            {
+              "name": "close_topic",
+              "paramsPattern": "next"
+            }
+          ],
+          "forbidTools": [
+            {
+              "name": "begin_question"
+            }
+          ],
+          "maxQuestions": 0,
+          "maxWords": 3
+        }
+      },
+      {
+        "name": "just-listen-request",
+        "history": [
+          {
+            "role": "user",
+            "text": "Just listen for a while, I'll talk you through the whole trace first."
+          }
+        ],
+        "toolMocks": {
+          "set_interaction_mode": "ok mode=listen_only. Say only \"Okay, I'll just listen.\" Then ask nothing and call skip_turn on every turn until the expert invites questions again."
+        },
+        "expect": {
+          "requireTools": [
+            {
+              "name": "set_interaction_mode",
+              "paramsPattern": "listen_only"
+            }
+          ],
+          "forbidTools": [
+            {
+              "name": "begin_question"
+            }
+          ],
+          "maxQuestions": 0,
+          "maxWords": 8
+        }
+      },
+      {
+        "name": "listen-only-event",
+        "history": [
+          {
+            "role": "user",
+            "text": "Just listen for now."
+          },
+          {
+            "role": "agent",
+            "text": "Okay, I'll just listen."
+          },
+          {
+            "role": "user",
+            "text": "[STATE] live_question_budget=available. [STATE] mode=listen_only. The expert asked you to just listen: ask nothing and call skip_turn on every turn until they invite questions again. Saying they are done still ends the task."
+          },
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          }
+        ],
+        "expect": {
+          "forbidTools": [
+            {
+              "name": "begin_question"
+            }
+          ],
+          "maxQuestions": 0
+        }
+      },
+      {
+        "name": "questions-again",
+        "history": [
+          {
+            "role": "user",
+            "text": "Just listen for now."
+          },
+          {
+            "role": "agent",
+            "text": "Okay, I'll just listen."
+          },
+          {
+            "role": "user",
+            "text": "[STATE] live_question_budget=available. [STATE] mode=listen_only. The expert asked you to just listen: ask nothing and call skip_turn on every turn until they invite questions again. Saying they are done still ends the task."
+          },
+          {
+            "role": "user",
+            "text": "Okay, you can ask questions again."
+          }
+        ],
+        "toolMocks": {
+          "set_interaction_mode": "ok mode=questions. Say only \"Okay.\" Ask at most one question at the next natural pause, never a burst of catch-up questions."
+        },
+        "expect": {
+          "requireTools": [
+            {
+              "name": "set_interaction_mode",
+              "paramsPattern": "questions"
+            }
+          ],
+          "maxQuestions": 1
+        }
+      },
+      {
+        "name": "done-while-listening",
+        "history": [
+          {
+            "role": "user",
+            "text": "Just listen for now."
+          },
+          {
+            "role": "agent",
+            "text": "Okay, I'll just listen."
+          },
+          {
+            "role": "user",
+            "text": "[STATE] live_question_budget=available. [STATE] mode=listen_only. The expert asked you to just listen: ask nothing and call skip_turn on every turn until they invite questions again. Saying they are done still ends the task."
+          },
+          {
+            "role": "user",
+            "text": "Right, I'm done, that's the task."
+          }
+        ],
+        "expect": {
+          "requireTools": [
+            {
+              "name": "signal_task_complete"
+            }
+          ]
+        }
+      },
+      {
+        "name": "second-correction-ends",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you recognise in this region?"
+          },
+          {
+            "role": "user",
+            "text": "That spike is usually from the wheel set passing a gap."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "When would you stop and ask someone else about that spike?"
+          },
+          {
+            "role": "user",
+            "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "user",
+            "text": "Okay, I'm done, that's the task."
+          },
+          {
+            "role": "user",
+            "text": "[PHASE debrief] The expert has finished the task; live questions are over. Ask about the open agenda gaps below, one short question per turn, in order. Before each question call begin_question with phase \"debrief\", kind \"gap\" and that gap_id. Ask only about these gaps and never re-ask anything the expert already answered. After each answer call record_coverage. If the expert says they do not know or would escalate, record it with status unknown_escalate and move on without pushing. When no open gap is left, call propose_draft. Open gaps: gap-oq-001 (event_id=evt-002): What you see and decide at the region you pointed at on SYS2: it was pointed at but not discussed during the task. | gap-evt-001-alternatives (event_id=evt-001): What could look similar to the region you pointed at on SYS1, and how you tell them apart. | gap-evt-001-reason (event_id=evt-001): What makes you read the region you pointed at on SYS1 the way you do."
+          },
+          {
+            "role": "user",
+            "text": "[CONTROL] The expert has finished the task. Start the debrief now with the first open agenda gap."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-002",
+                "kind": "gap",
+                "phase": "debrief",
+                "gap_id": "gap-oq-001",
+                "question": "What do you see and decide at the region you pointed at on SYS2?"
+              },
+              "result": "ok exchange_id=ex-003. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you see and decide at the region you pointed at on SYS2?"
+          },
+          {
+            "role": "user",
+            "text": "That drift is the sensor warming up, I ignore it in the first ten minutes."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-003",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "covered",
+                    "note": "ignores early drift"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason"
+            }
+          },
+          {
+            "role": "user",
+            "text": "[TEACH_BACK rev-1] The debrief is over; any gaps still open are dropped on purpose: do not ask or mention them. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
+          },
+          {
+            "role": "user",
+            "text": "[CONTROL] Deliver the teach-back of rev-1 now and end by asking explicitly whether it is right."
+          },
+          {
+            "role": "agent",
+            "text": "Here is how I would apply it. First, scan the upper channel for a narrow spike; it is usually the wheel set passing a gap. If both channels show it at the same moment, stop and call the measurement team. On the lower channel, ignore a slow drift in the first ten minutes, because that is the sensor warming up. Is that right, or would you change anything?"
+          },
+          {
+            "role": "user",
+            "text": "No, that's wrong, it's only when both channels show it at the same moment and it repeats on the next sleeper."
+          },
+          {
+            "role": "agent",
+            "text": "Corrected: stop and call the measurement team only when both channels show the spike at the same moment and it repeats on the next sleeper. Is that right now?"
+          },
+          {
+            "role": "user",
+            "text": "No, still not quite, it has to repeat on two sleepers, not one."
+          }
+        ],
+        "toolMocks": {
+          "confirm_revision": "ok confirmation_id=conf-002 status=corrected revision=rev-2. The correction pass is used up, so the teach-back ends here: do not propose another draft and ask nothing more. Thank the expert in one short sentence and say the draft is saved for their review, with the open points marked as not confirmed."
+        },
+        "expect": {
+          "requireTools": [
+            {
+              "name": "confirm_revision",
+              "paramsPattern": "corrected"
+            }
+          ],
+          "forbidTools": [
+            {
+              "name": "propose_draft"
+            },
+            {
+              "name": "begin_question"
+            }
+          ],
+          "maxQuestions": 0
+        }
+      },
+      {
+        "name": "orientation-already-stated",
+        "history": [
+          {
+            "role": "user",
+            "text": "Okay. Today I'm deciding whether each wheel passed the sensor cleanly, and I always start on the upper channel."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "toolOptional": true,
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "what decision",
+            "where do you (normally |usually )?(look|start)"
+          ]
+        }
+      },
+      {
+        "name": "just-noise",
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "And that little wiggle right after it is just noise, I ignore it."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "toolOptional": true,
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact",
+            "interference",
+            "vibration",
+            "electrical",
+            "\\bemi\\b"
           ]
         }
       }

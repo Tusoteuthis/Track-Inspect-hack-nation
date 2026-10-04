@@ -122,16 +122,16 @@ export function fullSession(session_id: string, options: { strike?: boolean; end
     "I would escalate if the drift lasts longer than ten minutes.",
   ];
   for (const [i, gap] of d.state.debrief_agenda.slice(0, 3).entries()) {
+    if (options.strike && i === 2) {
+      // the expert strikes their first answer to the last gap, then answers it again
+      d.ask({ event_id: gap.event_id ?? "none", kind: "gap", phase: "debrief", gap_id: gap.gap_id, question: "One more debrief question?" });
+      d.expert(`The ${STRUCK_WORD} rule applies there too.`);
+      d.expert("Actually, forget what I just said.");
+      d.act({ type: "strike_requested", trigger: "agent_tool" });
+    }
     d.ask({ event_id: gap.event_id ?? "none", kind: "gap", phase: "debrief", gap_id: gap.gap_id, question: `Debrief question ${i + 1}?` });
     d.expert(answers[i]);
     d.act({ type: "coverage_recorded", params: { exchange_id: d.lastExchangeId(), dimensions: [{ dimension: gap.dimension, status: "covered", note: "debrief" }] } });
-  }
-  if (options.strike) {
-    const gap = d.state.debrief_agenda[3];
-    d.ask({ event_id: gap.event_id ?? "none", kind: "gap", phase: "debrief", gap_id: gap.gap_id, question: "One more debrief question?" });
-    d.expert(`The ${STRUCK_WORD} rule applies there too.`);
-    d.expert("Actually, forget what I just said.");
-    d.act({ type: "strike_requested", trigger: "agent_tool" });
   }
   d.act({
     type: "draft_proposed",

@@ -1,6 +1,5 @@
 /** Confirmation store: `knowledge/confirmations/<confirmation_id>.json` (immutable). */
 import { createHash } from "node:crypto";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { ConfirmationSchema, parseConfirmationPost, type Confirmation, type KnowledgeRevision } from "@/lib/contracts";
@@ -13,18 +12,13 @@ import { getExchange } from "./exchanges";
 import { isValidId, newId, safeJoin } from "./ids";
 import { appendStatusTransition, findRevision, loadEntry, revisionStatus, withKnowledgeLock } from "./knowledge";
 import { canonicalJson, readJson, writeJsonAtomic } from "./store";
+import { getBlobStore } from "./blobstore";
 
 const confirmationsDir = () => path.join(getConfig().knowledgeDir, "confirmations");
 export const confirmationFile = (id: string) => safeJoin(confirmationsDir(), id) + ".json";
 
 export async function listConfirmations(): Promise<Confirmation[]> {
-  let files: string[];
-  try {
-    files = await fs.readdir(confirmationsDir());
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw err;
-  }
+  const files = (await getBlobStore().list(confirmationsDir())).map((e) => e.name);
   const out: Confirmation[] = [];
   for (const f of files.sort()) {
     const id = f.endsWith(".json") ? f.slice(0, -5) : "";

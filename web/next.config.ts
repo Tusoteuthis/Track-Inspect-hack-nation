@@ -5,6 +5,8 @@ import type { NextConfig } from "next";
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  // Self-contained server bundle for the Cloudflare Containers image (see Dockerfile).
+  output: "standalone",
   turbopack: {
     root: projectRoot,
   },

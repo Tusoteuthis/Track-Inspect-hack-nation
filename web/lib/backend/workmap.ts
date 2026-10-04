@@ -6,7 +6,6 @@
  * Default view: confirmed, current revisions that WS5 eligibility accepts (Work Map is a labelled
  * view, so fixture material is shown with its `source`). `include=draft`: everything but revoked.
  */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import type {
   Confirmation,
@@ -35,6 +34,7 @@ import {
 } from "./knowledge";
 import { assetDir } from "./paths";
 import { latestConfirmation, ws5Content } from "./ws5-content";
+import { getBlobStore } from "./blobstore";
 
 const assetUrl = (aid: string, which: "original" | "highlighted") => `/api/assets/${aid}/${which}`;
 
@@ -67,7 +67,7 @@ class Lookups {
   }
 }
 
-const fileExists = (file: string) => fs.stat(file).then(s => s.isFile(), () => false);
+const fileExists = async (file: string) => (await getBlobStore().stat(file))?.kind === "file";
 
 async function resolveEvidence(
   rev: KnowledgeRevision,
