@@ -22,6 +22,8 @@ export type SessionView = {
   connection: { capture: ConnectionState; agent: ConnectionState; backend: ConnectionState };
   case_id: string | null;
   knowledge_revision_id: string | null;
+  /** Increases with every acknowledged change; an update with a lower rev is stale. Absent in older fixtures. */
+  rev?: number;
   source: DataOrigin;
 };
 
@@ -183,4 +185,29 @@ export type AssessmentView = {
   practice_next: string[];
   evidence_used: Citation[];
   source: DataOrigin;
+};
+
+/** Learner-safe case listing (WS4 manifest). Never carries expected answers. */
+export type CaseSummary = {
+  case_id: string;
+  title: string;
+  /** The trace picture shown in setup and in the full-bleed display. */
+  asset: EvidenceAsset;
+  source: DataOrigin;
+};
+
+/**
+ * UI view of one WS3 PointingEvent. The asset is the event's own captured
+ * frame, so its region can never be drawn on a different picture.
+ */
+export type CompanionEvent = {
+  event_id: string;
+  captured_at_utc: string;
+  /** Recording time since session start. Never a signal-axis position. */
+  session_time_ms: number;
+  asset: EvidenceAsset;
+  region: EvidenceRegion;
+  record_state: "on_record" | "off_record";
+  /** null = unknown; shown as unknown, never guessed. */
+  channel_label: string | null;
 };

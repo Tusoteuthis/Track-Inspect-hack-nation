@@ -1,7 +1,10 @@
 // The single data-access interface for every WS7 screen (no second backend).
 // fixtureSource implements it now; apiSource (WS6) replaces it later.
+import type { PointingEvent } from "@/lib/expert/contracts";
 import type {
   AssessmentView,
+  CaseSummary,
+  ConnectionState,
   LearnerDraft,
   LearnerEvaluation,
   PracticeCaseView,
@@ -18,11 +21,15 @@ export type Ack<T> = { status: "acknowledged"; value: T } | { status: "failed"; 
 export const acknowledged = <T>(value: T): Ack<T> => ({ status: "acknowledged", value });
 export const failed = <T = never>(error: string): Ack<T> => ({ status: "failed", error });
 
-/** Live updates pushed by the source. Extended in later sprints (events, revisions). */
+/** Live updates pushed by the source. */
 export type SourceUpdate =
   | { type: "session"; session: SessionView }
   | { type: "workmap"; workmap: WorkMapView }
-  | { type: "review"; review: ReviewView };
+  | { type: "review"; review: ReviewView }
+  /** A pointing gesture (WS2 → WS3). Displayed only; the UI never forwards it to the agent. */
+  | { type: "pointing_event"; event: PointingEvent }
+  /** State of the live-update connection itself; "connected" after a drop means: resync. */
+  | { type: "connection"; state: ConnectionState };
 
 export interface DataSource {
   readonly kind: "fixture" | "api";
@@ -31,7 +38,15 @@ export interface DataSource {
   getPracticeCase(caseId: string): Promise<PracticeCaseView>;
   getAssessment(sessionId: string): Promise<AssessmentView>;
   getReview(sessionId: string): Promise<ReviewView>;
+  /** Cases an expert session can run on (WS4 manifest; learner-safe fields only). */
+  listCases(): Promise<CaseSummary[]>;
+  startSession(caseId: string): Promise<Ack<SessionView>>;
   requestOffRecord(sessionId: string, offRecord: boolean): Promise<Ack<SessionView>>;
+  /** paused=false resumes. Not yet in WS6 (fixture-backed). */
+  requestPause(sessionId: string, paused: boolean): Promise<Ack<SessionView>>;
+  requestStop(sessionId: string): Promise<Ack<SessionView>>;
+  /** Recent pointing events, oldest first; used to resync after a dropped connection. */
+  getRecentEvents(sessionId: string): Promise<PointingEvent[]>;
   submitDraftForReview(draft: LearnerDraft): Promise<Ack<LearnerEvaluation>>;
   commitDraft(
     draft: LearnerDraft,

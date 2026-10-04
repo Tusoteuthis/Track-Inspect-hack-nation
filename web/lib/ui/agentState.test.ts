@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agentState } from "@/components/practice/TutorPanel";
+import { agentState } from "@/lib/ui/agentState";
 
 describe("agentState", () => {
   it.each([

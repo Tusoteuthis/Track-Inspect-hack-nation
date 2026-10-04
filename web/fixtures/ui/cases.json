@@ -1,0 +1,18 @@
+{
+  "source": "fixture",
+  "cases": [
+    {
+      "case_id": "fixture-case-expert-001",
+      "title": "Trace A: two-channel sensor recording",
+      "asset": {
+        "asset_id": "fixture-asset-trace-a-full",
+        "original_url": "/fixtures/trace-a-full.svg",
+        "highlighted_url": null,
+        "frame_id": "fixture-frame-trace-a-full",
+        "width_px": 1600,
+        "height_px": 900
+      },
+      "source": "fixture"
+    }
+  ]
+}

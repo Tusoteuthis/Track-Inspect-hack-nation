@@ -39,10 +39,29 @@ describe("fixtureSource", () => {
     expect(b.steps[0].title).not.toBe("mutated");
   });
 
-  it("stubs later-sprint actions explicitly", async () => {
-    await expect(fixtureSource.requestOffRecord(FIXTURE_IDS.expertSession, true)).rejects.toThrow(
-      "not implemented: Sprint 3"
-    );
+  it("lists learner-safe expert cases labelled as fixture data (Sprint 3)", async () => {
+    const cases = await fixtureSource.listCases();
+    expect(cases.length).toBeGreaterThan(0);
+    for (const c of cases) {
+      expect(c.source).toBe("fixture");
+      expect(Object.keys(c).sort()).toEqual(["asset", "case_id", "source", "title"]);
+    }
+  });
+
+  it("acknowledges off-record for the expert session (Sprint 3)", async () => {
+    const source = createFixtureSource({ latencyMs: 0 });
+    const ack = await source.requestOffRecord(FIXTURE_IDS.expertSession, true);
+    expect(ack.status === "acknowledged" && ack.value.recording_state).toBe("off_record");
+    // Other source instances keep their own session state.
+    expect((await fixtureSource.getSession(FIXTURE_IDS.expertSession)).recording_state).toBe("on_record");
+  });
+
+  it("can force off-record, pause and stop failures (Sprint 3)", async () => {
+    const source = createFixtureSource({ latencyMs: 0, failOffRecord: true, failPause: true, failStop: true });
+    const sid = FIXTURE_IDS.expertSession;
+    expect((await source.requestOffRecord(sid, true)).status).toBe("failed");
+    expect((await source.requestPause(sid, true)).status).toBe("failed");
+    expect((await source.requestStop(sid)).status).toBe("failed");
   });
 
   it("simulates review and commit for practice (Sprint 2)", async () => {

@@ -54,6 +54,11 @@ function fakeSource() {
     getPracticeCase: vi.fn(),
     getAssessment: vi.fn(),
     requestOffRecord: vi.fn(),
+    listCases: vi.fn(),
+    startSession: vi.fn(),
+    requestPause: vi.fn(),
+    requestStop: vi.fn(),
+    getRecentEvents: vi.fn(),
     submitDraftForReview: vi.fn((draft: LearnerDraft) => {
       const d = deferred<Ack<LearnerEvaluation>>();
       reviews.push({ draft, d });
