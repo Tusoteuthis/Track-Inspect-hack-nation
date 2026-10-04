@@ -15,8 +15,8 @@ TDD: each logic task writes its vitest file first.
 - [ ] T006 [US1] Debrief counters in web/lib/expert/timing.ts
 
 ## Phase 4: US2 Teach-back revisions
-- [ ] T007 [US2] Test-first: proposal validation, quote check, unsupported flag, stable step ids, diff, stepsToTeach, fallback draft in web/lib/expert/draft.ts + draft.test.ts
-- [ ] T008 [US2] synthesis interface getGaps/buildDraft in web/lib/expert/synthesis.ts
+- [X] T007 [US2] Test-first: proposal validation, quote check, unsupported flag, stable step ids, diff, stepsToTeach, fallback draft in web/lib/expert/draft.ts + draft.test.ts
+- [X] T008 [US2] synthesis interface getGaps/buildDraft in web/lib/expert/synthesis.ts
 - [ ] T009 [US2] propose_draft action + teach-back exchange + [TEACH_BACK rev-n] block in web/lib/expert/debrief.ts
 
 ## Phase 5: US3 Correction & confirmation
