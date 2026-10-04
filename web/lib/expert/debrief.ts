@@ -19,9 +19,13 @@ import {
 import { formatDebriefUpdate, formatTeachBackUpdate } from "./context-update";
 import { DEBRIEF_MAX_GAPS, applyCoverage, openQuestionsFromTopics } from "./coverage";
 import { addRevision, stepsToTeach } from "./draft";
-import type { SessionState } from "./session";
+import { SAY_IT, type SessionState } from "./session";
 import { type Stamp, closeActive, mark, updateExchange } from "./session-util";
 import { type Synthesis, defaultSynthesis } from "./synthesis";
+
+/** Reminder after record_coverage in the live phase (the probes' tool mock uses the same words). */
+export const AFTER_COVERAGE_LIVE =
+  "Next: either call begin_question and then say that question out loud, or call skip_turn.";
 
 /** Fewest debrief questions before a draft may be proposed (or the whole agenda, if shorter). */
 export const MIN_DEBRIEF_QUESTIONS = 3;
@@ -115,7 +119,7 @@ function beginDebriefQuestion(state: SessionState, params: BeginQuestionParams, 
     ),
     active_exchange_id: exchange_id,
     awaiting_question_exchange_id: exchange_id,
-    last_tool_result: `ok exchange_id=${exchange_id}`,
+    last_tool_result: `ok exchange_id=${exchange_id}. ${SAY_IT}`,
     timing: [...closed.timing, mark(state, "question_tool_called", item.event_id, exchange_id, at)],
   };
 }
@@ -152,7 +156,7 @@ function beginCorrectionQuestion(state: SessionState, params: BeginQuestionParam
     exchanges: [...closed.exchanges, exchange],
     active_exchange_id: exchange_id,
     awaiting_question_exchange_id: exchange_id,
-    last_tool_result: `ok exchange_id=${exchange_id}`,
+    last_tool_result: `ok exchange_id=${exchange_id}. ${SAY_IT}`,
     timing: [...closed.timing, mark(state, "question_tool_called", exchange.event_id, exchange_id, at)],
   };
 }
@@ -227,7 +231,9 @@ export function recordCoverage(state: SessionState, params: unknown): SessionSta
   const tail =
     state.phase === "debrief"
       ? ` Open gaps: ${openGapIds(debrief_agenda).join(", ") || "none; call propose_draft"}`
-      : "";
+      : state.phase === "live"
+        ? ` ${AFTER_COVERAGE_LIVE}`
+        : "";
   return { ...state, coverage, debrief_agenda, open_questions, last_tool_result: `ok coverage ${x.event_id ?? "session"}: ${summary}.${tail}` };
 }
 

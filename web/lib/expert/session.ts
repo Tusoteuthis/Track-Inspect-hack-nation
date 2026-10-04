@@ -22,6 +22,9 @@ import { DEFAULT_INTERVIEW_CONFIG, withConfig } from "./interview-config";
 import { type Stamp, closeActive, mark, updateExchange, updateTopic } from "./session-util";
 import { ingestEvent, releaseText } from "./topics";
 
+/** Appended to every successful begin_question result (the probes' tool mock uses the same words). */
+export const SAY_IT = "Now say the question out loud, word for word.";
+
 export type SessionState = SessionSnapshot & {
   /** String returned to the LLM by the last `begin_question` call. */
   last_tool_result: string | null;
@@ -307,7 +310,7 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
     exchanges: [...closed.exchanges, exchange],
     active_exchange_id: exchange_id,
     awaiting_question_exchange_id: exchange_id,
-    last_tool_result: `ok exchange_id=${exchange_id}`,
+    last_tool_result: `ok exchange_id=${exchange_id}. ${SAY_IT}`,
     timing: [...closed.timing, mark(state, "question_tool_called", event_id, exchange_id, action)],
   };
 }

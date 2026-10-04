@@ -49,8 +49,9 @@ type Probes = Record<string, { envVar: string; language?: string; cases: Case[] 
 type RunResult = { lastUser: string; toolCalls: { name: string; params: string }[]; reply: string; failures: string[] };
 
 const TOOL_MOCKS = {
-  begin_question: { defaultReturnValue: "ok exchange_id=ex-sim" },
-  record_coverage: { defaultReturnValue: "ok coverage recorded." },
+  // same wording as the app (SAY_IT in session.ts, AFTER_COVERAGE_LIVE in debrief.ts)
+  begin_question: { defaultReturnValue: "ok exchange_id=ex-sim. Now say the question out loud, word for word." },
+  record_coverage: { defaultReturnValue: "ok coverage recorded. Next: either call begin_question and then say that question out loud, or call skip_turn." },
   signal_task_complete: { defaultReturnValue: "ok phase=debrief." },
   propose_draft: { defaultReturnValue: "ok revision_id=rev-sim." },
   confirm_revision: { defaultReturnValue: "ok confirmation recorded." },

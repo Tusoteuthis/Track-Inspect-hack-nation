@@ -57,7 +57,7 @@ describe("question ↔ event linkage", () => {
       source: "fixture",
     });
     expect(s.active_exchange_id).toBe("ex-001");
-    expect(s.last_tool_result).toBe("ok exchange_id=ex-001");
+    expect(s.last_tool_result).toBe("ok exchange_id=ex-001. Now say the question out loud, word for word.");
   });
 
   it("fills the question from the agent's next spoken line, verbatim", () => {

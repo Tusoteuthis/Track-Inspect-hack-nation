@@ -87,7 +87,7 @@ export function formatTeachBackUpdate(revision: DraftRevision, toTeach: DraftSte
     ? ` Not backed by evidence, do not state as fact: ${open.map(s => `${s.step_id}: ${s.text}`).join(" | ")}`
     : "";
   return (
-    `${head} When the expert answers, call confirm_revision with revision_id ${revision.revision_id}: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. ` +
+    `${head} Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id ${revision.revision_id}: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. ` +
     `Steps: ${steps}${/[.!?]$/.test(steps) ? "" : "."}${tail}`
   );
 }
