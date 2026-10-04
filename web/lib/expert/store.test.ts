@@ -29,7 +29,7 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe("file store", () => {
-  it("writes all six files for a session", async () => {
+  it("writes all session files, including the timing report", async () => {
     const store = createFileStore(join(root, "knowledge"), { publicDir: join(root, "web", "public") });
     const res = await store.saveSnapshot(snap);
     const dir = join(root, "knowledge", "sessions", SID);
@@ -47,6 +47,10 @@ describe("file store", () => {
     // image link is relative from the session folder to web/public
     expect(md).toContain("](../../../web/public/fixtures/trace-a-evt-001-highlight.svg)");
     expect(readFileSync(join(dir, "transcript.md"), "utf8")).toContain("[ex-001] A step.");
+    expect(SESSION_FILES).toContain("timing-report.md");
+    expect(readFileSync(join(dir, "timing-report.md"), "utf8")).toContain(`# Timing report — ${SID}`);
+    expect(session.counts).toMatchObject({ live_questions: 1, guardrail_questions: 0, interruptions: 0, topics: 1 });
+    expect(session.topics).toHaveLength(1);
   });
 
   it("is idempotent: saving the same snapshot twice leaves identical files and no temp files", async () => {

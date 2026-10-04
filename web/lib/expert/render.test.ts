@@ -17,6 +17,7 @@ const actions: SessionAction[] = [
   { type: "question_begun", params: { event_id: "evt-001", kind: "explain", question: "plan" }, ...at(3) },
   { type: "agent_final_line", line_id: "line-2", text: "What do you recognize in this region?", ...at(4) },
   { type: "user_final_line", line_id: "line-3", text: "That's usually the joint.", ...at(5) },
+  { type: "event_received", event: fx("evt-003-repeat-of-001.json"), ...at(5) },
   { type: "event_received", event: fx("evt-002-resolved-sys2.json"), ...at(6) },
   { type: "user_final_line", line_id: "line-4", text: "Only if it repeats, though.", ...at(7) },
   { type: "agent_final_line", line_id: "line-5", text: "Why there?", ...at(8) },
@@ -77,5 +78,29 @@ describe("renderTranscriptMd", () => {
     expect(md).toContain("- 01:00:04.000Z **agent** [ex-001] What do you recognize in this region?");
     expect(md).toContain("- 01:00:07.000Z **expert** [ex-001] Only if it repeats, though.");
     expect(md.split("\n").filter(l => l.startsWith("- "))).toHaveLength(5);
+  });
+});
+
+describe("renderExchangesMd (Sprint 2)", () => {
+  it("shows the topic and merged duplicate gestures of an exchange", () => {
+    const s = toSnapshot(
+      ([
+        { type: "event_received", event: fx("evt-001-resolved.json"), ...at(1) },
+        { type: "event_received", event: fx("evt-003-repeat-of-001.json"), ...at(2) },
+        { type: "question_begun", params: { event_id: "evt-001", kind: "explain", question: "p" }, ...at(3) },
+      ] satisfies SessionAction[]).reduce(reduceSession, initialSession(SID, "2026-10-04T01:00:00.000Z"))
+    );
+    const md = renderExchangesMd(s);
+    expect(md).toContain("- Topic: top-001 · also pointed at: evt-003 (merged duplicate)");
+  });
+
+  it("notes that a clarification answer is not an interpretation", () => {
+    const s = toSnapshot(
+      ([
+        { type: "event_received", event: fx("evt-004-ambiguous.json"), ...at(1) },
+        { type: "question_begun", params: { event_id: "evt-004", kind: "clarify_reference", question: "p" }, ...at(2) },
+      ] satisfies SessionAction[]).reduce(reduceSession, initialSession(SID, "2026-10-04T01:00:00.000Z"))
+    );
+    expect(renderExchangesMd(s)).toContain("identifies the region only; not an interpretation");
   });
 });

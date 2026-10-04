@@ -6,6 +6,7 @@ import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { type SessionSnapshot, isValidSessionId } from "./contracts";
 import { renderExchangesMd, renderTranscriptMd } from "./render";
+import { liveCounters, renderTimingReportMd } from "./timing";
 
 export const SESSION_FILES = [
   "session.json",
@@ -14,6 +15,7 @@ export const SESSION_FILES = [
   "timing.json",
   "transcript.md",
   "exchanges.md",
+  "timing-report.md",
 ] as const;
 
 export interface ExpertSessionStore {
@@ -55,8 +57,9 @@ function sessionFiles(
   const counts = {
     events: events.length,
     exchanges: exchanges.length,
-    unlinked_agent_questions: snap.unlinked_agent_questions.length,
     preamble_lines: snap.preamble.length,
+    topics: snap.topics.length,
+    ...liveCounters(snap),
   };
   return {
     "session.json": json({ ...session, counts }),
@@ -65,6 +68,7 @@ function sessionFiles(
     "timing.json": json(timing),
     "transcript.md": renderTranscriptMd(snap),
     "exchanges.md": renderExchangesMd(snap, { imageHref }),
+    "timing-report.md": renderTimingReportMd(snap),
   };
 }
 

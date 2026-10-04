@@ -40,6 +40,11 @@ export function renderExchangesMd(snap: SessionSnapshot, options: RenderOptions 
       : "";
     out.push(`- Event: ${eventLabel(event, x.event_id)}${details}`);
     if (event) out.push(`- Image: ![${event.event_id} highlighted](${href(event.highlighted_image_ref)})`);
+    if (x.topic_id) {
+      const also = x.related_event_ids.length ? ` · also pointed at: ${x.related_event_ids.join(", ")} (merged duplicate)` : "";
+      out.push(`- Topic: ${x.topic_id}${also}`);
+    }
+    if (x.kind === "clarify_reference") out.push("- Clarification: the answer identifies the region only; not an interpretation.");
     out.push(`- Asked: ${x.asked_at_utc} · phase ${x.phase}`, "");
     out.push(`**Question (verbatim):** ${x.question || "_(not spoken yet)_"}`, "");
     if (x.question_planned) out.push(`_Planned (AI, not evidence):_ ${x.question_planned}`, "");
