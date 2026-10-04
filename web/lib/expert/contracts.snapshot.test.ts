@@ -6,12 +6,14 @@ import {
   SCHEMA_VERSION,
   type SessionSnapshot,
   type TimingMark,
+  type Topic,
   isValidSessionId,
   validateBeginQuestionParams,
   validateExpertExchange,
   validateSessionSnapshot,
   validateTimingMark,
 } from "./contracts";
+import { DEFAULT_INTERVIEW_CONFIG } from "./interview-config";
 
 const evt001 = JSON.parse(
   readFileSync(join(__dirname, "..", "..", "fixtures", "pointing-events", "evt-001-resolved.json"), "utf8")
@@ -33,6 +35,32 @@ function exchange(): ExpertExchange {
     audio_offset_secs: null,
     record_state: "on_record",
     source: "fixture",
+    topic_id: "top-001",
+    related_event_ids: [],
+  };
+}
+
+function topic(): Topic {
+  return {
+    topic_id: "top-001",
+    session_id: "ses-20261004-010000-abcd",
+    primary_event_id: "evt-001",
+    alias_event_ids: [],
+    state: "answered",
+    requires_clarification: false,
+    record_state: "on_record",
+    channel_id: "SYS1",
+    queued_at_utc: "2026-10-04T01:00:01.000Z",
+    queued_at_perf_ms: 1234.5,
+    last_event_at_perf_ms: 1234.5,
+    released_at_utc: "2026-10-04T01:00:04.000Z",
+    released_at_perf_ms: 4000,
+    asked_at_perf_ms: 4500,
+    stale_at_release: false,
+    release_text: "[POINTING_EVENT] event_id=evt-001 …",
+    nudged_at_perf_ms: null,
+    exchange_ids: ["ex-001"],
+    deferred_reason: null,
   };
 }
 
@@ -64,6 +92,8 @@ function snapshot(): SessionSnapshot {
     ],
     timing: [mark()],
     unlinked_agent_questions: [],
+    topics: [topic()],
+    interview_config: { ...DEFAULT_INTERVIEW_CONFIG },
   };
 }
 
@@ -177,5 +207,54 @@ describe("validateSessionSnapshot", () => {
       validateSessionSnapshot({ ...snapshot(), transcript: [{ line_id: "l", role: "robot", text: "", at_utc: "x" }] })
     );
     expect(errs.some(e => e.startsWith("transcript[0]"))).toBe(true);
+  });
+});
+
+describe("Sprint 2 contract additions", () => {
+  it("accepts a snapshot with topics, config and exchange topic links", () => {
+    expect(errors(validateSessionSnapshot(snapshot()))).toEqual([]);
+  });
+
+  it("accepts the new timing marks", () => {
+    for (const name of ["user_speech_started", "user_speech_ended", "topic_nudged"] as const) {
+      expect(validateTimingMark({ ...mark(), mark: name }).ok).toBe(true);
+    }
+  });
+
+  it("rejects a topic with an unknown state or unknown events", () => {
+    const s = snapshot();
+    s.topics = [{ ...topic(), state: "waiting" as Topic["state"] }];
+    expect(errors(validateSessionSnapshot(s)).join(" | ")).toMatch(/topics\[0\]\.state/);
+    const t = snapshot();
+    t.topics = [{ ...topic(), alias_event_ids: ["evt-404"] }];
+    expect(errors(validateSessionSnapshot(t)).join(" | ")).toMatch(/alias_event_ids evt-404/);
+  });
+
+  it("rejects a topic whose primary event is unknown", () => {
+    const s = snapshot();
+    s.topics = [{ ...topic(), primary_event_id: "evt-404" }];
+    expect(errors(validateSessionSnapshot(s)).join(" | ")).toMatch(/primary_event_id evt-404/);
+  });
+
+  it("rejects exchanges with unknown related events or an unknown topic", () => {
+    const s = snapshot();
+    s.exchanges = [{ ...exchange(), related_event_ids: ["evt-404"], topic_id: "top-009" }];
+    const e = errors(validateSessionSnapshot(s)).join(" | ");
+    expect(e).toMatch(/related_event_ids.*evt-404/);
+    expect(e).toMatch(/topic_id top-009/);
+  });
+
+  it("requires related_event_ids to be an array", () => {
+    const x = { ...exchange(), related_event_ids: "evt-003" };
+    expect(errors(validateExpertExchange(x)).join(" ")).toMatch(/related_event_ids/);
+  });
+
+  it("rejects a missing or invalid interview config", () => {
+    const s = snapshot() as unknown as Record<string, unknown>;
+    delete s.interview_config;
+    expect(errors(validateSessionSnapshot(s)).join(" ")).toMatch(/interview_config/);
+    const bad = snapshot();
+    bad.interview_config = { ...DEFAULT_INTERVIEW_CONFIG, pause_ms: -1 };
+    expect(errors(validateSessionSnapshot(bad)).join(" ")).toMatch(/interview_config\.pause_ms/);
   });
 });

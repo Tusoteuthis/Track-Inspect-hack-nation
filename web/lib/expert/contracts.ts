@@ -30,7 +30,18 @@ export type TimingMarkName =
   | "question_tool_called"
   | "agent_speech_started"
   | "answer_started"
-  | "answer_ended";
+  | "answer_ended"
+  | "user_speech_started"
+  | "user_speech_ended"
+  | "topic_nudged";
+export type TopicState =
+  | "queued"
+  | "released"
+  | "asked"
+  | "answered"
+  | "deferred_to_debrief"
+  | "dropped_off_record";
+export type DeferredReason = "budget" | "moved_on" | "release_timeout";
 
 /** Normalized box in the original saved frame, origin top-left, values in [0, 1]. */
 export type Region = {
@@ -71,11 +82,18 @@ export type PointingEvent = {
 /** A verbatim expert transcript line attached to an exchange. */
 export type AnswerLine = { text: string; at_utc: string; transcript_line_id: string };
 
-/** One question and the expert's verbatim answer (WS3 → WS5). `event_id` is fixed at creation. */
+/**
+ * One question and the expert's verbatim answer (WS3 → WS5). `event_id` is fixed at creation.
+ * A `clarify_reference` answer only identifies a region; it never counts as an interpretation.
+ */
 export type ExpertExchange = {
   exchange_id: string;
   session_id: string;
+  /** Primary event of the topic the question is about. */
   event_id: string | null;
+  topic_id: string | null;
+  /** Duplicate gestures merged into the topic (evidence), excluding `event_id`. */
+  related_event_ids: string[];
   phase: Phase;
   kind: ExchangeKind;
   /** The agent's spoken question, verbatim. "" until the agent's next final line arrives. */
@@ -167,6 +185,56 @@ export type RecordingSegment = {
   ended_at_utc: string | null;
 };
 
+/**
+ * Something the expert pointed at that the apprentice may ask about. Duplicate gestures
+ * are merged as aliases; every event stays stored in `events`.
+ */
+export type Topic = {
+  topic_id: string;
+  session_id: string;
+  primary_event_id: string;
+  alias_event_ids: string[];
+  state: TopicState;
+  /** Primary mapping_status was not "resolved": the first question must be clarify_reference. */
+  requires_clarification: boolean;
+  record_state: RecordState;
+  channel_id: string | null;
+  /** Topic ready (= the topic_queued mark). */
+  queued_at_utc: string;
+  queued_at_perf_ms: number;
+  /** Receive time of the newest primary/alias event; drives the dedup window and staleness. */
+  last_event_at_perf_ms: number;
+  released_at_utc: string | null;
+  released_at_perf_ms: number | null;
+  /** Latest begin_question on this topic (follow-ups included). */
+  asked_at_perf_ms: number | null;
+  stale_at_release: boolean | null;
+  /** The exact contextual update sent to the agent. */
+  release_text: string | null;
+  nudged_at_perf_ms: number | null;
+  exchange_ids: string[];
+  deferred_reason: DeferredReason | null;
+};
+
+/** Tunables of the live interview, stored with each session so reports state what was used. */
+export type InterviewConfig = {
+  dedup_window_ms: number;
+  dedup_min_iou: number;
+  stale_after_ms: number;
+  budget_max_questions: number;
+  budget_window_ms: number;
+  /** Minimum expert quiet time before a topic is released. */
+  pause_ms: number;
+  /** A released topic the agent does not ask about within this time goes to the debrief. */
+  release_timeout_ms: number;
+  /** Send one "[CONTROL]" nudge this long after a release if the agent stays silent; 0 = never. */
+  nudge_after_ms: number;
+  /** A speaking interval ends this long after the last speech signal. */
+  speech_hold_ms: number;
+  vad_threshold: number;
+  mic_threshold: number;
+};
+
 /** Parameters of the `begin_question` client tool, after normalization ("none" → null). */
 export type BeginQuestionParams = { event_id: string | null; kind: ExchangeKind; question: string };
 
@@ -199,6 +267,8 @@ export type SessionSnapshot = {
   transcript: TranscriptEntry[];
   timing: TimingMark[];
   unlinked_agent_questions: UnlinkedQuestion[];
+  topics: Topic[];
+  interview_config: InterviewConfig;
 };
 
 // --- validation of external input ------------------------------------------
@@ -313,6 +383,31 @@ const TIMING_MARKS: readonly TimingMarkName[] = [
   "agent_speech_started",
   "answer_started",
   "answer_ended",
+  "user_speech_started",
+  "user_speech_ended",
+  "topic_nudged",
+];
+const TOPIC_STATES: readonly TopicState[] = [
+  "queued",
+  "released",
+  "asked",
+  "answered",
+  "deferred_to_debrief",
+  "dropped_off_record",
+];
+const DEFERRED_REASONS: readonly DeferredReason[] = ["budget", "moved_on", "release_timeout"];
+const CONFIG_KEYS: readonly (keyof InterviewConfig)[] = [
+  "dedup_window_ms",
+  "dedup_min_iou",
+  "stale_after_ms",
+  "budget_max_questions",
+  "budget_window_ms",
+  "pause_ms",
+  "release_timeout_ms",
+  "nudge_after_ms",
+  "speech_hold_ms",
+  "vad_threshold",
+  "mic_threshold",
 ];
 const ROLES = ["user", "agent"] as const;
 
@@ -328,6 +423,8 @@ export function isValidSessionId(value: unknown): value is string {
 
 const isTimestamp = (v: unknown): v is string => isNonEmptyString(v) && !Number.isNaN(Date.parse(v));
 const isNullableString = (v: unknown): boolean => v === null || isNonEmptyString(v);
+const isStringList = (v: unknown): v is string[] => Array.isArray(v) && v.every(isNonEmptyString);
+const isNullableNumber = (v: unknown): boolean => v === null || isFiniteNumber(v);
 
 /** Checks `begin_question` tool params from the LLM; does not check that the event is known. */
 export function validateBeginQuestionParams(input: unknown): ValidationResult<BeginQuestionParams> {
@@ -376,6 +473,8 @@ export function validateExpertExchange(input: unknown): ValidationResult<ExpertE
   if (!oneOf(EXCHANGE_KINDS, input.kind)) errors.push(`kind must be one of ${EXCHANGE_KINDS.join(", ")}`);
   if (typeof input.question !== "string") errors.push("question must be a string");
   if (!isNullableString(input.question_planned)) errors.push("question_planned must be a non-empty string or null");
+  if (!isNullableString(input.topic_id)) errors.push("topic_id must be a non-empty string or null");
+  if (!isStringList(input.related_event_ids)) errors.push("related_event_ids must be an array of strings");
   checkAnswerLines(input.answer_lines, "answer_lines", errors);
   if (!isTimestamp(input.asked_at_utc)) errors.push("asked_at_utc must be an ISO-8601 timestamp");
   for (const key of ["answer_started_at_utc", "answer_ended_at_utc"] as const) {
@@ -400,6 +499,50 @@ export function validateTimingMark(input: unknown): ValidationResult<TimingMark>
   if (!isTimestamp(input.at_utc)) errors.push("at_utc must be an ISO-8601 timestamp");
   if (!isFiniteNumber(input.at_perf_ms)) errors.push("at_perf_ms must be a number");
   return errors.length ? { ok: false, errors } : { ok: true, value: input as TimingMark };
+}
+
+export function validateTopic(input: unknown): ValidationResult<Topic> {
+  if (!isRecord(input)) return { ok: false, errors: ["topic must be an object"] };
+  const errors: string[] = [];
+  for (const key of ["topic_id", "session_id", "primary_event_id"] as const) {
+    if (!isNonEmptyString(input[key])) errors.push(`${key} must be a non-empty string`);
+  }
+  for (const key of ["alias_event_ids", "exchange_ids"] as const) {
+    if (!isStringList(input[key])) errors.push(`${key} must be an array of strings`);
+  }
+  if (!oneOf(TOPIC_STATES, input.state)) errors.push(`state must be one of ${TOPIC_STATES.join(", ")}`);
+  if (typeof input.requires_clarification !== "boolean") errors.push("requires_clarification must be a boolean");
+  if (!oneOf(RECORD_STATES, input.record_state)) errors.push(`record_state must be one of ${RECORD_STATES.join(", ")}`);
+  if (!isNullableString(input.channel_id)) errors.push("channel_id must be a non-empty string or null");
+  if (!isTimestamp(input.queued_at_utc)) errors.push("queued_at_utc must be an ISO-8601 timestamp");
+  for (const key of ["queued_at_perf_ms", "last_event_at_perf_ms"] as const) {
+    if (!isFiniteNumber(input[key])) errors.push(`${key} must be a number`);
+  }
+  if (input.released_at_utc !== null && !isTimestamp(input.released_at_utc)) {
+    errors.push("released_at_utc must be an ISO-8601 timestamp or null");
+  }
+  for (const key of ["released_at_perf_ms", "asked_at_perf_ms", "nudged_at_perf_ms"] as const) {
+    if (!isNullableNumber(input[key])) errors.push(`${key} must be a number or null`);
+  }
+  if (input.stale_at_release !== null && typeof input.stale_at_release !== "boolean") {
+    errors.push("stale_at_release must be a boolean or null");
+  }
+  if (!isNullableString(input.release_text)) errors.push("release_text must be a non-empty string or null");
+  if (input.deferred_reason !== null && !oneOf(DEFERRED_REASONS, input.deferred_reason)) {
+    errors.push(`deferred_reason must be one of ${DEFERRED_REASONS.join(", ")} or null`);
+  }
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as Topic };
+}
+
+export function validateInterviewConfig(input: unknown): ValidationResult<InterviewConfig> {
+  if (!isRecord(input)) return { ok: false, errors: ["must be an object"] };
+  const errors: string[] = [];
+  for (const key of CONFIG_KEYS) {
+    const v = input[key];
+    if (!isFiniteNumber(v) || v < 0) errors.push(`${key} must be a number ≥ 0`);
+  }
+  if (isFiniteNumber(input.dedup_min_iou) && input.dedup_min_iou > 1) errors.push("dedup_min_iou must be ≤ 1");
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as InterviewConfig };
 }
 
 function checkTranscriptEntry(entry: unknown, path: string, errors: string[]): void {
@@ -452,6 +595,9 @@ export function validateSessionSnapshot(input: unknown): ValidationResult<Sessio
   const events = checkList(input.events, "events", validatePointingEvent, errors);
   const exchanges = checkList(input.exchanges, "exchanges", validateExpertExchange, errors);
   const timing = checkList(input.timing, "timing", validateTimingMark, errors);
+  const topics = checkList(input.topics, "topics", validateTopic, errors);
+  const config = validateInterviewConfig(input.interview_config);
+  if (!config.ok) errors.push(...config.errors.map(e => `interview_config${e.startsWith("must") ? " " : "."}${e}`));
   checkAnswerLines(input.preamble, "preamble", errors);
   if (!Array.isArray(input.transcript)) errors.push("transcript must be an array");
   else input.transcript.forEach((t, i) => checkTranscriptEntry(t, `transcript[${i}]`, errors));
@@ -465,7 +611,12 @@ export function validateSessionSnapshot(input: unknown): ValidationResult<Sessio
   }
 
   const sid = input.session_id;
-  const records: [string, { session_id: string }[]][] = [["events", events], ["exchanges", exchanges], ["timing", timing]];
+  const records: [string, { session_id: string }[]][] = [
+    ["events", events],
+    ["exchanges", exchanges],
+    ["timing", timing],
+    ["topics", topics],
+  ];
   for (const [path, list] of records) {
     list.forEach((r, i) => {
       if (r.session_id !== sid) errors.push(`${path}[${i}].session_id must equal the snapshot session_id`);
@@ -477,12 +628,29 @@ export function validateSessionSnapshot(input: unknown): ValidationResult<Sessio
     if (eventIds.has(e.event_id)) errors.push(`duplicate event_id ${e.event_id}`);
     eventIds.add(e.event_id);
   }
+  const topicIds = new Set<string>();
+  topics.forEach((t, i) => {
+    if (topicIds.has(t.topic_id)) errors.push(`duplicate topic_id ${t.topic_id}`);
+    topicIds.add(t.topic_id);
+    if (!eventIds.has(t.primary_event_id)) {
+      errors.push(`topics[${i}].primary_event_id ${t.primary_event_id} is not a known event`);
+    }
+    for (const a of t.alias_event_ids) {
+      if (!eventIds.has(a)) errors.push(`topics[${i}].alias_event_ids ${a} is not a known event`);
+    }
+  });
   const exchangeIds = new Set<string>();
   exchanges.forEach((x, i) => {
     if (exchangeIds.has(x.exchange_id)) errors.push(`duplicate exchange_id ${x.exchange_id}`);
     exchangeIds.add(x.exchange_id);
     if (x.event_id !== null && !eventIds.has(x.event_id)) {
       errors.push(`exchanges[${i}].event_id ${x.event_id} is not a known event`);
+    }
+    for (const r of x.related_event_ids) {
+      if (!eventIds.has(r)) errors.push(`exchanges[${i}].related_event_ids ${r} is not a known event`);
+    }
+    if (x.topic_id !== null && !topicIds.has(x.topic_id)) {
+      errors.push(`exchanges[${i}].topic_id ${x.topic_id} is not a known topic`);
     }
   });
   for (const key of ["active_exchange_id", "awaiting_question_exchange_id"] as const) {

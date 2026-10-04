@@ -2,7 +2,12 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { PointingEvent } from "./contracts";
-import { formatPointingEventUpdate } from "./context-update";
+import {
+  budgetStateLine,
+  controlNudge,
+  formatPointingEventUpdate,
+  isControlText,
+} from "./context-update";
 
 const dir = join(__dirname, "..", "..", "fixtures", "pointing-events");
 const fixtures: PointingEvent[] = readdirSync(dir)
@@ -50,5 +55,45 @@ describe("formatPointingEventUpdate", () => {
 
   it("marks live events as live", () => {
     expect(formatPointingEventUpdate({ ...byId("evt-001"), source: "live" })).toContain("source=live.");
+  });
+});
+
+describe("release wording (Sprint 2)", () => {
+  it("adds an explicit earlier-moment reference when stale, naming the channel", () => {
+    const text = formatPointingEventUpdate(byId("evt-001"), { stale: true });
+    expect(text).toContain(" stale=yes: the expert pointed at this a while ago and may have moved on.");
+    expect(text).toContain('Refer to it explicitly, for example "the region you pointed at a moment ago on SYS1".');
+    expect(text).not.toContain("\n");
+  });
+
+  it("says 'on the trace' when the channel is unknown", () => {
+    const text = formatPointingEventUpdate(byId("evt-004"), { stale: true });
+    expect(text).toContain('"the region you pointed at a moment ago on the trace"');
+  });
+
+  it("is unchanged when not stale and no guardrail is pending", () => {
+    expect(formatPointingEventUpdate(byId("evt-001"), { stale: false, guardrailPending: false })).toBe(
+      formatPointingEventUpdate(byId("evt-001"))
+    );
+  });
+
+  it("adds the guardrail reminder when none was asked yet, never with an interpretation", () => {
+    const text = formatPointingEventUpdate(byId("evt-001"), { guardrailPending: true });
+    expect(text).toContain("No guardrail question yet: once the expert has explained what they see here, ask when they would stop, escalate or not trust it.");
+  });
+
+  it("builds the control nudge and recognizes control text", () => {
+    const n = controlNudge("evt-001");
+    expect(n).toBe(
+      "[CONTROL] The expert has paused. If it is still open, ask your one question about event_id=evt-001 now; otherwise call skip_turn."
+    );
+    expect(isControlText(n)).toBe(true);
+    expect(isControlText("  [CONTROL] x")).toBe(true);
+    expect(isControlText("So here the control unit…")).toBe(false);
+  });
+
+  it("states the budget", () => {
+    expect(budgetStateLine(true)).toMatch(/^\[STATE\] live_question_budget=used_up\. .*skip_turn/);
+    expect(budgetStateLine(false)).toBe("[STATE] live_question_budget=available.");
   });
 });
