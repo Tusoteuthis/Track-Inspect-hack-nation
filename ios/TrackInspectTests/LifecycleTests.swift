@@ -207,8 +207,25 @@ import UIKit
     var stopCalls = 0
     var stopFinished = false
     var stopDelay: Duration = .zero
-    func register() async throws {}
-    func handle(url: URL) async throws {}
+    var linkStatus: GlassesConnectionStatus = .connected
+    var connectionChecks = 0
+    func connectionStatus() -> GlassesConnectionStatus {
+        connectionChecks += 1
+        return linkStatus
+    }
+    var unregisterCalls = 0
+    var unregisterResult = true
+    var unregisterFailure = false
+    var stoppedBeforeUnregister = false
+    func unregister() async throws -> Bool {
+        unregisterCalls += 1
+        stoppedBeforeUnregister = stopFinished
+        if unregisterFailure { throw AppFailure(message: "Test removal failed") }
+        if unregisterResult { linkStatus = .notRegistered }
+        return unregisterResult
+    }
+    func register() async throws -> GlassesRegistrationStatus { .registered }
+    func handle(url: URL) async throws -> GlassesRegistrationStatus? { nil }
     func start() async throws {
         startCalls += 1
         stopFinished = false

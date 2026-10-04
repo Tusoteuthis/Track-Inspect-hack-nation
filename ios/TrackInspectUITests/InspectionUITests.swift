@@ -12,6 +12,9 @@ import XCTest
         app.buttons["settingsButton"].tap()
         XCTAssertTrue(app.navigationBars["Setup"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["setupIntroduction"].exists)
+        let connection = app.staticTexts["glassesConnectionStatus"]
+        XCTAssertTrue(connection.waitForExistence(timeout: 3))
+        XCTAssertEqual(connection.label, "Status unavailable") // Simulator never claims a physical link.
         screenshot("Workspace settings", app: app)
         let agent = app.textFields["agentID"]
         scrollTo(agent, in: app)
@@ -20,6 +23,21 @@ import XCTest
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["videoControl"].exists)
         screenshot("Dashboard", app: app)
+    }
+
+    func testUnpairRequiresConfirmationAndCanBeCancelled() throws {
+        let app = launch()
+        app.buttons["settingsButton"].tap()
+        let unpair = app.buttons["unpairGlasses"]
+        XCTAssertTrue(unpair.waitForExistence(timeout: 3))
+        scrollTo(unpair, in: app)
+        unpair.tap()
+        let confirmation = app.alerts["Unpair TrackInspect?"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 3))
+        XCTAssertTrue(confirmation.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Your glasses stay paired")).firstMatch.exists)
+        confirmation.buttons["Cancel"].tap()
+        XCTAssertFalse(app.staticTexts["unpairStatus"].exists)
+        XCTAssertTrue(unpair.isEnabled)
     }
 
     func testSetupIdentityAndLargeTextRemainReachable() throws {
@@ -32,7 +50,7 @@ import XCTest
         let identity = app.staticTexts["applicationIdentity"]
         scrollTo(identity, in: app)
         XCTAssertEqual(identity.label, "Application identifier")
-        XCTAssertEqual(identity.value as? String, "ai.track-inspect.app")
+        XCTAssertEqual(identity.value as? String, "ai.trackinspect.app")
         screenshot("Settings accessibility text", app: app)
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["settingsButton"].exists)
@@ -98,9 +116,8 @@ import XCTest
         let app = launch()
         app.buttons["settingsButton"].tap()
         XCTAssertTrue(app.staticTexts["setupIntroduction"].waitForExistence(timeout: 3))
-        // Bring the routing/privacy panels into view instead of auditing a paragraph
-        // whose first line is clipped by the sheet's bottom edge.
-        app.swipeUp()
+        // Audit the initial Settings viewport, including connection mode and pairing.
+        // An arbitrary full swipe can leave labels obscured under the navigation bar.
         try app.performAccessibilityAudit(for: [.contrast, .sufficientElementDescription, .hitRegion]) { issue in
             print("Setup accessibility audit: \(issue.detailedDescription); element: \(String(describing: issue.element))")
             return false

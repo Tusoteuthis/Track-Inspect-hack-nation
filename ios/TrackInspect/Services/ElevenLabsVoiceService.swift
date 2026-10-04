@@ -59,4 +59,9 @@ import ElevenLabs
         guard let conversation, conversation.state.isActive else { return }
         try await conversation.updateContext(text)
     }
+
+    func sendText(_ text: String) async throws {
+        guard let conversation, conversation.state.isActive else { return }
+        try await conversation.sendMessage(text)
+    }
 }

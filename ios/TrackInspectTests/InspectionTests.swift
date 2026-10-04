@@ -88,8 +88,10 @@ final class InspectionTests: XCTestCase {
     var started = false
     var fail = false
     var delayStart = false
-    func register() async throws {}
-    func handle(url: URL) async throws {}
+    func connectionStatus() -> GlassesConnectionStatus { .notRegistered }
+    func unregister() async throws -> Bool { true }
+    func register() async throws -> GlassesRegistrationStatus { .registered }
+    func handle(url: URL) async throws -> GlassesRegistrationStatus? { nil }
     func start() async throws {
         if delayStart { try await Task.sleep(for: .seconds(30)) }
         try Task.checkCancellation()

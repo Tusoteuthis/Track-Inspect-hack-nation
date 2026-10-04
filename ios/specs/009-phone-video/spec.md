@@ -1,0 +1,7 @@
+# iPhone camera as a video source
+
+User asked for iPhone device video as an option beside Meta glasses video. Settings must offer an explicit Glasses/iPhone choice, persisted, defaulting to Glasses. The iPhone source uses the back camera through AVFoundation and needs no Meta registration. Frames follow the existing on-device pipeline: same bounded analysis, no upload, no recording, capture stops on backgrounding and requires explicit restart. Selecting a source never starts capture; changing it stops a running stream. Phone frames must not be reported as glasses streaming.
+
+Plan: SDK-free `VideoSource` enum; `FrameSource` protocol (frames/start/stop) split out of `VideoService`, which keeps Meta registration; `PhoneVideoService` adapter (video-only capture session on a serial queue, one frame in flight, 640×480, portrait); ViewModel selects the adapter per run via `startVideo(source:)`. `NSCameraUsageDescription` added. No new dependency; no privacy or architecture exceptions.
+
+Completed: implementation, Settings "Video source" section, source-specific labels on the main screen, `VideoSourceTests`. Regenerated Xcode project. 66 unit tests passed on the iPhone 16 simulator. UI suite not run. Not installed on a phone: the real camera path (permission prompt, first frame, orientation, coexistence with a voice call) is unverified and remains a hardware gate — the simulator has no camera.

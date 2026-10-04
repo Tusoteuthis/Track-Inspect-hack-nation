@@ -5,6 +5,7 @@ struct InspectionView: View {
     @Bindable var model: InspectionViewModel
     @Bindable var mentra: MentraGlassesService
     @AppStorage("elevenLabsAgentID") private var agentID = AgentPreset.expert.agentID
+    @AppStorage("videoSource") private var videoSource = VideoSource.glasses
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var showSettings = false
     @State private var confirmVoice = false
@@ -29,6 +30,7 @@ struct InspectionView: View {
                     workspaceHeader
                     cameraPanel
                     analysisPanel
+                    if let capture = model.pointingCapture { targetPanel(capture) }
                     voicePanel
                     Label("Research prototype. Not a safety assessment.", systemImage: "info.circle")
                         .font(.caption).foregroundStyle(InspectionTheme.secondary)
@@ -62,7 +64,14 @@ struct InspectionView: View {
                 }
             }
             .sheet(isPresented: $showSettings) {
-                InspectionSettingsView(agentID: $agentID, mentra: mentra) {
+                InspectionSettingsView(agentID: $agentID, mentra: mentra, videoSource: $videoSource, registrationStatus: model.glassesRegistration,
+                                       isPairing: model.isPairing,
+                                       connectionStatus: model.glassesConnection,
+                                       refreshConnection: { model.refreshGlassesConnection() },
+                                       isUnpairing: model.isUnpairing,
+                                       isUnpairPending: model.isUnpairPending,
+                                       unpairMessage: model.unpairMessage,
+                                       onUnpair: { Task { await model.unpair() } }) {
                     Task { await model.pair() }
                 }
             }
@@ -75,6 +84,9 @@ struct InspectionView: View {
             .alert("Attention", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
                 Button("OK") { model.error = nil }
             } message: { Text(model.error ?? "") }
+            .onChange(of: videoSource) {
+                if model.isVideoRunning { Task { await model.stopVideo() } }
+            }
             .task(id: photo) {
                 guard let photo else { return }
                 do {
@@ -118,20 +130,39 @@ struct InspectionView: View {
                 }.padding(16)
                 InspectionRule()
                 if let image = model.preview {
-                    Image(uiImage: image).resizable().scaledToFit().frame(maxHeight: 360)
+                    Image(uiImage: image).resizable().scaledToFit()
+                        .overlay {
+                            if let tip = model.analysis?.pointing?.tip {
+                                GeometryReader { area in
+                                    if let box = model.analysis?.target?.box {
+                                        Rectangle().strokeBorder(InspectionTheme.accent, lineWidth: 3)
+                                            .frame(width: box.width * area.size.width, height: box.height * area.size.height)
+                                            .position(x: box.midX * area.size.width, y: box.midY * area.size.height)
+                                    }
+                                    Circle().strokeBorder(InspectionTheme.accent, lineWidth: 3)
+                                        .frame(width: 30, height: 30)
+                                        .position(x: tip.x * area.size.width, y: tip.y * area.size.height)
+                                }.accessibilityHidden(true)
+                            }
+                        }
+                        .frame(maxHeight: 360)
                         .frame(maxWidth: .infinity).background(InspectionTheme.recessed)
-                        .accessibilityLabel(model.isVideoRunning ? "Live glasses preview" : "Selected test photo")
+                        .accessibilityLabel(!model.isVideoRunning ? "Selected test photo"
+                                            : model.videoSource == .phone ? "Live iPhone camera preview" : "Live glasses preview")
                 } else {
                     VStack(spacing: 10) {
-                        Image(systemName: "eyeglasses")
+                        Image(systemName: videoSource == .phone ? "iphone" : "eyeglasses")
                             .font(.system(size: 27, weight: .regular))
                             .foregroundStyle(InspectionTheme.accent)
                             .frame(width: 58, height: 48)
                             .background(InspectionTheme.raised, in: RoundedRectangle(cornerRadius: 12))
                             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(InspectionTheme.border))
                             .accessibilityHidden(true)
-                        Text("Connect your glasses").font(.subheadline.weight(.medium))
-                        Text("Stream your view from Meta Ray-Ban,\nor select a photo to try local analysis.")
+                        Text(videoSource == .phone ? "Use your iPhone camera" : "Connect your glasses")
+                            .font(.subheadline.weight(.medium))
+                        Text(videoSource == .phone
+                             ? "Stream this iPhone's back camera,\nor select a photo to try local analysis."
+                             : "Stream your view from Meta Ray-Ban,\nor select a photo to try local analysis.")
                             .font(.caption).foregroundStyle(InspectionTheme.secondary)
                     }
                     .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
@@ -142,23 +173,30 @@ struct InspectionView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .top, spacing: 8) {
                         if model.isVideoBusy {
-                            ProgressView().accessibilityLabel("Connecting glasses")
+                            ProgressView().accessibilityLabel(model.videoSource == .phone ? "Starting iPhone camera" : "Connecting glasses")
                         } else {
                             Image(systemName: model.isVideoRunning ? "video" : "video.slash")
                                 .accessibilityHidden(true)
                         }
                         Text(model.videoStatus).accessibilityIdentifier("videoStatus")
                     }.font(.caption).foregroundStyle(InspectionTheme.secondary)
+                    if videoSource == .glasses, let registration = model.glassesRegistration {
+                        Label(registration.message, systemImage: registration == .registered ? "checkmark.circle" : "arrow.up.forward.app")
+                            .font(.caption).foregroundStyle(InspectionTheme.accent)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("glassesRegistrationStatus")
+                    }
                     controls {
                         Button {
                             if model.isVideoRunning { Task { await model.stopVideo() } }
-                            else { model.startVideo() }
+                            else { model.startVideo(source: videoSource) }
                         } label: {
                             Label(model.isVideoRunning ? "Stop video" : "Start video",
                                   systemImage: model.isVideoRunning ? "stop.fill" : "play.fill")
                         }
                         .buttonStyle(InspectionButtonStyle(prominent: true, fullWidth: true))
-                        .accessibilityLabel(model.isVideoRunning ? "Stop video" : "Start glasses video")
+                        .accessibilityLabel(model.isVideoRunning ? "Stop video"
+                                            : videoSource == .phone ? "Start iPhone video" : "Start glasses video")
                         .disabled(model.isVideoStopping).accessibilityIdentifier("videoControl")
                         PhotosPicker(selection: $photo, matching: .images) {
                             Label("Test photo", systemImage: "photo")
@@ -199,6 +237,21 @@ struct InspectionView: View {
                             .font(.subheadline).foregroundStyle(InspectionTheme.secondary)
                     }
                     controls {
+                        Label(result.pointing.map { "Pointing \($0.direction)" + (result.target?.label.map { " at \($0.label.replacingOccurrences(of: "_", with: " "))" } ?? "") }
+                              ?? "No pointing finger",
+                              systemImage: "hand.point.up.left")
+                            .font(.subheadline)
+                            .foregroundStyle(result.pointing == nil ? InspectionTheme.secondary : InspectionTheme.text)
+                        if !textSize.isAccessibilitySize { Spacer(minLength: 0) }
+                        if let pointing = result.pointing {
+                            Text("\(Int(pointing.confidence * 100))%")
+                                .font(.caption.monospacedDigit()).foregroundStyle(InspectionTheme.accent)
+                                .padding(.horizontal, 7).padding(.vertical, 4)
+                                .background(InspectionTheme.raised, in: RoundedRectangle(cornerRadius: 5))
+                        }
+                    }
+                    .accessibilityElement(children: .combine).accessibilityIdentifier("pointingStatus")
+                    controls {
                         Label("\(result.milliseconds) ms", systemImage: "timer")
                         Text(result.capturedAt, style: .time)
                     }.font(.caption).foregroundStyle(InspectionTheme.secondary)
@@ -209,7 +262,54 @@ struct InspectionView: View {
                         .font(.caption).foregroundStyle(InspectionTheme.secondary)
                 }
                 InspectionRule()
-                Text("General image labels · Not a defect detector")
+                Text("General image labels and a hand-pose heuristic · Not a defect detector")
+                    .font(.caption).foregroundStyle(InspectionTheme.secondary)
+                InspectionRule()
+                Toggle("Describe pointing targets with a cloud model", isOn: $model.describeTargets)
+                    .font(.subheadline).disabled(!model.canDescribeTargets)
+                    .accessibilityIdentifier("describeTargets")
+                    .accessibilityHint("Uploads the annotated screenshot to the Passiv gateway.")
+                Text(model.canDescribeTargets
+                     ? "On by default. Each time you point, the annotated screenshot is uploaded to the Passiv gateway and the description is sent to the voice agent as text while a call is active. Sent images cannot be recalled."
+                     : "No Passiv key in this build. Add PASSIV_API_KEY to Secrets.xcconfig and rebuild.")
+                    .font(.caption).foregroundStyle(InspectionTheme.secondary)
+            }.fixedSize(horizontal: false, vertical: true).padding(16)
+        }
+    }
+
+    private func targetPanel(_ capture: PointingCapture) -> some View {
+        let name = capture.target.label.map { "\($0.label.replacingOccurrences(of: "_", with: " ")) · \(Int($0.confidence * 100))%" }
+            ?? "No confident label for this region"
+        let picture = Image(uiImage: capture.image)
+        return InspectionPanel {
+            VStack(alignment: .leading, spacing: 14) {
+                controls {
+                    sectionTitle("Pointing target", symbol: "scope")
+                    if !textSize.isAccessibilitySize { Spacer(minLength: 0) }
+                    Text(capture.capturedAt, style: .time).font(.caption).foregroundStyle(InspectionTheme.secondary)
+                }
+                picture.resizable().scaledToFit().frame(maxHeight: 360).frame(maxWidth: .infinity)
+                    .background(InspectionTheme.recessed)
+                    .accessibilityLabel("Frame with the pointing finger and a box on its target")
+                Text(name).font(.subheadline).accessibilityIdentifier("pointingTarget")
+                if let description = capture.description {
+                    Label(description, systemImage: "cloud").font(.subheadline).textSelection(.enabled)
+                        .accessibilityIdentifier("targetDescription")
+                } else if model.isDescribingTarget {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Asking the cloud model…").font(.caption).foregroundStyle(InspectionTheme.secondary)
+                    }.accessibilityElement(children: .combine)
+                }
+                Text(capture.target.salient
+                     ? "Pointing \(capture.pointing.direction) at the nearest standout object along the finger."
+                     : "Pointing \(capture.pointing.direction). No standout object along the finger, so the box marks the area ahead of it.")
+                    .font(.caption).foregroundStyle(InspectionTheme.secondary)
+                ShareLink(item: picture, preview: SharePreview("Pointing target", image: picture)) {
+                    Label("Share screenshot", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(InspectionButtonStyle(fullWidth: true)).accessibilityIdentifier("shareTarget")
+                Text("Kept in memory until the next run or when the app leaves the foreground. Sharing is your choice.")
                     .font(.caption).foregroundStyle(InspectionTheme.secondary)
             }.fixedSize(horizontal: false, vertical: true).padding(16)
         }

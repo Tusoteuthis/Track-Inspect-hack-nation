@@ -7,27 +7,43 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		02D9D223A2CA7FEDDA461D41 /* PassivTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 041A2CCFA385BA50DFD8B28B /* PassivTests.swift */; };
 		144B222A0FB993BFEB3FD9C6 /* TrackInspectApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1AD665BEFC60260CEAA994 /* TrackInspectApp.swift */; };
+		1A69BFDB0A27BCA1B8D2047A /* MetaBuildModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3611DD4DB4857FF2F4BDA342 /* MetaBuildModeTests.swift */; };
+		1EF59BAFF3F172F506CF65E5 /* VideoSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79664B8D59E54ECCCBD0ECB5 /* VideoSourceTests.swift */; };
 		233D943FD8B6EBE8A4F7E31E /* MetaVideoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BC0F2791CA03BD4AC2D91D7 /* MetaVideoService.swift */; };
 		256A165198F7BF7C8E35A394 /* InspectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFCF61CF345BC4B115CEE22 /* InspectionTests.swift */; };
+		25FCB2BEFF3825B5E44BEED4 /* PhoneVideoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5880FBF4B6AB9B986A149A35 /* PhoneVideoService.swift */; };
+		264D5DF5A656EBFC6FA7580F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07E7740902EBE1760FBA311A /* Assets.xcassets */; };
 		2C89A2B085F8CC70E96C280A /* LifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B093E5D34CA6A161E80F368A /* LifecycleTests.swift */; };
 		34530F87097F9E61CBA59790 /* InspectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A0138692089DB67032FF5 /* InspectionUITests.swift */; };
+		403E0AEF106FE71A297B6A52 /* ConnectionStatusTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5378E8AD83649919921B03C /* ConnectionStatusTests.swift */; };
 		45176711F1DBE1AA6CEF841D /* MentraBluetoothSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 1F199DC6E34E20E070D53B5E /* MentraBluetoothSDK */; };
 		454810066BA113EB918E4348 /* InspectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6485E9B0E95401B7C06FA64F /* InspectionViewModel.swift */; };
+		5017265850F6A5F8E7561B3E /* RegistrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2E975528AC0183B46F1892B /* RegistrationTests.swift */; };
 		581AF97A878CAAC6B5623E47 /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDC31C4B0D646B2EE0939820 /* MWDATCore */; };
 		5C7F8349977576E5361EE45C /* InspectionTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BBF4200CC8D48A6D9AB159C /* InspectionTheme.swift */; };
+		5C926790C75E807803A744F5 /* PassivVisionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B502288173F1824746E57FC6 /* PassivVisionService.swift */; };
 		6828EE98785B8F287B04B509 /* ClassifierContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C546F46BA1C8F1E7C1A7DDE /* ClassifierContractTests.swift */; };
 		6D055C6F500EF4CC40BD7D47 /* AgentPresetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20485289555DC2197ECC1C1 /* AgentPresetTests.swift */; };
+		7C25C460CD12E03039EC8B2B /* MetaRegistrationFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE1446D45B29079152AE3C2 /* MetaRegistrationFlow.swift */; };
+		7E0725CF63D3BFF7EE326525 /* PointingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB73EBEC99090E4E8A226CF7 /* PointingTests.swift */; };
 		813BA81C0B415BEA0B55B042 /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = 35940F8F424CCC249E21BA39 /* MWDATCamera */; };
 		89A14B1AD0D295A7C28E625D /* InspectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3330E1677737F80C3B304860 /* InspectionSettingsView.swift */; };
 		9F7BC9D1944A01CFB6896C29 /* LocalAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56BC28E259E9FA5B19CE09D /* LocalAnalysisService.swift */; };
 		A0CF55B4E23B0BFD5077993C /* MentraGlassesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D69556390350CDD5A7697F3 /* MentraGlassesService.swift */; };
+		A989618EC89999A6C74BC75B /* PointingDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3AB2BD5C020253EB63F3EE /* PointingDetector.swift */; };
 		AB047B2CCD4F8271B349171D /* SessionTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60D93673837F6026D1C9A52 /* SessionTiming.swift */; };
+		AE2E80EC8338F7D85063DF86 /* VideoSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F173F77C954F6090E990BC6F /* VideoSource.swift */; };
+		C81588624B4F5F5E6F2F2D1A /* AppIconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5228508C3F52884F179B68A1 /* AppIconTests.swift */; };
 		C8379EBE330DF793DC107F32 /* InspectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 568BD640C5C9B3E9118A3B9D /* InspectionView.swift */; };
 		C94724A27C8DB416FEA88FF1 /* PrivacyTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 052815985ABE20511D0264A7 /* PrivacyTimingTests.swift */; };
 		D130F53FBDC828EC045D0E4C /* ElevenLabs in Frameworks */ = {isa = PBXBuildFile; productRef = 6EF7B106901C91063AF6BEC4 /* ElevenLabs */; };
+		D1BA24F4D353B1638AFD04D8 /* UnpairTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EA57E667329D72827C0A845 /* UnpairTests.swift */; };
+		D768A52B09F4731F681F09C8 /* GlassesConnectionStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A02F40B41CB2664A6DCBD75 /* GlassesConnectionStatus.swift */; };
 		DF93847A5A6813362204D676 /* ElevenLabsVoiceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ECE64DAB3D9F57DEF30ABBB /* ElevenLabsVoiceService.swift */; };
 		E37F9CEA5AD990B838BD2E62 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 089683E853E4DEB7CCD7DD96 /* README.md */; };
+		F6070B9DC91CA5451FDA6847 /* PointingSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 488C53BCC38BAFD8247313F9 /* PointingSnapshot.swift */; };
 		F9344007CBD311AFDC29F7DE /* ServiceProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB55EC3958DC6B8CB3671980 /* ServiceProtocols.swift */; };
 		FA846F4463C235577B30520A /* ClassifierContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7D6F35D3EE165F1D72F3113 /* ClassifierContract.swift */; };
 		FF00FF989F9302CA15BA34E0 /* AgentPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB28041690436C6895B1F0F /* AgentPreset.swift */; };
@@ -51,8 +67,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		041A2CCFA385BA50DFD8B28B /* PassivTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassivTests.swift; sourceTree = "<group>"; };
 		045C33D103B81ACF1E3F4A04 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		052815985ABE20511D0264A7 /* PrivacyTimingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyTimingTests.swift; sourceTree = "<group>"; };
+		07E7740902EBE1760FBA311A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		089683E853E4DEB7CCD7DD96 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		0BC0F2791CA03BD4AC2D91D7 /* MetaVideoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaVideoService.swift; sourceTree = "<group>"; };
 		1AB28041690436C6895B1F0F /* AgentPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentPreset.swift; sourceTree = "<group>"; };
@@ -60,22 +78,36 @@
 		2D69556390350CDD5A7697F3 /* MentraGlassesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentraGlassesService.swift; sourceTree = "<group>"; };
 		2FAE52CB762D3A09E1BA4497 /* TrackInspectTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TrackInspectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3330E1677737F80C3B304860 /* InspectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionSettingsView.swift; sourceTree = "<group>"; };
+		3611DD4DB4857FF2F4BDA342 /* MetaBuildModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaBuildModeTests.swift; sourceTree = "<group>"; };
+		488C53BCC38BAFD8247313F9 /* PointingSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointingSnapshot.swift; sourceTree = "<group>"; };
+		5228508C3F52884F179B68A1 /* AppIconTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconTests.swift; sourceTree = "<group>"; };
 		568BD640C5C9B3E9118A3B9D /* InspectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionView.swift; sourceTree = "<group>"; };
+		5880FBF4B6AB9B986A149A35 /* PhoneVideoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneVideoService.swift; sourceTree = "<group>"; };
 		5C546F46BA1C8F1E7C1A7DDE /* ClassifierContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassifierContractTests.swift; sourceTree = "<group>"; };
+		5EA57E667329D72827C0A845 /* UnpairTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnpairTests.swift; sourceTree = "<group>"; };
 		6485E9B0E95401B7C06FA64F /* InspectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionViewModel.swift; sourceTree = "<group>"; };
 		6ECE64DAB3D9F57DEF30ABBB /* ElevenLabsVoiceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElevenLabsVoiceService.swift; sourceTree = "<group>"; };
+		79664B8D59E54ECCCBD0ECB5 /* VideoSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoSourceTests.swift; sourceTree = "<group>"; };
 		7B8399E2527F49D26CBCA884 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		9A02F40B41CB2664A6DCBD75 /* GlassesConnectionStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassesConnectionStatus.swift; sourceTree = "<group>"; };
+		9E3AB2BD5C020253EB63F3EE /* PointingDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointingDetector.swift; sourceTree = "<group>"; };
 		A56BC28E259E9FA5B19CE09D /* LocalAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAnalysisService.swift; sourceTree = "<group>"; };
 		AFFCF61CF345BC4B115CEE22 /* InspectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionTests.swift; sourceTree = "<group>"; };
 		B093E5D34CA6A161E80F368A /* LifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleTests.swift; sourceTree = "<group>"; };
+		B502288173F1824746E57FC6 /* PassivVisionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassivVisionService.swift; sourceTree = "<group>"; };
 		B60D93673837F6026D1C9A52 /* SessionTiming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionTiming.swift; sourceTree = "<group>"; };
 		BE1AD665BEFC60260CEAA994 /* TrackInspectApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackInspectApp.swift; sourceTree = "<group>"; };
+		C2E975528AC0183B46F1892B /* RegistrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistrationTests.swift; sourceTree = "<group>"; };
 		CB55EC3958DC6B8CB3671980 /* ServiceProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServiceProtocols.swift; sourceTree = "<group>"; };
 		D20485289555DC2197ECC1C1 /* AgentPresetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentPresetTests.swift; sourceTree = "<group>"; };
 		D6E5CDB64BB6591D92134794 /* TrackInspect.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = TrackInspect.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DB73EBEC99090E4E8A226CF7 /* PointingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PointingTests.swift; sourceTree = "<group>"; };
 		DD2A0138692089DB67032FF5 /* InspectionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionUITests.swift; sourceTree = "<group>"; };
+		DFE1446D45B29079152AE3C2 /* MetaRegistrationFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaRegistrationFlow.swift; sourceTree = "<group>"; };
 		E1BB304C03F37173D7BB9549 /* TrackInspectUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TrackInspectUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E7D6F35D3EE165F1D72F3113 /* ClassifierContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClassifierContract.swift; sourceTree = "<group>"; };
+		F173F77C954F6090E990BC6F /* VideoSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoSource.swift; sourceTree = "<group>"; };
+		F5378E8AD83649919921B03C /* ConnectionStatusTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatusTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,10 +129,18 @@
 			isa = PBXGroup;
 			children = (
 				D20485289555DC2197ECC1C1 /* AgentPresetTests.swift */,
+				5228508C3F52884F179B68A1 /* AppIconTests.swift */,
 				5C546F46BA1C8F1E7C1A7DDE /* ClassifierContractTests.swift */,
+				F5378E8AD83649919921B03C /* ConnectionStatusTests.swift */,
 				AFFCF61CF345BC4B115CEE22 /* InspectionTests.swift */,
 				B093E5D34CA6A161E80F368A /* LifecycleTests.swift */,
+				3611DD4DB4857FF2F4BDA342 /* MetaBuildModeTests.swift */,
+				041A2CCFA385BA50DFD8B28B /* PassivTests.swift */,
+				DB73EBEC99090E4E8A226CF7 /* PointingTests.swift */,
 				052815985ABE20511D0264A7 /* PrivacyTimingTests.swift */,
+				C2E975528AC0183B46F1892B /* RegistrationTests.swift */,
+				5EA57E667329D72827C0A845 /* UnpairTests.swift */,
+				79664B8D59E54ECCCBD0ECB5 /* VideoSourceTests.swift */,
 				4001E5FBF44B7CA6B6786E9D /* Fixtures */,
 			);
 			path = TrackInspectTests;
@@ -152,6 +192,7 @@
 		940AE9F596F126D81A5011F8 /* TrackInspect */ = {
 			isa = PBXGroup;
 			children = (
+				07E7740902EBE1760FBA311A /* Assets.xcassets */,
 				7B8399E2527F49D26CBCA884 /* Info.plist */,
 				F337D6E21D0C2882DF727BA5 /* App */,
 				927A4C1814A6D47EBEBEA363 /* Config */,
@@ -178,10 +219,17 @@
 				1AB28041690436C6895B1F0F /* AgentPreset.swift */,
 				E7D6F35D3EE165F1D72F3113 /* ClassifierContract.swift */,
 				6ECE64DAB3D9F57DEF30ABBB /* ElevenLabsVoiceService.swift */,
+				9A02F40B41CB2664A6DCBD75 /* GlassesConnectionStatus.swift */,
 				A56BC28E259E9FA5B19CE09D /* LocalAnalysisService.swift */,
 				2D69556390350CDD5A7697F3 /* MentraGlassesService.swift */,
+				DFE1446D45B29079152AE3C2 /* MetaRegistrationFlow.swift */,
 				0BC0F2791CA03BD4AC2D91D7 /* MetaVideoService.swift */,
+				B502288173F1824746E57FC6 /* PassivVisionService.swift */,
+				5880FBF4B6AB9B986A149A35 /* PhoneVideoService.swift */,
+				9E3AB2BD5C020253EB63F3EE /* PointingDetector.swift */,
+				488C53BCC38BAFD8247313F9 /* PointingSnapshot.swift */,
 				CB55EC3958DC6B8CB3671980 /* ServiceProtocols.swift */,
+				F173F77C954F6090E990BC6F /* VideoSource.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -230,6 +278,7 @@
 			buildConfigurationList = 56A6C32E3EE22EB40F8586BF /* Build configuration list for PBXNativeTarget "TrackInspect" */;
 			buildPhases = (
 				3130AE0A3BD50A5095C58AF6 /* Sources */,
+				1A37F21C6EF2F0D64304EA60 /* Resources */,
 				E6F81FA51D2F94F7AAEC5136 /* Frameworks */,
 			);
 			buildRules = (
@@ -307,6 +356,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		1A37F21C6EF2F0D64304EA60 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				264D5DF5A656EBFC6FA7580F /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8FED66437AB646E21B09078F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -325,16 +382,23 @@
 				FF00FF989F9302CA15BA34E0 /* AgentPreset.swift in Sources */,
 				FA846F4463C235577B30520A /* ClassifierContract.swift in Sources */,
 				DF93847A5A6813362204D676 /* ElevenLabsVoiceService.swift in Sources */,
+				D768A52B09F4731F681F09C8 /* GlassesConnectionStatus.swift in Sources */,
 				89A14B1AD0D295A7C28E625D /* InspectionSettingsView.swift in Sources */,
 				5C7F8349977576E5361EE45C /* InspectionTheme.swift in Sources */,
 				C8379EBE330DF793DC107F32 /* InspectionView.swift in Sources */,
 				454810066BA113EB918E4348 /* InspectionViewModel.swift in Sources */,
 				9F7BC9D1944A01CFB6896C29 /* LocalAnalysisService.swift in Sources */,
 				A0CF55B4E23B0BFD5077993C /* MentraGlassesService.swift in Sources */,
+				7C25C460CD12E03039EC8B2B /* MetaRegistrationFlow.swift in Sources */,
 				233D943FD8B6EBE8A4F7E31E /* MetaVideoService.swift in Sources */,
+				5C926790C75E807803A744F5 /* PassivVisionService.swift in Sources */,
+				25FCB2BEFF3825B5E44BEED4 /* PhoneVideoService.swift in Sources */,
+				A989618EC89999A6C74BC75B /* PointingDetector.swift in Sources */,
+				F6070B9DC91CA5451FDA6847 /* PointingSnapshot.swift in Sources */,
 				F9344007CBD311AFDC29F7DE /* ServiceProtocols.swift in Sources */,
 				AB047B2CCD4F8271B349171D /* SessionTiming.swift in Sources */,
 				144B222A0FB993BFEB3FD9C6 /* TrackInspectApp.swift in Sources */,
+				AE2E80EC8338F7D85063DF86 /* VideoSource.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,10 +415,18 @@
 			buildActionMask = 2147483647;
 			files = (
 				6D055C6F500EF4CC40BD7D47 /* AgentPresetTests.swift in Sources */,
+				C81588624B4F5F5E6F2F2D1A /* AppIconTests.swift in Sources */,
 				6828EE98785B8F287B04B509 /* ClassifierContractTests.swift in Sources */,
+				403E0AEF106FE71A297B6A52 /* ConnectionStatusTests.swift in Sources */,
 				256A165198F7BF7C8E35A394 /* InspectionTests.swift in Sources */,
 				2C89A2B085F8CC70E96C280A /* LifecycleTests.swift in Sources */,
+				1A69BFDB0A27BCA1B8D2047A /* MetaBuildModeTests.swift in Sources */,
+				02D9D223A2CA7FEDDA461D41 /* PassivTests.swift in Sources */,
+				7E0725CF63D3BFF7EE326525 /* PointingTests.swift in Sources */,
 				C94724A27C8DB416FEA88FF1 /* PrivacyTimingTests.swift in Sources */,
+				5017265850F6A5F8E7561B3E /* RegistrationTests.swift in Sources */,
+				D1BA24F4D353B1638AFD04D8 /* UnpairTests.swift in Sources */,
+				1EF59BAFF3F172F506CF65E5 /* VideoSourceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -408,7 +480,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 22;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -450,7 +522,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.track-inspect.app.TrackInspectUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = ai.trackinspect.app.TrackInspectUITests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = TrackInspect;
@@ -467,7 +539,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.track-inspect.app.TrackInspectTests";
+				PRODUCT_BUNDLE_IDENTIFIER = ai.trackinspect.app.TrackInspectTests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrackInspect.app/TrackInspect";
@@ -508,7 +580,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 22;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -543,7 +615,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.track-inspect.app.TrackInspectTests";
+				PRODUCT_BUNDLE_IDENTIFIER = ai.trackinspect.app.TrackInspectTests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TrackInspect.app/TrackInspect";
@@ -562,7 +634,7 @@
 					"@executable_path/Frameworks",
 				);
 				OTHER_LDFLAGS = "$(inherited) -ObjC";
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.track-inspect.app";
+				PRODUCT_BUNDLE_IDENTIFIER = ai.trackinspect.app;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -580,7 +652,7 @@
 					"@executable_path/Frameworks",
 				);
 				OTHER_LDFLAGS = "$(inherited) -ObjC";
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.track-inspect.app";
+				PRODUCT_BUNDLE_IDENTIFIER = ai.trackinspect.app;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -596,7 +668,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "ai.track-inspect.app.TrackInspectUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = ai.trackinspect.app.TrackInspectUITests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = TrackInspect;
