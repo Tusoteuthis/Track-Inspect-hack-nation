@@ -1,15 +1,17 @@
 "use client";
 
-import { useConversationControls, useConversationStatus } from "@elevenlabs/react";
-import { type ReactNode, useEffect, useState } from "react";
+import { useConversationControls, useConversationInput, useConversationStatus } from "@elevenlabs/react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { deriveCompletion } from "@/lib/expert/completion";
+import { currentSegment } from "@/lib/expert/record-state";
 import { COVERAGE_DIMENSIONS, type ExpertExchange, type InterviewConfig, type TimingMark, type Topic } from "@/lib/expert/contracts";
 import { coverageGrid } from "@/lib/expert/coverage";
-import { diffRevisions, stepVerification } from "@/lib/expert/draft";
+import { activeConfirmations, diffRevisions, stepVerification } from "@/lib/expert/draft";
 import { FIXTURE_EVENTS } from "@/lib/expert/fixtures";
 import { DEFAULT_SCENARIO, formatScenarioOffsets, parseScenarioOffsets } from "@/lib/expert/scenario";
 import type { SessionState } from "@/lib/expert/session";
 import { exchangeTimings, liveCounters } from "@/lib/expert/timing";
-import type { ExpertSession, GateStatus, SaveStatus } from "./useExpertSession";
+import type { ConversationIo, ExpertSession, GateStatus, SaveStatus } from "./useExpertSession";
 
 type Props = {
   session: ExpertSession;
@@ -33,19 +35,37 @@ const TUNABLES: [keyof InterviewConfig, number][] = [
  * release controller tick.
  */
 export function ExpertConsole({ session, raw }: Props) {
-  const { sendContextualUpdate, sendUserMessage, getInputVolume } = useConversationControls();
+  const { sendContextualUpdate, sendUserMessage, getInputVolume, sendUserActivity } = useConversationControls();
+  const { setMuted } = useConversationInput();
   const { status } = useConversationStatus();
   const [showRaw, setShowRaw] = useState(false);
   const [deliverError, setDeliverError] = useState<string | null>(null);
   const [offsets, setOffsets] = useState(formatScenarioOffsets(DEFAULT_SCENARIO));
+  const [muteWhileOff, setMuteWhileOff] = useState(false);
   const { state, save, tick } = session;
   const connected = status === "connected";
+  const io = useMemo<ConversationIo>(
+    () => ({ sendContextualUpdate, sendUserMessage, getInputVolume, sendUserActivity }),
+    [sendContextualUpdate, sendUserMessage, getInputVolume, sendUserActivity]
+  );
+  const offRecord = state ? currentSegment(state).state === "off_record" : false;
 
   useEffect(() => {
     if (!connected) return;
-    const id = setInterval(() => tick({ sendContextualUpdate, sendUserMessage, getInputVolume }), TICK_MS);
+    const id = setInterval(() => tick(io), TICK_MS);
     return () => clearInterval(id);
-  }, [connected, tick, sendContextualUpdate, sendUserMessage, getInputVolume]);
+  }, [connected, tick, io]);
+
+  // Optional: mute the mic while off the record, so that audio never reaches ElevenLabs
+  // (capabilities doc (f); unverified in voice). A muted expert must use the console to resume.
+  useEffect(() => {
+    if (!connected) return;
+    try {
+      setMuted(offRecord && muteWhileOff);
+    } catch {
+      // not connected yet
+    }
+  }, [connected, offRecord, muteWhileOff, setMuted]);
 
   const parsedOffsets = parseScenarioOffsets(offsets);
 
@@ -66,10 +86,14 @@ export function ExpertConsole({ session, raw }: Props) {
         <PhaseBar
           state={state}
           connected={connected}
-          onEndTask={() => session.endTask({ sendContextualUpdate, sendUserMessage, getInputVolume })}
-          onTeachBack={() => session.startTeachBack({ sendContextualUpdate, sendUserMessage, getInputVolume })}
+          onEndTask={() => session.endTask(io)}
+          onTeachBack={() => session.startTeachBack(io)}
         />
       ) : null}
+      {state ? (
+        <TrustPanel session={session} state={state} io={io} connected={connected} muteWhileOff={muteWhileOff} setMuteWhileOff={setMuteWhileOff} />
+      ) : null}
+      {state?.ended_at_utc ? <CompletionPanel session={session} state={state} connected={connected} /> : null}
       <GateLine gate={connected ? session.gate : null} />
 
       <div className="ec-controls">
@@ -406,7 +430,7 @@ function PhaseBar({
   onTeachBack: () => void;
 }) {
   const latest = state.revisions.at(-1);
-  const final = latest && state.confirmations.find(c => c.revision_id === latest.revision_id && c.status === "confirmed");
+  const final = latest && activeConfirmations(state).find(c => c.revision_id === latest.revision_id && c.status === "confirmed");
   return (
     <div className="ec-controls" aria-label="Phase">
       <span className="ec-small">
@@ -449,7 +473,7 @@ const STATUS_MARK: Record<string, string> = { missing: "·", partial: "½", cove
 function DebriefPanels({ state }: { state: SessionState }) {
   const grid = coverageGrid(state);
   const rows = [...new Set(grid.map(c => c.event_id))];
-  const verification = stepVerification(state.revisions, state.confirmations);
+  const verification = stepVerification(state.revisions, activeConfirmations(state));
   const done = state.debrief_agenda.filter(i => i.state !== "open").length;
   return (
     <>
@@ -551,5 +575,168 @@ function DebriefPanels({ state }: { state: SessionState }) {
         </div>
       ) : null}
     </>
+  );
+}
+
+/**
+ * Off-record and strike controls, the acknowledged record state (the stored segment, not a local
+ * toggle), what was excluded, and the ElevenLabs-side retention status.
+ */
+function TrustPanel({
+  session,
+  state,
+  io,
+  connected,
+  muteWhileOff,
+  setMuteWhileOff,
+}: {
+  session: ExpertSession;
+  state: SessionState;
+  io: ConversationIo;
+  connected: boolean;
+  muteWhileOff: boolean;
+  setMuteWhileOff: (on: boolean) => void;
+}) {
+  const seg = currentSegment(state);
+  const off = seg.state === "off_record";
+  const segments = state.recording_segments.filter(s => s.state === "off_record");
+  const x = state.off_record_excluded;
+  const [strikeResult, setStrikeResult] = useState<string | null>(null);
+  const running = !state.ended_at_utc;
+  return (
+    <div className="ec-card" aria-label="Record state">
+      <div className="ec-controls">
+        <span className="ec-small">
+          Record state:{" "}
+          <strong className={off ? "ec-err" : "ec-ok"}>{off ? "OFF THE RECORD" : "on the record"}</strong>{" "}
+          <span className="ec-muted">
+            (acknowledged · since {time(seg.started_at_utc)} · {seg.trigger.replace("_", " ")})
+          </span>
+        </span>
+        <button type="button" disabled={!running} onClick={() => session.setRecordState(io, off ? "on_record" : "off_record")}>
+          {off ? "Back on the record" : "Go off the record"}
+        </button>
+        <label className="ec-small">
+          <input type="checkbox" checked={muteWhileOff} onChange={e => setMuteWhileOff(e.target.checked)} /> mute mic while off the record
+        </label>
+        <button
+          type="button"
+          disabled={!running || off}
+          onClick={() => setStrikeResult(session.strikeLast(io))}
+          title="Removes the expert's last answer from every record; dependent revisions are superseded"
+        >
+          Strike last answer
+        </button>
+      </div>
+      {off && muteWhileOff && connected ? (
+        <p className="ec-small ec-err">Mic muted: the expert cannot be heard. Use “Back on the record” to resume.</p>
+      ) : null}
+      {strikeResult ? <p className="ec-small ec-muted">Strike: {strikeResult}</p> : null}
+      <p className="ec-small ec-muted">
+        {segments.length} off-record segment(s) · dropped {x.transcript_lines} line(s), {x.events} event(s), {x.timing_marks} mark(s) · refused{" "}
+        {x.refused_tool_calls} tool call(s) · {state.strikes.length} strike(s)
+        {state.strikes.length
+          ? ` (${state.strikes.map(s => `${s.exchange_id}${s.invalidated_confirmation_ids.length ? `, invalidated ${s.invalidated_confirmation_ids.join(", ")}` : ""}`).join("; ")})`
+          : ""}
+      </p>
+      <ul className="ec-list ec-small">
+        {segments.map(s => (
+          <li key={s.segment_id}>
+            off-record segment from {time(s.started_at_utc)} to {s.ended_at_utc ? time(s.ended_at_utc) : "now"} (content excluded)
+          </li>
+        ))}
+      </ul>
+      <ElevenLabsRetention session={session} state={state} />
+    </div>
+  );
+}
+
+function ElevenLabsRetention({ session, state }: { session: ExpertSession; state: SessionState }) {
+  const hadOff = state.recording_segments.some(s => s.state === "off_record");
+  const d = session.deletion;
+  const last = state.elevenlabs_deletions.at(-1);
+  return (
+    <div className="ec-small">
+      <p className="ec-muted">
+        ElevenLabs side: the conversation audio and transcript are stored by ElevenLabs under the shared agent&apos;s
+        default retention (record_voice on, no retention limit set; not changed here). Off-record words are excluded
+        locally; ElevenLabs cannot delete part of a conversation, so the session&apos;s whole conversation is deleted
+        after it ends. See notes/ws3-sprints/docs/trust.md.
+      </p>
+      <label>
+        <input type="checkbox" checked={session.autoDelete} onChange={e => session.setAutoDelete(e.target.checked)} /> delete this
+        session&apos;s ElevenLabs conversation(s) when it ends, if it went off the record
+      </label>{" "}
+      <button
+        type="button"
+        disabled={!state.ended_at_utc || !hadOff || d.status === "running"}
+        onClick={() => void session.deleteConversations()}
+        title={!hadOff ? "Only for sessions with an off-record segment" : !state.ended_at_utc ? "Stop the session first" : undefined}
+      >
+        Delete ElevenLabs conversation(s) now
+      </button>
+      {d.status === "running" ? <span> deleting…</span> : null}
+      {d.status === "error" ? <span className="ec-err"> deletion failed: {d.message}</span> : null}
+      {last ? (
+        <span className={last.results.every(r => r.status !== "failed") ? "ec-ok" : "ec-err"}>
+          {" "}
+          ElevenLabs deletion ({time(last.at_utc)}): {last.results.map(r => `${r.conversation_id} ${r.status}${r.detail ? ` (${r.detail})` : ""}`).join(", ")}
+        </span>
+      ) : hadOff ? (
+        <span className="ec-err"> ElevenLabs conversation not deleted yet.</span>
+      ) : null}
+    </div>
+  );
+}
+
+function CompletionPanel({ session, state, connected }: { session: ExpertSession; state: SessionState; connected: boolean }) {
+  const c = deriveCompletion(state);
+  const ev = session.evidence;
+  return (
+    <div className="ec-card" aria-label="Session completion">
+      <div className="ec-small">
+        <strong className={c.end_reason === "completed" ? "ec-ok" : "ec-err"}>
+          {c.end_reason === "completed" ? `Completed: ${c.confirmed_revision_id} explicitly confirmed` : `${c.end_reason.toUpperCase()}: not everything was finished`}
+        </strong>{" "}
+        <span className="ec-muted">
+          ended {time(c.ended_at_utc)} ({c.end_cause ?? "?"}) · {c.counts.live_questions} live ({c.counts.live_guardrail_questions} guardrail) ·{" "}
+          {c.counts.debrief_questions} debrief · written to completion.json / completion.md
+        </span>
+      </div>
+      {c.unfinished.length ? (
+        <ul className="ec-list ec-small">
+          {c.unfinished.map(u => (
+            <li key={u}>{u}</li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="ec-controls">
+        <button type="button" disabled={ev.status === "running"} onClick={() => void session.exportEvidence()}>
+          Export demo evidence
+        </button>
+        {state.phase === "incomplete" && !connected ? (
+          <button type="button" disabled={session.resumeArmed} onClick={session.armResume} title="Best effort: the next Start continues this session id in the same phase">
+            {session.resumeArmed ? "Resume armed: press Start" : "Resume this session"}
+          </button>
+        ) : null}
+      </div>
+      {ev.status === "error" ? <p className="ec-small ec-err">Export failed: {ev.message}</p> : null}
+      {ev.status === "done" ? (
+        <div className="ec-small">
+          <p className="ec-muted">Written to knowledge/sessions/{state.session_id}/{ev.value.file} (derived from the saved files).</p>
+          <ul className="ec-list">
+            {ev.value.checklist.map(r => (
+              <li key={r.id}>
+                <span className={r.ok ? "ec-ok" : "ec-err"}>{r.ok ? "✓" : "✗"}</span> {r.label} — <span className="ec-muted">{r.detail}</span>
+              </li>
+            ))}
+          </ul>
+          <details>
+            <summary>demo-evidence.md</summary>
+            <pre className="ec-pre">{ev.value.markdown}</pre>
+          </details>
+        </div>
+      ) : null}
+    </div>
   );
 }

@@ -39,6 +39,10 @@ export type VoiceSessionProps = {
   onVadScore?: (score: number) => void;
   /** Tentative user transcript text; needs `tentative_user_transcript` in the agent's client events. */
   onUserTentative?: (text: string) => void;
+  /** Fires when the user presses Stop (before the disconnect), so a stop can be told apart from a dropped connection. */
+  onStop?: () => void;
+  /** Fires on a conversation error (before any disconnect it causes). */
+  onSessionError?: (message: string) => void;
   /**
    * Rendered inside the conversation provider, so children can call
    * `useConversationControls()` — e.g. `sendContextualUpdate` to tell the agent
@@ -64,6 +68,7 @@ export function VoiceSession({
   onDisconnected,
   onVadScore,
   onUserTentative,
+  onSessionError,
   ...props
 }: VoiceSessionProps) {
   const [lines, setLinesState] = useState<TranscriptLine[]>([]);
@@ -84,6 +89,8 @@ export function VoiceSession({
   vadCb.current = onVadScore;
   const userTentativeCb = useRef(onUserTentative);
   userTentativeCb.current = onUserTentative;
+  const errorCb = useRef(onSessionError);
+  errorCb.current = onSessionError;
 
   const nextId = useCallback(() => `line-${++lineCounter.current}`, []);
   const setLines = useCallback((next: TranscriptLine[]) => {
@@ -127,9 +134,11 @@ export function VoiceSession({
         disconnectedCb.current?.();
       }}
       onModeChange={({ mode }: { mode: "speaking" | "listening" }) => modeCb.current?.(mode)}
-      onError={(error: unknown) =>
-        setSessionError(error instanceof Error ? error.message : String(error))
-      }
+      onError={(error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        setSessionError(message);
+        errorCb.current?.(message);
+      }}
       onMessage={handleMessage}
       onDebug={handleDebug}
       onVadScore={({ vadScore }: { vadScore: number }) => vadCb.current?.(vadScore)}
@@ -150,7 +159,7 @@ export function VoiceSession({
 
 type VoicePanelProps = Omit<
   VoiceSessionProps,
-  "children" | "onFinalLine" | "onAgentModeChange" | "onDisconnected" | "onVadScore" | "onUserTentative"
+  "children" | "onFinalLine" | "onAgentModeChange" | "onDisconnected" | "onVadScore" | "onUserTentative" | "onSessionError"
 > & {
   lines: TranscriptLine[];
   resetTranscript: () => void;
@@ -165,6 +174,7 @@ function VoicePanel({
   dynamicVariables,
   clientTools,
   onConnected,
+  onStop,
   lines,
   resetTranscript,
   sessionError,
@@ -234,6 +244,7 @@ function VoicePanel({
   async function toggleSession() {
     setSessionError(null);
     if (sessionActive) {
+      onStop?.();
       endSession();
       setStarting(false);
       return;

@@ -1,4 +1,4 @@
-import type { DebriefItem, DraftRevision, DraftStep, PointingEvent } from "./contracts";
+import type { DebriefItem, DraftRevision, DraftStep, PointingEvent, RecordState } from "./contracts";
 
 /**
  * The contextual update that tells the agent about a pointing event: one stable,
@@ -103,3 +103,20 @@ export const controlDebriefStart = () =>
 
 export const controlTeachBack = (revisionId: string) =>
   `${CONTROL_PREFIX} Deliver the teach-back of ${revisionId} now and end by asking explicitly whether it is right.`;
+
+/** Fixed context id for the current record state; only the newest line is current. */
+export const RECORD_CONTEXT_ID = "ws3-record";
+
+export const recordStateLine = (state: RecordState) =>
+  state === "off_record"
+    ? "[RECORD_STATE] off_record. The expert is off the record: ask nothing, record nothing and call skip_turn on every turn until they go back on the record. Never mention or ask about anything said meanwhile."
+    : "[RECORD_STATE] on_record. The expert is on the record again; continue where you left off. Never mention or ask about anything said while off the record.";
+
+/** Gives the agent a turn to acknowledge a record-state change made in the console. */
+export const controlRecordState = (state: RecordState) =>
+  state === "off_record"
+    ? `${CONTROL_PREFIX} The expert went off the record from the console. Say only "Okay, off the record." and then stay silent.`
+    : `${CONTROL_PREFIX} The expert is back on the record (console). Say only "Okay, back on the record." and continue where you left off.`;
+
+/** Passes a console action's tool-style result to the agent (for example after a strike). */
+export const controlNote = (text: string) => `${CONTROL_PREFIX} ${text}`;

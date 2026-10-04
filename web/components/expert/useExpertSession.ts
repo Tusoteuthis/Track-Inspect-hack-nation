@@ -2,10 +2,24 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ClientToolHandler } from "@/components/voice/VoiceSession";
-import { type InterviewConfig, type PointingEvent, validatePointingEvent } from "@/lib/expert/contracts";
+import {
+  type ElevenLabsDeletionReport,
+  type EndCause,
+  type InterviewConfig,
+  type PointingEvent,
+  type RecordState,
+  validatePointingEvent,
+} from "@/lib/expert/contracts";
+import type { ChecklistRow } from "@/lib/expert/demo-evidence";
+import { currentRecordState } from "@/lib/expert/record-state";
+import { RESUME_CONTEXT_ID, resumeSummary } from "@/lib/expert/resume";
 import {
   PHASE_CONTEXT_ID,
+  RECORD_CONTEXT_ID,
   budgetStateLine,
+  controlNote,
+  controlRecordState,
+  recordStateLine,
   controlDebriefStart,
   controlNudge,
   controlTeachBack,
@@ -50,9 +64,16 @@ export type ConversationIo = {
   sendContextualUpdate: (text: string, options?: { contextId?: string }) => void;
   sendUserMessage: (text: string) => void;
   getInputVolume: () => number;
+  /** Keeps the agent's turn timeout from firing while the expert is off the record. */
+  sendUserActivity?: () => void;
 };
 
+export type RequestStatus<T> = { status: "idle" } | { status: "running" } | { status: "done"; value: T } | { status: "error"; message: string };
+export type EvidenceExport = { markdown: string; checklist: ChecklistRow[]; file: string };
+
 const SAVE_DEBOUNCE_MS = 1000;
+/** sendUserActivity cadence while off the record (capabilities doc (f): every ≤ 5 s). */
+const OFF_RECORD_ACTIVITY_MS = 4000;
 /** Fixed context id for "current state" updates; only the newest one is current. */
 const STATE_CONTEXT_ID = "ws3-state";
 
@@ -84,6 +105,19 @@ export function useExpertSession() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saving = useRef(false);
   const dirty = useRef(false);
+  /** How the current conversation ends: set by Stop / an error before the disconnect arrives. */
+  const endCause = useRef<EndCause>("disconnect");
+  /** Last record state sent as a `ws3-record` contextual update. */
+  const recordSent = useRef<RecordState>("on_record");
+  const lastActivity = useRef(0);
+  /** The next connect continues the ended session instead of starting a new one. */
+  const resumeNext = useRef(false);
+  const resumePending = useRef(false);
+  const autoDeleteRef = useRef(true);
+  const [autoDelete, setAutoDeleteState] = useState(true);
+  const [evidence, setEvidence] = useState<RequestStatus<EvidenceExport>>({ status: "idle" });
+  const [deletion, setDeletion] = useState<RequestStatus<ElevenLabsDeletionReport>>({ status: "idle" });
+  const [resumeArmed, setResumeArmed] = useState(false);
 
   const flush = useCallback(async () => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -114,6 +148,12 @@ export function useExpertSession() {
     }
   }, []);
 
+  /** Resolves once no save is running or pending (the final snapshot is on disk). */
+  const flushFully = useCallback(async () => {
+    await flush();
+    for (let i = 0; i < 100 && (saving.current || dirty.current); i++) await new Promise(r => setTimeout(r, 100));
+  }, [flush]);
+
   const scheduleSave = useCallback(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void flush(), SAVE_DEBOUNCE_MS);
@@ -140,8 +180,11 @@ export function useExpertSession() {
     speechRef.current = initialSpeech();
     budgetUsedUp.current = false;
     phaseSent.current = null;
+    recordSent.current = "on_record";
     setState(next);
     setSave({ status: "idle" });
+    setEvidence({ status: "idle" });
+    setDeletion({ status: "idle" });
     return next;
   }, []);
 
@@ -172,9 +215,51 @@ export function useExpertSession() {
     [dispatch]
   );
 
+  /** Deletes the ended session's ElevenLabs conversation(s) via the server route (session-scoped). */
+  const deleteConversations = useCallback(async () => {
+    const current = stateRef.current;
+    if (!current) return;
+    setDeletion({ status: "running" });
+    try {
+      const res = await fetch(`/api/expert-sessions/${current.session_id}/elevenlabs-deletion`, { method: "POST" });
+      const data: ElevenLabsDeletionReport & { error?: string } = await res.json().catch(() => ({ error: `HTTP ${res.status}` }) as never);
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      dispatch({ type: "deletion_recorded", report: data });
+      setDeletion({ status: "done", value: data });
+    } catch (error) {
+      setDeletion({ status: "error", message: error instanceof Error ? error.message : String(error) });
+    }
+  }, [dispatch]);
+
+  const exportEvidence = useCallback(async () => {
+    const current = stateRef.current;
+    if (!current) return;
+    setEvidence({ status: "running" });
+    try {
+      await flushFully();
+      const res = await fetch(`/api/expert-sessions/${current.session_id}/demo-evidence`, { method: "POST" });
+      const data: EvidenceExport & { error?: string } = await res.json().catch(() => ({ error: `HTTP ${res.status}` }) as never);
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      setEvidence({ status: "done", value: data });
+    } catch (error) {
+      setEvidence({ status: "error", message: error instanceof Error ? error.message : String(error) });
+    }
+  }, [flushFully]);
+
   const onConnected = useCallback(
     (conversationId: string) => {
-      if (!stateRef.current || stateRef.current.ended_at_utc) startNewSession();
+      endCause.current = "disconnect";
+      const current = stateRef.current;
+      if (resumeNext.current && current?.ended_at_utc && current.phase === "incomplete") {
+        resumeNext.current = false;
+        setResumeArmed(false);
+        dispatch({ type: "resumed", ...stamp() });
+        resumePending.current = true;
+        phaseSent.current = null;
+        recordSent.current = "on_record";
+      } else if (!current || current.ended_at_utc) {
+        startNewSession();
+      }
       dispatch({ type: "connected", conversation_id: conversationId });
     },
     [dispatch, startNewSession]
@@ -182,8 +267,20 @@ export function useExpertSession() {
 
   const onDisconnected = useCallback(() => {
     cancelScenario();
-    if (stateRef.current && !stateRef.current.ended_at_utc) dispatch({ type: "session_ended", ...stamp() });
-  }, [cancelScenario, dispatch]);
+    const current = stateRef.current;
+    if (!current || current.ended_at_utc) return;
+    dispatch({ type: "session_ended", cause: endCause.current, ...stamp() });
+    // after the final save: delete the conversation if anything was said off the record (option)
+    const offRecord = stateRef.current?.recording_segments.some(s => s.state === "off_record");
+    if (autoDeleteRef.current && offRecord) void flushFully().then(() => deleteConversations());
+  }, [cancelScenario, deleteConversations, dispatch, flushFully]);
+
+  const onStop = useCallback(() => {
+    endCause.current = "stop";
+  }, []);
+  const onSessionError = useCallback(() => {
+    endCause.current = "error";
+  }, []);
 
   const onFinalLine = useCallback(
     (line: TranscriptLine) => {
@@ -228,6 +325,14 @@ export function useExpertSession() {
         dispatch({ type: "revision_confirmed", params, ...stamp() });
         return stateRef.current?.last_tool_result ?? "error no active session";
       },
+      set_record_state: params => {
+        dispatch({ type: "record_state_tool", params, ...stamp() });
+        return stateRef.current?.last_tool_result ?? "error no active session";
+      },
+      strike_last_answer: () => {
+        dispatch({ type: "strike_requested", trigger: "agent_tool", ...stamp() });
+        return stateRef.current?.last_tool_result ?? "error no active session";
+      },
     }),
     [dispatch]
   );
@@ -256,6 +361,54 @@ export function useExpertSession() {
       phaseSent.current = text;
       io.sendContextualUpdate(text, { contextId: PHASE_CONTEXT_ID });
     }
+  }, []);
+
+  /** Sends the record state (`ws3-record`) whenever it changed, whichever trigger changed it. */
+  const syncRecord = useCallback((io: ConversationIo) => {
+    const current = stateRef.current;
+    if (!current) return;
+    const recordState = currentRecordState(current);
+    if (recordState !== recordSent.current) {
+      recordSent.current = recordState;
+      io.sendContextualUpdate(recordStateLine(recordState), { contextId: RECORD_CONTEXT_ID });
+    }
+  }, []);
+
+  /** Console toggle: the acknowledged state is the stored segment; the agent is asked to acknowledge aloud. */
+  const setRecordState = useCallback(
+    (io: ConversationIo, to: RecordState) => {
+      const before = stateRef.current && currentRecordState(stateRef.current);
+      dispatch({ type: "record_state_changed", to, trigger: "console", ...stamp() });
+      if (!stateRef.current || currentRecordState(stateRef.current) === before) return;
+      syncRecord(io);
+      if (!stateRef.current.ended_at_utc) io.sendUserMessage(controlRecordState(to));
+    },
+    [dispatch, syncRecord]
+  );
+
+  /** Console: strike the expert's last answer (same rules as the agent tool). */
+  const strikeLast = useCallback(
+    (io: ConversationIo) => {
+      dispatch({ type: "strike_requested", trigger: "console", ...stamp() });
+      const result = stateRef.current?.last_tool_result ?? "";
+      if (result.startsWith("ok") && stateRef.current && !stateRef.current.ended_at_utc) {
+        syncPhase(io);
+        io.sendUserMessage(controlNote(`The expert struck their last answer from the console. ${result.replace(/^ok /, "")}`));
+      }
+      return result;
+    },
+    [dispatch, syncPhase]
+  );
+
+  /** Arms a best-effort resume: the next Start continues this session (same id, same phase). */
+  const armResume = useCallback(() => {
+    resumeNext.current = true;
+    setResumeArmed(true);
+  }, []);
+
+  const setAutoDelete = useCallback((on: boolean) => {
+    autoDeleteRef.current = on;
+    setAutoDeleteState(on);
   }, []);
 
   /** Console: the expert is done (dev path; normally the agent calls signal_task_complete). */
@@ -299,9 +452,22 @@ export function useExpertSession() {
         dispatch({ type: "user_speech_changed", speaking: false, ...stampAt(settled.transition.at_perf) });
       }
 
+      if (resumePending.current) {
+        resumePending.current = false;
+        io.sendContextualUpdate(resumeSummary(stateRef.current!), { contextId: RESUME_CONTEXT_ID });
+      }
+      syncRecord(io);
       syncPhase(io);
       const s = stateRef.current!;
       const speech = speechRef.current;
+      if (currentRecordState(s) === "off_record") {
+        if (io.sendUserActivity && now - lastActivity.current >= OFF_RECORD_ACTIVITY_MS) {
+          lastActivity.current = now;
+          io.sendUserActivity();
+        }
+        setGate({ decision: "wait", reasons: ["off record"], expert_speaking: speech.speaking, quiet_ms: -1, budget: { used: 0, max: cfg.budget_max_questions } });
+        return;
+      }
       if (s.phase !== "live") {
         // After the live part nothing is released any more; debrief questions come from the agenda.
         setGate({ decision: "wait", reasons: [`phase ${s.phase}`], expert_speaking: speech.speaking, quiet_ms: -1, budget: { used: 0, max: cfg.budget_max_questions } });
@@ -336,7 +502,7 @@ export function useExpertSession() {
         budget: { used: budget.used, max: budget.max },
       });
     },
-    [dispatch, observe, syncPhase]
+    [dispatch, observe, syncPhase, syncRecord]
   );
 
   /** Tunables (pause_ms in the human gate); applied to the running session and the next one. */
@@ -383,7 +549,27 @@ export function useExpertSession() {
     cancelScenario,
     endTask,
     startTeachBack,
-    voiceProps: { clientTools, onFinalLine, onConnected, onDisconnected, onAgentModeChange, onVadScore, onUserTentative },
+    setRecordState,
+    strikeLast,
+    armResume,
+    resumeArmed,
+    autoDelete,
+    setAutoDelete,
+    deleteConversations,
+    deletion,
+    exportEvidence,
+    evidence,
+    voiceProps: {
+      clientTools,
+      onFinalLine,
+      onConnected,
+      onDisconnected,
+      onAgentModeChange,
+      onVadScore,
+      onUserTentative,
+      onStop,
+      onSessionError,
+    },
   };
 }
 

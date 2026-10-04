@@ -6,6 +6,7 @@
 import {
   type AnswerLine,
   type DeferredReason,
+  type ElevenLabsDeletionReport,
   type EndCause,
   type ExpertExchange,
   type InterviewConfig,
@@ -19,6 +20,7 @@ import {
   type TimingMarkName,
   type Topic,
   validateBeginQuestionParams,
+  validateDeletionReport,
   validateSetRecordStateParams,
 } from "./contracts";
 import { beginPhaseQuestion, confirmRevision, endPhase, proposeDraft, recordCoverage, startDebrief } from "./debrief";
@@ -70,7 +72,8 @@ export type SessionAction =
   | ({ type: "strike_requested"; trigger: "agent_tool" | "console" } & Stamp)
   | ({ type: "record_state_changed"; to: RecordState; trigger: RecordStateTrigger } & Stamp)
   | ({ type: "session_ended"; cause?: EndCause } & Stamp)
-  | ({ type: "resumed" } & Stamp);
+  | ({ type: "resumed" } & Stamp)
+  | { type: "deletion_recorded"; report: ElevenLabsDeletionReport };
 
 /** Actions that record content: refused while off the record (agent tools get OFF_RECORD_REFUSAL). */
 const RECORDING_ACTIONS = new Set<SessionAction["type"]>([
@@ -321,6 +324,10 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     case "resumed": {
       return resumeSession(state, action);
     }
+
+    case "deletion_recorded":
+      if (action.report.session_id !== state.session_id || !validateDeletionReport(action.report).ok) return state;
+      return { ...state, elevenlabs_deletions: [...state.elevenlabs_deletions, action.report] };
   }
 }
 
