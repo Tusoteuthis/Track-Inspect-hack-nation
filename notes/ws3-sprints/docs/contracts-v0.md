@@ -64,7 +64,24 @@ Validation rejects: wrong schema version, missing ids, unknown enum values, regi
 
 ### CoverageItem — WS3 stand-in, to be replaced by WS5 synthesis
 
-`dimension` (`decision` \| `reason` \| `cues` \| `alternatives` \| `guardrails` \| `unresolved`), `event_id` (nullable: session-level), `status` (`missing` \| `partial` \| `covered`), `supporting_exchange_ids[]`, `note` (nullable, **AI synthesis**).
+`dimension` (`decision` \| `reason` \| `cues` \| `alternatives` \| `guardrails` \| `unresolved`), `event_id` (nullable: session-level), `status` (`missing` \| `partial` \| `covered`), `supporting_exchange_ids[]`, `note` (nullable, **AI synthesis**), *(Sprint 3)* `resolution` (`answered` \| `unknown_escalate` \| null).
+
+*(Sprint 3)* Filled by the agent's `record_coverage` tool after an answer. Row key (`event_id` = topic primary event, `dimension`). Status only goes up. `unknown_escalate` stores `covered` and also covers the row's `guardrails`. Code: `web/lib/expert/coverage.ts` behind `web/lib/expert/synthesis.ts` (`getGaps`, `buildDraft`), the WS5 swap point.
+
+### Gap / DebriefItem — Sprint 3
+
+**Gap:**
+- `gap_id`: `gap-<event_id|session>-<dimension>` or `gap-<open_question_id>`
+- `event_id`, `topic_id`, `dimension`, `open_question_id`
+- `description`: a template, never an interpretation
+- `status_at_start` (`missing` \| `partial`)
+
+**DebriefItem** = Gap + `state` (`open` → `asked` → `partial` \| `resolved` \| `unknown`) + `exchange_ids[]`.
+
+The agenda is the top 5 gaps, frozen when the debrief starts (`debrief_agenda` in the snapshot). The selector:
+- excludes covered cells;
+- excludes dimensions already asked and answered on the same region (explain→decision, reasoning→reason, context→cues, distinction→alternatives, guardrail→guardrails);
+- orders: deferred topics' open questions first, then guardrails, alternatives and missing reasons, with topic rows before the session row.
 
 ### OpenQuestion
 
@@ -74,10 +91,33 @@ Validation rejects: wrong schema version, missing ids, unknown enum values, regi
 
 - **Fields:** `revision_id` (`rev-1`, `rev-2`, …), `session_id`, `created_at_utc`, `parent_revision_id` (nullable for the first revision), `change_reason` (nullable; references the correction).
 - **Steps:** `steps[]` = `{step_id, text (AI synthesis; any quote must be verbatim from a linked answer), kind (step|decision|guardrail|exception), supporting_event_ids[], supporting_exchange_ids[]}`. A step with no supporting event **and** exchange is unsupported and is not taught as fact.
+- *(Sprint 3)* **New fields:**
+  - `steps[].supported` (boolean);
+  - `change_exchange_ids[]` (the expert's correction exchanges).
+- *(Sprint 3)* **Step ids** are `s-N` and stay stable across revisions: an unchanged step (same kind and text) keeps its id.
+- *(Sprint 3)* **Evidence:**
+  - an exchange's own event (and its merged duplicates) counts as event evidence;
+  - `clarify_reference` answers never count;
+  - quotes (`"…"`, `“…”`, `‘…’`, `'…'`) must appear verbatim (case, spacing and edge punctuation aside) in the step's linked answers, or the proposal is rejected.
 
 ### ExpertConfirmation
 
 `confirmation_id`, `revision_id` (the **exact** revision reviewed), `status` (`confirmed` \| `corrected` \| `unresolved`), `step_ids_reviewed[]`, `expert_response_exchange_id` (the explicit spoken response; silence never creates a confirmation), `at_utc`.
+
+*(Sprint 3)* **Step verification** in `knowledge-draft.md` is either `confirmed` or `unresolved`. A step is `confirmed` only when:
+- the latest revision has a `confirmed` confirmation, **and**
+- some confirmation in its parent chain reviewed that step id.
+
+### Phases — Sprint 3
+
+- `SessionSnapshot.phase`: `live` → `debrief` → `teach_back` → `confirmed`, or `incomplete` if the session ends without confirming the latest revision.
+- `phase_log[]` = `{phase, at_utc, trigger: agent_tool|console|confirmation|session_end}`.
+- `ExpertExchange.phase` stays `live|debrief|teach_back`.
+- New exchange kinds:
+  - `teach_back`: opened by the client when a revision is created. Its `question` is the spoken teach-back, verbatim.
+  - `correction`: a question asked during the teach-back.
+- New exchange fields: `gap_id` (debrief) and `revision_id` (teach-back).
+- `DeferredReason` adds `task_complete`.
 
 ### SessionCompletion
 
@@ -128,7 +168,27 @@ The full state of one expert session, validated by `validateSessionSnapshot` and
 
 ### Client tool `begin_question` — Sprint 1
 
-Params: `{event_id: string ("none" → null), kind: ExchangeKind, question: string}`. It returns `ok exchange_id=ex-NNN` or `error …` to the LLM. Validator: `validateBeginQuestionParams`. *(Sprint 2)* A duplicate's id is accepted and attributed to the primary event; a non-`clarify_reference` first question on an ambiguous topic returns `error event <id> is ambiguous: …`.
+Params: `{event_id: string ("none" → null), kind: ExchangeKind, question: string}`, *(Sprint 3)* optional `phase` (`live|debrief|teach_back`, must match the current phase) and `gap_id` ("none" → null).
+- **Debrief:** a question needs an open agenda gap. Its event comes from the gap, and its kind is stored as `gap`.
+- **Teach-back:** the question is stored as `correction`. It returns `ok exchange_id=ex-NNN` or `error …` to the LLM. Validator: `validateBeginQuestionParams`. *(Sprint 2)* A duplicate's id is accepted and attributed to the primary event; a non-`clarify_reference` first question on an ambiguous topic returns `error event <id> is ambiguous: …`.
+
+### Client tools — Sprint 3
+
+Full table: `specs/20261004-003657-ws3-sprint-3-debrief-confirmation/contracts/agent-tools.md`.
+
+- **`record_coverage({exchange_id, dimensions:[{dimension, status: partial|covered|unknown_escalate, note}]})`**: rejects unknown or unanswered exchanges and `clarify_reference`.
+- **`signal_task_complete({reason})`**: moves live → debrief and returns the `[PHASE debrief]` agenda.
+- **`propose_draft({steps:[{kind, text, event_ids[], exchange_ids[]}], change_reason})`**:
+  - in the debrief, it creates rev-1, but only after ≥ 3 answered debrief questions (or the whole agenda, if shorter);
+  - in the teach-back, it is allowed only after a `corrected` confirmation and creates rev-n+1;
+  - it returns the `[TEACH_BACK rev-n]` block;
+  - the client assigns all ids.
+- **`confirm_revision({revision_id, status, step_ids_reviewed})`**:
+  - only in the teach-back;
+  - rejects a stale `revision_id`;
+  - needs an unused teach-back-phase exchange for the latest revision, with a spoken teach-back and expert answer lines. Otherwise: "silence is not confirmation", and nothing is stored;
+  - `step_ids_reviewed` defaults to the steps taught.
+- **Phase blocks** go out as a contextual update with `contextId` `ws3-phase`, whenever they change. For the console path, a `[CONTROL]` nudge follows.
 
 ### What the agent receives — Sprint 2
 
@@ -144,6 +204,13 @@ knowledge/sessions/<session_id>/
   transcript.md  exchanges.md  timing-report.md
   revisions/rev-N.json|md  confirmations.json  completion.json|md  knowledge-draft.md
 ```
+
+*(Sprint 3)* The following are written:
+- `revisions/rev-N.json|md`: never overwritten with different content (the store refuses).
+- `confirmations.json`.
+- `knowledge-draft.md`: the latest revision for WS5. Each step lists its verification, its event images (highlighted + full frame, FIXTURE-labeled) and the verbatim answers of its exchanges, followed by guardrails, open questions, the diff to the parent revision and the confirmations.
+
+`completion.json|md` follows in Sprint 4. `session.json.counts` adds `debrief_questions`, `debrief_gap_questions` and `teach_backs`.
 
 ## Open questions per partner
 
