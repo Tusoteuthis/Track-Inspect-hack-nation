@@ -30,6 +30,8 @@ export function renderExchangesMd(snap: SessionSnapshot, options: RenderOptions 
     `- Started: ${snap.started_at_utc} · Ended: ${snap.ended_at_utc ?? "(in progress)"}`,
     `- Events: ${snap.events.length} (fixture: ${fixtures}) · Exchanges: ${snap.exchanges.length} · ` +
       `Unlinked agent questions: ${snap.unlinked_agent_questions.length}`,
+    `- Phase: ${snap.phase} · Revisions: ${snap.revisions.map(r => r.revision_id).join(", ") || "—"} · ` +
+      `Confirmations: ${snap.confirmations.length}`,
   ];
 
   for (const x of snap.exchanges) {
@@ -45,6 +47,11 @@ export function renderExchangesMd(snap: SessionSnapshot, options: RenderOptions 
       out.push(`- Topic: ${x.topic_id}${also}`);
     }
     if (x.kind === "clarify_reference") out.push("- Clarification: the answer identifies the region only; not an interpretation.");
+    if (x.gap_id) {
+      const gap = snap.debrief_agenda.find(g => g.gap_id === x.gap_id);
+      out.push(`- Debrief gap: ${x.gap_id}${gap ? ` (${gap.state}) — ${gap.description}` : ""}`);
+    }
+    if (x.revision_id) out.push(`- Reviews draft revision: ${x.revision_id}`);
     out.push(`- Asked: ${x.asked_at_utc} · phase ${x.phase}`, "");
     out.push(`**Question (verbatim):** ${x.question || "_(not spoken yet)_"}`, "");
     if (x.question_planned) out.push(`_Planned (AI, not evidence):_ ${x.question_planned}`, "");
@@ -54,6 +61,12 @@ export function renderExchangesMd(snap: SessionSnapshot, options: RenderOptions 
     if (marks.length) out.push("", `Timing: ${marks.map(m => `${m.mark} ${time(m.at_utc)}`).join(" · ")}`);
   }
 
+  if (snap.confirmations.length) {
+    out.push("", "## Confirmations", "");
+    for (const c of snap.confirmations) {
+      out.push(`- ${c.confirmation_id} · ${c.revision_id} · **${c.status}** · response ${c.expert_response_exchange_id} · steps ${c.step_ids_reviewed.join(", ") || "—"} · ${c.at_utc}`);
+    }
+  }
   if (snap.preamble.length) {
     out.push("", "## Preamble (expert, before any question)", "", quote(snap.preamble.map(l => l.text)));
   }

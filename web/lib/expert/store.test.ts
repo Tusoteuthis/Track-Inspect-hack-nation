@@ -81,3 +81,37 @@ describe("knowledgeRoot", () => {
     expect(knowledgeRoot({ KNOWLEDGE_DIR: "out/k" }, "/repo/web")).toBe("/repo/web/out/k");
   });
 });
+
+describe("revisions on disk", () => {
+  const withRevision = (reason: string | null) => ({
+    ...snap,
+    revisions: [
+      {
+        revision_id: "rev-1",
+        session_id: SID,
+        created_at_utc: "2026-10-04T01:00:09.000Z",
+        parent_revision_id: null,
+        steps: [{ step_id: "s-1", text: "First look for the step.", kind: "step" as const, supporting_event_ids: ["evt-001"], supporting_exchange_ids: ["ex-001"], supported: true }],
+        change_reason: reason,
+        change_exchange_ids: [],
+      },
+    ],
+  });
+
+  it("writes revisions/rev-n.json|md and saves the same revision again idempotently", async () => {
+    const store = createFileStore(join(root, "knowledge"));
+    const res = await store.saveSnapshot(withRevision(null));
+    expect(res.files).toEqual(expect.arrayContaining(["revisions/rev-1.json", "revisions/rev-1.md", "confirmations.json", "knowledge-draft.md"]));
+    const dir = join(root, "knowledge", "sessions", SID);
+    expect(JSON.parse(readFileSync(join(dir, "revisions", "rev-1.json"), "utf8")).steps[0].step_id).toBe("s-1");
+    await expect(store.saveSnapshot(withRevision(null))).resolves.toBeTruthy();
+  });
+
+  it("refuses to overwrite an existing revision with different content (immutable)", async () => {
+    const store = createFileStore(join(root, "knowledge"));
+    await store.saveSnapshot(withRevision(null));
+    await expect(store.saveSnapshot(withRevision("edited later"))).rejects.toThrow(/immutable/);
+    const dir = join(root, "knowledge", "sessions", SID);
+    expect(JSON.parse(readFileSync(join(dir, "revisions", "rev-1.json"), "utf8")).change_reason).toBeNull();
+  });
+});

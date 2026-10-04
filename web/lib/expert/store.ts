@@ -2,9 +2,10 @@
 // so WS6 can swap in the shared backend without touching conversation logic.
 
 import { randomBytes } from "node:crypto";
-import { mkdir, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { type SessionSnapshot, isValidSessionId } from "./contracts";
+import { renderKnowledgeDraftMd, renderRevisionMd } from "./knowledge-render";
 import { renderExchangesMd, renderTranscriptMd } from "./render";
 import { liveCounters, renderTimingReportMd } from "./timing";
 
@@ -16,6 +17,8 @@ export const SESSION_FILES = [
   "transcript.md",
   "exchanges.md",
   "timing-report.md",
+  "confirmations.json",
+  "knowledge-draft.md",
 ] as const;
 
 export interface ExpertSessionStore {
@@ -42,8 +45,9 @@ export function createFileStore(root: string, options: { publicDir?: string } = 
         : undefined;
       const contents = sessionFiles(snapshot, imageHref);
       await mkdir(dir, { recursive: true });
+      const revisionFiles = await writeRevisions(dir, snapshot);
       for (const name of SESSION_FILES) await writeAtomic(join(dir, name), contents[name]);
-      return { dir, files: [...SESSION_FILES] };
+      return { dir, files: [...SESSION_FILES, ...revisionFiles] };
     },
   };
 }
@@ -69,7 +73,36 @@ function sessionFiles(
     "transcript.md": renderTranscriptMd(snap),
     "exchanges.md": renderExchangesMd(snap, { imageHref }),
     "timing-report.md": renderTimingReportMd(snap),
+    "confirmations.json": json(snap.confirmations),
+    "knowledge-draft.md": renderKnowledgeDraftMd(snap, { imageHref }),
   };
+}
+
+/**
+ * revisions/rev-n.json|md. Revisions are immutable: an existing file is only ever rewritten
+ * with identical content; different content for an existing revision id is refused.
+ */
+async function writeRevisions(dir: string, snap: SessionSnapshot): Promise<string[]> {
+  if (!snap.revisions.length) return [];
+  const revDir = join(dir, "revisions");
+  await mkdir(revDir, { recursive: true });
+  const files: string[] = [];
+  for (const rev of snap.revisions) {
+    const pairs: [string, string][] = [
+      [`${rev.revision_id}.json`, JSON.stringify(rev, null, 2) + "\n"],
+      [`${rev.revision_id}.md`, renderRevisionMd(rev)],
+    ];
+    for (const [name, data] of pairs) {
+      const path = join(revDir, name);
+      const existing = await readFile(path, "utf8").catch(() => null);
+      if (existing !== null && existing !== data) {
+        throw new Error(`revision ${rev.revision_id} already exists with different content; revisions are immutable`);
+      }
+      if (existing === null) await writeAtomic(path, data);
+      files.push(`revisions/${name}`);
+    }
+  }
+  return files;
 }
 
 /** Write to a temp file in the same directory, then rename: readers never see a half-written file. */
