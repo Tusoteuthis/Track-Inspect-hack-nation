@@ -12,6 +12,7 @@
 		256A165198F7BF7C8E35A394 /* InspectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFCF61CF345BC4B115CEE22 /* InspectionTests.swift */; };
 		2C89A2B085F8CC70E96C280A /* LifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B093E5D34CA6A161E80F368A /* LifecycleTests.swift */; };
 		34530F87097F9E61CBA59790 /* InspectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2A0138692089DB67032FF5 /* InspectionUITests.swift */; };
+		45176711F1DBE1AA6CEF841D /* MentraBluetoothSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 1F199DC6E34E20E070D53B5E /* MentraBluetoothSDK */; };
 		454810066BA113EB918E4348 /* InspectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6485E9B0E95401B7C06FA64F /* InspectionViewModel.swift */; };
 		581AF97A878CAAC6B5623E47 /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDC31C4B0D646B2EE0939820 /* MWDATCore */; };
 		5C7F8349977576E5361EE45C /* InspectionTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BBF4200CC8D48A6D9AB159C /* InspectionTheme.swift */; };
@@ -19,6 +20,7 @@
 		813BA81C0B415BEA0B55B042 /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = 35940F8F424CCC249E21BA39 /* MWDATCamera */; };
 		89A14B1AD0D295A7C28E625D /* InspectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3330E1677737F80C3B304860 /* InspectionSettingsView.swift */; };
 		9F7BC9D1944A01CFB6896C29 /* LocalAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56BC28E259E9FA5B19CE09D /* LocalAnalysisService.swift */; };
+		A0CF55B4E23B0BFD5077993C /* MentraGlassesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D69556390350CDD5A7697F3 /* MentraGlassesService.swift */; };
 		AB047B2CCD4F8271B349171D /* SessionTiming.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60D93673837F6026D1C9A52 /* SessionTiming.swift */; };
 		C8379EBE330DF793DC107F32 /* InspectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 568BD640C5C9B3E9118A3B9D /* InspectionView.swift */; };
 		C94724A27C8DB416FEA88FF1 /* PrivacyTimingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 052815985ABE20511D0264A7 /* PrivacyTimingTests.swift */; };
@@ -52,6 +54,7 @@
 		089683E853E4DEB7CCD7DD96 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		0BC0F2791CA03BD4AC2D91D7 /* MetaVideoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetaVideoService.swift; sourceTree = "<group>"; };
 		1BBF4200CC8D48A6D9AB159C /* InspectionTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionTheme.swift; sourceTree = "<group>"; };
+		2D69556390350CDD5A7697F3 /* MentraGlassesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MentraGlassesService.swift; sourceTree = "<group>"; };
 		2FAE52CB762D3A09E1BA4497 /* TrackInspectTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TrackInspectTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3330E1677737F80C3B304860 /* InspectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionSettingsView.swift; sourceTree = "<group>"; };
 		568BD640C5C9B3E9118A3B9D /* InspectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectionView.swift; sourceTree = "<group>"; };
@@ -79,6 +82,7 @@
 				581AF97A878CAAC6B5623E47 /* MWDATCore in Frameworks */,
 				813BA81C0B415BEA0B55B042 /* MWDATCamera in Frameworks */,
 				D130F53FBDC828EC045D0E4C /* ElevenLabs in Frameworks */,
+				45176711F1DBE1AA6CEF841D /* MentraBluetoothSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -169,6 +173,7 @@
 				E7D6F35D3EE165F1D72F3113 /* ClassifierContract.swift */,
 				6ECE64DAB3D9F57DEF30ABBB /* ElevenLabsVoiceService.swift */,
 				A56BC28E259E9FA5B19CE09D /* LocalAnalysisService.swift */,
+				2D69556390350CDD5A7697F3 /* MentraGlassesService.swift */,
 				0BC0F2791CA03BD4AC2D91D7 /* MetaVideoService.swift */,
 				CB55EC3958DC6B8CB3671980 /* ServiceProtocols.swift */,
 			);
@@ -230,6 +235,7 @@
 				DDC31C4B0D646B2EE0939820 /* MWDATCore */,
 				35940F8F424CCC249E21BA39 /* MWDATCamera */,
 				6EF7B106901C91063AF6BEC4 /* ElevenLabs */,
+				1F199DC6E34E20E070D53B5E /* MentraBluetoothSDK */,
 			);
 			productName = TrackInspect;
 			productReference = D6E5CDB64BB6591D92134794 /* TrackInspect.app */;
@@ -280,6 +286,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				B7D3FF8E8CDB58B97FDAA9B2 /* XCRemoteSwiftPackageReference "elevenlabs-swift-sdk" */,
+				BE8DA09D164EF3D441CE2B27 /* XCRemoteSwiftPackageReference "mentra-bluetooth-sdk-ios" */,
 				98145F3F53DEDE413B591BD0 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -316,6 +323,7 @@
 				C8379EBE330DF793DC107F32 /* InspectionView.swift in Sources */,
 				454810066BA113EB918E4348 /* InspectionViewModel.swift in Sources */,
 				9F7BC9D1944A01CFB6896C29 /* LocalAnalysisService.swift in Sources */,
+				A0CF55B4E23B0BFD5077993C /* MentraGlassesService.swift in Sources */,
 				233D943FD8B6EBE8A4F7E31E /* MetaVideoService.swift in Sources */,
 				F9344007CBD311AFDC29F7DE /* ServiceProtocols.swift in Sources */,
 				AB047B2CCD4F8271B349171D /* SessionTiming.swift in Sources */,
@@ -645,9 +653,22 @@
 				version = 3.4.0;
 			};
 		};
+		BE8DA09D164EF3D441CE2B27 /* XCRemoteSwiftPackageReference "mentra-bluetooth-sdk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Mentra-Community/mentra-bluetooth-sdk-ios.git";
+			requirement = {
+				kind = exactVersion;
+				version = 0.1.20;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		1F199DC6E34E20E070D53B5E /* MentraBluetoothSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BE8DA09D164EF3D441CE2B27 /* XCRemoteSwiftPackageReference "mentra-bluetooth-sdk-ios" */;
+			productName = MentraBluetoothSDK;
+		};
 		35940F8F424CCC249E21BA39 /* MWDATCamera */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 98145F3F53DEDE413B591BD0 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;

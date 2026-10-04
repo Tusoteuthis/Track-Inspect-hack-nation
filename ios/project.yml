@@ -17,6 +17,9 @@ packages:
   ElevenLabs:
     url: https://github.com/elevenlabs/elevenlabs-swift-sdk.git
     exactVersion: "3.4.0"
+  MentraBluetoothSDK:
+    url: https://github.com/Mentra-Community/mentra-bluetooth-sdk-ios.git
+    exactVersion: "0.1.20"
 targets:
   TrackInspect:
     type: application
@@ -40,6 +43,8 @@ targets:
         product: MWDATCamera
       - package: ElevenLabs
         product: ElevenLabs
+      - package: MentraBluetoothSDK
+        product: MentraBluetoothSDK
   TrackInspectTests:
     type: bundle.unit-test
     platform: iOS

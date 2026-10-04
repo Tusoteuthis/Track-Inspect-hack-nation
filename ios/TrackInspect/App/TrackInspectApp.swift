@@ -6,11 +6,12 @@ import SwiftUI
         analyzer: LocalAnalysisService(),
         voice: ElevenLabsVoiceService()
     )
+    @State private var mentra = MentraGlassesService()
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
-            InspectionView(model: model)
+            InspectionView(model: model, mentra: mentra)
                 .preferredColorScheme(.dark)
                 .tint(InspectionTheme.accent)
                 .onOpenURL { url in Task { await model.handle(url: url) } }

@@ -19,7 +19,7 @@
 <key>TeamID</key><string>$(DEVELOPMENT_TEAM)</string>
 <key>startupOptions</key><dict><key>usesDam</key><true/></dict>
 </dict>
-<key>NSBluetoothAlwaysUsageDescription</key><string>Connect to your Meta glasses to receive live video for on-device analysis.</string>
+<key>NSBluetoothAlwaysUsageDescription</key><string>Connect to Meta or Mentra-compatible glasses for inspection video, device status, and supported text guidance.</string>
 <key>NSMicrophoneUsageDescription</key><string>Send your voice to ElevenLabs so your inspection assistant can talk with you.</string>
 <key>UISupportedExternalAccessoryProtocols</key><array><string>com.meta.ar.wearable</string></array>
 <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>

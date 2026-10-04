@@ -1,6 +1,6 @@
 # TrackInspect iOS
 
-Native iPhone/iPad prototype for Meta Ray-Ban video, local visual analysis, and an ElevenLabs voice assistant.
+Native iPhone/iPad prototype for Meta Ray-Ban video, Mentra-compatible Bluetooth glasses, local visual analysis, and an ElevenLabs voice assistant.
 
 **iOS bundle identifier: `ai.track-inspect.app`**. This is the app identity, not an assumed backend URL. Meta callback remains `trackinspect://`.
 
@@ -9,6 +9,7 @@ Native iPhone/iPad prototype for Meta Ray-Ban video, local visual analysis, and 
 ## What works in this first version
 
 - Pair through Meta AI and handle the `trackinspect://` return link.
+- Directly scan, connect, reconnect, disconnect, and forget Even Realities G1/G2, NIMO, or Mentra Live over Bluetooth, with battery/readiness status and text HUD tests on G1/G2/NIMO.
 - Receive DAT camera frames at low resolution / 24 fps, with a live phone preview.
 - Analyze sampled frames locally using Apple's built-in Vision image-classification model. One inference at a time, at most ~1.3 analyses/second; incoming frames are skipped while inference is busy.
 - Optionally load a bundled **image classification** Core ML model named `InspectionClassifier` instead.
@@ -81,6 +82,12 @@ The generated Xcode project and SPM lockfile are included. `project.yml` is cano
 5. Wear the glasses, keep competing camera apps closed, and select **Start glasses video**.
 
 The integration uses Meta DAT **0.7.0**, a long-lived selector, a session pinned to the resolved device, a wait for session `.started` before capability attachment, and a fresh session after stop. It reports device errors rather than looping blindly on retries.
+
+## Mentra-compatible glasses
+
+TrackInspect also links the official native `MentraBluetoothSDK` at version `0.1.20`, with its analytics disabled. No Mentra account, API key, or companion app is required. Open Settings, select the exact model to scan, then connect a discovered pair. G1, G2, and NIMO support short text HUD tests; Mentra Live does not have a working text HUD in this SDK.
+
+This is an additional BLE/HUD backend, not a substitute live vision pipeline. The SDK sends photos to a hosted webhook and streams video to RTMP/SRT/WHIP endpoints; it does not provide in-process camera frames to TrackInspect. Live on-device frame analysis therefore remains Meta DAT or a user-selected photo. Real discovery, firmware compatibility, display output, and audio/camera behavior require physical-device validation.
 
 ## ElevenLabs setup
 

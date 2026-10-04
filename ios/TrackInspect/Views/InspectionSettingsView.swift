@@ -2,8 +2,10 @@ import SwiftUI
 
 struct InspectionSettingsView: View {
     @Binding var agentID: String
+    @Bindable var mentra: MentraGlassesService
     var onPair: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var mentraModel = MentraGlassesModel.g1
 
     var body: some View {
         NavigationStack {
@@ -28,6 +30,72 @@ struct InspectionSettingsView: View {
                         InspectionRule()
                         Text("Requires your Meta app credentials and camera permission. Register trackinspect:// as the return link in the Meta developer portal.")
                             .font(.caption).foregroundStyle(InspectionTheme.secondary)
+                    }
+
+                    section("Mentra-compatible glasses", symbol: "eyeglasses") {
+                        Text(mentra.statusText)
+                            .font(.subheadline.weight(.medium))
+                            .accessibilityIdentifier("mentraStatus")
+
+                        if mentra.isConnected {
+                            HStack {
+                                Button("Disconnect") { mentra.disconnect() }
+                                Button("Forget", role: .destructive) { mentra.forget() }
+                            }
+                            .buttonStyle(InspectionButtonStyle())
+
+                            Button("Test text HUD", systemImage: "text.bubble") {
+                                Task { await mentra.sendHUDTest() }
+                            }
+                            .buttonStyle(InspectionButtonStyle(fullWidth: true))
+                            .disabled(!mentra.canRenderHUD)
+                        } else {
+                            Button("Reconnect saved glasses", systemImage: "arrow.clockwise") {
+                                mentra.connectDefault()
+                            }
+                            .buttonStyle(InspectionButtonStyle(fullWidth: true))
+
+                            Picker("Glasses model", selection: $mentraModel) {
+                                ForEach(MentraGlassesModel.allCases) { model in
+                                    Text(model.rawValue).tag(model)
+                                }
+                            }
+                            .pickerStyle(.menu)
+
+                            Button("Scan for \(mentraModel.rawValue)", systemImage: "dot.radiowaves.left.and.right") {
+                                mentra.scan(model: mentraModel)
+                            }
+                            .buttonStyle(InspectionButtonStyle(fullWidth: true))
+                            .disabled(mentra.isScanning)
+                        }
+
+                        if mentra.isScanning {
+                            HStack {
+                                ProgressView().accessibilityLabel("Scanning for Mentra glasses")
+                                Button("Stop scan") { mentra.stopScan() }
+                            }
+                        }
+
+                        ForEach(mentra.discovered) { device in
+                            Button {
+                                mentra.connect(id: device.id)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(device.name)
+                                    Text(device.model).font(.caption).foregroundStyle(InspectionTheme.secondary)
+                                }.frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(InspectionButtonStyle(fullWidth: true))
+                        }
+
+                        if let error = mentra.lastError {
+                            Label(error, systemImage: "exclamationmark.triangle")
+                                .font(.caption).foregroundStyle(.orange)
+                        }
+
+                        InspectionRule()
+                        Text("Direct Bluetooth requires no Mentra account. G1, G2, and NIMO support short text guidance; Mentra Live has no working text HUD. The Mentra SDK does not provide in-process camera frames, so live local vision still requires Meta glasses or a selected photo.")
+                            .font(.caption).foregroundStyle(InspectionTheme.text)
                     }
 
                     section("Voice agent", symbol: "waveform") {
@@ -59,7 +127,7 @@ struct InspectionSettingsView: View {
                         Label("Video stays on your iPhone", systemImage: "checkmark.shield")
                             .font(.subheadline)
                         Text("Voice and optional text summaries go to ElevenLabs. No recordings are saved by this app. Capture stops when the app enters the background.")
-                            .font(.caption).foregroundStyle(InspectionTheme.secondary)
+                            .font(.caption).foregroundStyle(InspectionTheme.text)
                         InspectionRule()
                         Text("General image classification, not certified defect detection. Do not use this prototype to assess track safety.")
                             .font(.caption).foregroundStyle(InspectionTheme.secondary)

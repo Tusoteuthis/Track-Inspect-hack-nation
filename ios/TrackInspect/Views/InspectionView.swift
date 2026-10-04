@@ -3,6 +3,7 @@ import PhotosUI
 
 struct InspectionView: View {
     @Bindable var model: InspectionViewModel
+    @Bindable var mentra: MentraGlassesService
     @AppStorage("elevenLabsAgentID") private var agentID = ""
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var showSettings = false
@@ -61,7 +62,9 @@ struct InspectionView: View {
                 }
             }
             .sheet(isPresented: $showSettings) {
-                InspectionSettingsView(agentID: $agentID) { Task { await model.pair() } }
+                InspectionSettingsView(agentID: $agentID, mentra: mentra) {
+                    Task { await model.pair() }
+                }
             }
             .alert("Start cloud voice?", isPresented: $confirmVoice) {
                 Button("Cancel", role: .cancel) {}
