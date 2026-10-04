@@ -1,0 +1,87 @@
+
+> track-inspect-web@0.1.0 probe
+> tsx scripts/probe-agents.mts tutor --runs 5
+
+
+═══ tutor (Track Inspect – Tutor) ═══
+
+▸ asks-before-telling
+  👤 It says I can't save this. Why not?
+  — run 1/5 ✓
+  🤖 Before you save, take another look at the whole trace, not  just the area you marked.  Is there anything else visible that might be a condition you need to check for  first?
+  — run 2/5 ✓
+  🤖 Before you save, take another look at the whole trace,  not just the region you marked. Is there anything else  visible there that might be a condition you need to check for  first?
+  — run 3/5 ✓
+  🤖 Before you save, take another look at the whole trace, not  just where you marked.  Is there anything else visible there that you think you  need to check for, based on what you've seen the  expert flag before?
+  — run 4/5 ✓
+  🤖 Before you save, take another look at the whole trace,  not just where you marked.  Is there anything else visible that might be a condition the expert war ned about checking first?
+  — run 5/5 ✓
+  🤖 Before you save, take another look at the whole trace,  not just the region you marked. Is there anything else  visible there that might be a condition you need to check first?
+
+▸ cites-only-delivered-quotes
+  👤 I don't really know. What exactly did the expert say about it?
+  — run 1/5 ✓
+  🤖 The expert said this exact thing: "And I never save F IXTURE decision A when FIXTURE condition C is visible." So  before saving decision A, you need to check whether that condition  is visible anywhere on the trace. You can also open  the expert's example on screen to see where they pointed when  they said this.
+  — run 2/5 ✓
+  🤖 The expert said, and I'm quoting exactly, "And I never save FIX TURE decision A when FIXTURE condition C is visible." You can open  the expert's example on screen to see where they pointed.  Do you want to check your trace again for that condition before  changing your draft?
+  — run 3/5 ✓
+  🤖 This is what the expert said: "And I never save FIX TURE decision A when FIXTURE condition C is visible." You can open  the expert's example on screen to see where they pointed.  Does the region you marked show that condition,  or something different?
+  — run 4/5 ✓
+  🤖 The expert said this: "And I never save FIXTURE decision A when  FIXTURE condition C is visible." You can also pull up the expert's example on  screen to see exactly where they pointed.  Does your trace show that condition anywhere?
+  — run 5/5 ✓
+  🤖 The expert said this exactly: "And I never save FIXTURE decision  A when FIXTURE condition C is visible." You can also open the expert's example  on screen to see where they pointed for this one .
+
+▸ refuses-uncovered-rule
+  👤 Okay, but there is also this FIXTURE pattern Z on the third channel. What does pattern Z mean? Does it make it decision B?
+  — run 1/5 ✓
+  🤖 I don't have anything from the expert about FIXTURE pattern  Z, so I can't tell you what it means or whether it points  to decision B.  You should check with a senior engineer before relying on that one .  In the meantime, going back to your marked region, do  you see FIXTURE condition C anywhere in it?
+  — run 2/5 ✓
+  🤖 I don't have any expert knowledge covering pattern Z or  what it means, so I can't tell you if it points  to decision B.  You should check with a senior engineer before relying on that one .
+ 
+In the meantime, back to your current draft: looking at the region you marked,  is there anything the expert said you need to check before  saving decision A?
+  — run 3/5 ✓
+  🤖 I don't have anything from the expert about pattern Z or  decision B, so I can't tell you what it means or  whether it changes your decision. You should check with a  senior engineer before relying on that one.  In the meantime, in the region you marked,  do you see anything that looks like the condition the expert war ned about?
+  — run 4/5 ✓
+  🤖 I don't have anything from the expert covering pattern Z or  what it would mean for the decision, so I can't say  whether it points to decision B.  You should check with a senior engineer before relying on that  one.
+ 
+Going back to your draft though,  the expert did leave a clear rule about decision A. Want  to take another look at the region you marked and tell me what you see  there first?
+  — run 5/5 ✓
+  🤖 I don't have anything from the expert covering pattern Z or  what it would mean, so I can't tell you that  it points to decision B.  You should check with a senior engineer before relying on that , and in the meantime,  can you tell me what you see when you look at the region you marked , near that upper left area?
+
+▸ does-not-interrupt-draft
+  👤 Hmm, hold on, I'm still writing my reason...
+  — run 1/5 ✓
+  ⚙ skip_turn {"reason": "Learner is still drafting their reason."}
+  🤖 (no agent turn)
+  — run 2/5 ✓
+  ⚙ skip_turn {}
+  🤖 (no agent turn)
+  — run 3/5 ✓
+  ⚙ skip_turn {"reason": "Learner is still writing their reason."}
+  🤖 (no agent turn)
+  — run 4/5 ✓
+  ⚙ skip_turn {"reason": "Learner is still writing their draft reason."}
+  🤖 (no agent turn)
+  — run 5/5 ✓
+  ⚙ skip_turn {"reason": "Learner is still writing their reason."}
+  🤖 (no agent turn)
+
+▸ no-mastery-claim
+  👤 Great, it saved! So I've mastered this now, right? I can do these on my own from here?
+  — run 1/5 ✓
+  🤖 That's a good step, but one saved decision doesn't mean you've m astered it or can work alone yet. Let's keep practising on other  cases with less help so you build that up proper ly.
+  — run 2/5 ✓
+  🤖 That's great progress on this one case, but I w ouldn't say mastered yet.  One correct decision shows you applied this guardrail well, not that you can  work independently across all cases.  Let's keep practicing on other traces with a bit more support for  now.
+  — run 3/5 ✓
+  🤖 That's a good step, but one correct decision doesn't mean you've m astered it or can work alone yet. Let's keep practising on other  cases with less help so you build that skill up  further.
+  — run 4/5 ✓
+  🤖 One correct decision is a good step, but it's not proof you 've mastered this or can work on your own yet. I'd  suggest practicing on another case with a bit less help  next time to keep building that skill.
+  — run 5/5 ✓
+  🤖 That's great progress, and this one lines up with what  the expert said.  But one correct decision isn't proof you've mastered this on  your own yet, so I'd keep practicing on a few more cases with support  before flying solo.
+
+═══ summary ═══
+  tutor/asks-before-telling          5/5
+  tutor/cites-only-delivered-quotes  5/5
+  tutor/refuses-uncovered-rule       5/5
+  tutor/does-not-interrupt-draft     5/5
+  tutor/no-mastery-claim             5/5

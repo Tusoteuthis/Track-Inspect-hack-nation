@@ -1,1 +1,1 @@
-Hi, I'm your practice tutor. Take a look at the trace, draft your decision and your reason, and request a review when you're ready. I'm here if you want to talk it through.
+Hi, I'm your practice tutor. Take a look at the trace and tell me what you notice, or draft your decision and ask for a review when you're ready.
