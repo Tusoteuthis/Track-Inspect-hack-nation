@@ -57,6 +57,16 @@ Already compatible (verified against the code): the error envelope `{error:{code
 ## 4. Integration steps
 
 ### I1: Shared base (now, about 1 hour; prerequisite for everything else)
+
+**Done 2026-10-04.** Worktree `.claude/worktrees/integration-ws6-ws7`, branch `integration-ws6-ws7`, merge `e0dfb0e`.
+- Merged: `voice` + `006-ws6-trust-demo` + `ws7-sprint-4`. Only the README conflicted; it now keeps the WS6 guide and adds a WS7 §9.
+- Gate results:
+  - typecheck clean
+  - vitest 109 files / 1346 tests pass
+  - `npm run e2e` 45/45 pass (synthesis on its default setting, stub tutor, temp dirs, port 3110)
+  - Playwright 33/33 pass (port 3111)
+- Not included: the uncommitted WS7 styling WIP in `ws7-sprint-3`. Merge it once committed.
+
 1. Commit the WS7 styling WIP in the `ws7-sprint-3` worktree. Only the WS7 agent or the human does this.
 2. Make a branch `integration-ws6-ws7` from `voice` and merge `006-ws6-trust-demo`, then `ws7-sprint-4`. Resolve `web/README.md` by keeping both sections (WS6 run/e2e, WS7 screens/env).
 3. Gate: `npm ci && npm run typecheck && npx vitest run && npm run test:e2e` (Playwright, fixtures) **and** `npm run dev -p 3006` + `npm run e2e` (WS6, 45 checks). All four must be green before any gap work.
