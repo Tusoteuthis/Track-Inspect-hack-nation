@@ -1,8 +1,16 @@
 # WS6 status and pickup guide (read this first)
 
-**Last updated:** 2026-10-04, after integration steps I1, I2 and I4 (WS6↔WS7). See §0.
+**Last updated:** 2026-10-04: **all WS6 work is merged into `voice`** and the WS6 worktrees are closed. Continue on `voice` (or a new branch from it).
 
 ## 0. Integration with WS7 (newest work, read first)
+
+**Merged into `voice` on 2026-10-04** (human decision: WS6 only). That is `006-ws6-trust-demo` (S0–S4) plus the integration-route commits from `007`, cherry-picked without WS7.
+- **Not on `voice`:** WS7 sprints 3–4. They are still being merged separately by WS7.
+- **Gate on the merge branch:** typecheck, vitest 99 files / 1322 tests, e2e 52/52, Playwright 22/22.
+- **Closed:** the `ws06-backend` and `integration-ws6-ws7` worktrees. Their branches are kept.
+- **Superseded branches:** `007-ws6-integration-routes` and `integration-ws6-ws7` still contain the WS7 S3–S4 merge; don't merge them into `voice`.
+
+The history below is kept for reference.
 
 - **Plan:** `notes/ws6-ws7-integration-plan.md` (gaps G1–G20, steps I1–I6, human decisions in §6).
 - **I1 done.** Branch `integration-ws6-ws7` (worktree `.claude/worktrees/integration-ws6-ws7`) = `voice` + `006` + `ws7-sprint-4`; all gates green.

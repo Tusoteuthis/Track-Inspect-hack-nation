@@ -1,6 +1,10 @@
 # WS6 ↔ WS7 integration plan (backend ↔ frontend)
 
-Status: decisions taken 2026-10-04 (see §6). Applies to WS6 `006-ws6-trust-demo` (worktree `ws06-backend`) and
+Status: decisions taken 2026-10-04 (see §6).
+
+**Update 2026-10-04:** WS6 (including I2/I4) is merged into `voice` on its own. WS7 merges its sprints separately.
+- After the WS7 merge, the frontend should merge `voice` and work through the I3/I5 "WS7 impact" list under I4.
+- The `integration-ws6-ws7` branch is superseded. Applies to WS6 `006-ws6-trust-demo` (worktree `ws06-backend`) and
 WS7 `ws7-sprint-4` (worktree `ws7-sprint-3`). Both branch from `voice@289de30`.
 
 ## 1. Where things stand
