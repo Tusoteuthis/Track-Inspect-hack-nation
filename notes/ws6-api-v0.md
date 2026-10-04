@@ -1,13 +1,13 @@
 # WS6 API v0 — pending agreement
 
-**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented), S2 (knowledge revisions & confirmation — implemented), S3 (newcomer session & pre-save enforcement — implemented)
+**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented), S2 (knowledge revisions & confirmation — implemented), S3 (newcomer session & pre-save enforcement — implemented), S4 (trust, recovery, diagnostics & demo — implemented)
 **Code:** contracts `web/lib/contracts/` (zod; `SCHEMA_VERSION = "ws6.v0"`), server lib `web/lib/backend/`, routes `web/app/api/`, fixtures `web/fixtures/ws6/`.
 **Record fields:** [`specs/001-ws6-foundation-contracts/data-model.md`](../specs/001-ws6-foundation-contracts/data-model.md). This doc names schemas; it does not repeat every field.
 **Dev server:** `npm run dev -- -p 3006` (add `-H 0.0.0.0` for LAN/iPhone).
 
 ## 1. Status and feedback
 
-- **v0, pending agreement.** Implemented: `GET /api/health` (S0), every route marked **S1** in §5.2–5.5 and §5.10 (notes §5.11), every route marked **S2** in §5.6–5.7 (notes §5.12), and every route marked **S3** in §5.8 (notes §5.13). Every other route is a promise with its owning sprint (S1–S4).
+- **v0, pending agreement.** Implemented: `GET /api/health` (S0), every route marked **S1** in §5.2–5.5 and §5.10 (notes §5.11), every route marked **S2** in §5.6–5.7 (notes §5.12), every route marked **S3** in §5.8 (notes §5.13), and every route marked **S4** in §5.1 and §5.9 (notes §5.14). All v0 routes are implemented.
 - Route paths below are the ones already promised in `notes/ws6-sprints/sprint-1..4-*.md`. Where this doc deviates from a sprint prompt, the deviation is listed in §9.
 - **How to object:** reply to the WS6 owner or add a note to `notes/ws6-sprints/handoff-sprint-0.md` → "Requests from partners". Objections are collected into the **next sprint's handoff** and the doc is updated there. Please answer the numbered questions in §8 by number (e.g. "WS3-Q2: …").
 - Partner names (WS3 `ws3.v0`, WS5 `ws5.v0`, WS7 `ws7.ui.v0`) are cited from their notes. WS6 does not define their APIs.
@@ -44,7 +44,7 @@
 ### Integrity and trust rules
 
 - **No dangling references.** A record referencing an asset/event/exchange is accepted only if the target is stored for this session → else `409 asset_not_available` (assets) / `404 not_found` (other refs), nothing stored.
-- **Off-record = not stored.** While the session is `off_record`, content writes (assets, events, exchanges, learner drafts) are refused with `403 off_record` and nothing is written (S1). S4 extends this to jobs/outputs, retroactive purge and tombstones (see §8 WS2-Q5).
+- **Off-record = not stored.** S4: an asset/event/exchange that is labelled off-record, arrives while the session is off-record, or was captured (`captured_at_utc` / `asked_at_utc`) inside an off-record segment is answered `202 { status: "dropped_off_record", kind, id }`; only a content-free tombstone is written, so retries get the same answer. Answer lines spoken inside an off-record segment are cut before storage. `since_utc` on the record-state route purges what was stored since then (§5.14). Learner drafts while off-record still get `403 off_record` (S1). Nothing off-record reaches a job or module.
 - **Revision-bound decisions.** Confirmations, evaluations and commits name exact revision IDs; stale work never overwrites newer state.
 - **Backend is authoritative.** Clients display state from responses/SSE; a disabled button is never enforcement.
 - **Logs/diagnostics** (`web/.runtime/diag/*.ndjson`, `GET /api/diagnostics`) contain IDs, timings, outcomes and error codes only — never expert words, images, or off-record material.
@@ -66,12 +66,13 @@
 | `stale_revision` | 409 | `rev`/`draft_rev`/reviewed revision is not current |
 | `evaluation_required` | 409 | Commit without any evaluation for the current draft |
 | `evaluation_pending` | 409 | Commit while the matching evaluation is `pending` |
-| `evaluation_stale` | 409 | Evaluation not bound to the current `draft_rev` and pinned knowledge (`details.reason`: `draft_changed` \| `knowledge_changed`) |
-| `commit_blocked` | 409 | Outcome policy blocks (`details.reason: "blocked_by_outcome"`, `details.outcome`) or already committed with another key (`details.reason: "already_committed"`) |
+| `evaluation_stale` | 409 | Evaluation not bound to the current `draft_rev` and pinned knowledge (`details.policy_code`: `evaluation_stale` \| `knowledge_changed`) |
+| `commit_blocked` | 409 | Outcome policy blocks (`details.policy_code: "blocked_by_outcome"`, `details.outcome`) or already committed with another key (`details.policy_code: "already_committed"`) |
 | `invalid_transition` | 409 | Illegal lifecycle transition, or write to an ended/committed session |
 | `internal` | 500 | Unexpected error; message never leaks internals |
-
-Reserved, added to `ErrorCode` when their sprint lands: `no_confirmed_knowledge` 409 (S3, newcomer session with nothing eligible), `case_not_permitted` 409 (S3, case shown to the expert), `gone` 410 (S4, late retry of a deleted ID).
+| `no_confirmed_knowledge` | 409 | S3: newcomer session with nothing eligible (`details.excluded[]`) |
+| `case_not_permitted` | 409 | S3: case shown to the expert, or no unseen case |
+| `gone` | 410 | S4: the ID was deleted (tombstone); a late retry cannot recreate it |
 
 ### Live updates (SSE)
 
@@ -95,8 +96,8 @@ Reserved, added to `ErrorCode` when their sprint lands: `no_confirmed_knowledge`
 | `evaluation.updated` | `evaluation_id`, `draft_rev` | created (pending) and every status change: done \| failed \| stale | **S3** |
 | `commit.stored` | `commit_id`, `evaluation_id`, `draft_rev` | commit POST | **S3** |
 | `assessment.stored` | — (re-fetch) | assessment (on commit or newcomer `end`) | **S3** |
-| `record.deleted` | one of `asset_id`/`event_id`/`exchange_id` | deletion cascade | S4 |
-| `entry.revoked` | `entry_id`, `revision_id` | revoke route; also emitted on newcomer sessions that pinned it | S4 |
+| `record.deleted` | one of `asset_id`/`event_id`/`exchange_id` | deletion cascade and off-record purge (on the owning session) | **S4** |
+| `entry.revoked` | `entry_id`, `revision_id` | revoke route and every cascade/purge; on the originating expert session and on newcomer sessions that pinned it | **S4** |
 
 Knowledge events (`revision.created`, `confirmation.stored`, `entry.revoked`) are emitted on the **originating expert session's** stream (and `entry.revoked` additionally on affected newcomer streams). A global stream is not in v0 (WS7-Q4).
 
@@ -183,10 +184,10 @@ Legend — **Idem.**: `PUT-id` = idempotency table in §2; `key` = Idempotency-K
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
 | GET | `/api/health` | — | `{ ok, schema_version, knowledge_dir_writable, runtime_dir_writable, modules: {} }` · `200`, or `503` with `ok:false` when a dir is unwritable | safe | — | — | **S0** |
-| GET | `/api/diagnostics?session_id=` | — | `Diagnostics` (ID chain event → exchanges → revisions → confirmation → newcomer session → evaluation → commit, timings, last error per component; no content) | safe | — | — | S4 |
-| GET | `/api/access?token=` | — | sets same-site cookie for browsers when `BACKEND_ACCESS_TOKEN` is set | safe | `unauthorized` | — | S4 |
+| GET | `/api/diagnostics[?session_id=]` | — | with `session_id`: `{ session_id, role, lifecycle, record_state, generation, chain, components, failing_components, timeline }` (expert chain: `events[{ event_id, asset_id, exchanges, revisions, confirmations, newcomer_sessions[{ evaluations, commit }] }]`, `jobs`; newcomer chain: `pinned`, `evaluations`, `commit`); without: `{ sessions, components, failing_components }`. IDs/statuses/timings only | safe | — | — | **S4** |
+| GET | `/api/access?token=[&next=/path]` | — | sets the `ws6_access` cookie (HttpOnly, SameSite=Strict, the token's hash) and `303` to `next` (relative only) or `200 { ok }` | safe | `unauthorized` | — | **S4** |
 
-`modules` is filled from S2 (`{ synthesis: { id, version, source } }`, e.g. `ws5-synthesis` 0.2.0 `live` or `ws6-stub-synthesis` 0.1.0 `stub`; §5.12); S4 adds per-component status and `elevenlabs_configured: boolean`.
+`modules` = `{ synthesis, tutor, assessment }` → `{ id, version, source }` (§5.12, §5.13). S4 adds `elevenlabs: { api_key_configured, expert_agent_configured, tutor_agent_configured }` (booleans only), `access_token_required`, `components: { <component>: { requests, errors, last_ok_at_utc, last_error: { at_utc, op, error_code, ids } | null } }` from the diag log, and `failing_components` (latest outcome a server or module failure).
 
 ### 5.2 Session lifecycle & record state
 
@@ -203,7 +204,7 @@ Lifecycle: `created → active → ended`; `created | active → aborted`; `ende
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| PUT | `/api/sessions/:sid/assets/:aid` | `multipart/form-data`: `meta` (JSON `AssetUploadMeta`: `kind`, `captured_at_utc`, `source`, `event_id?`, `record_state?`, `coordinate_space?`, `original: {width_px,height_px}`, `highlighted?: {width_px,height_px} \| null`), `original` (png/jpeg by content sniffing, required), `highlighted` (required iff `meta.highlighted`); per-file cap `ASSET_MAX_BYTES` (default 15 MiB); declared dims must match the image | `201 EvidenceAsset` (server fills `path`, `mime`, `sha256`, `status: "stored"`) | PUT-id by content hash: same bytes → `200`; different → `409` | `conflict_immutable`, `off_record`, `invalid_transition` | `asset.stored` | **S1** |
+| PUT | `/api/sessions/:sid/assets/:aid` | `multipart/form-data`: `meta` (JSON `AssetUploadMeta`: `kind`, `captured_at_utc`, `source`, `event_id?`, `record_state?`, `coordinate_space?`, `original: {width_px,height_px}`, `highlighted?: {width_px,height_px} \| null`), `original` (png/jpeg by content sniffing, required), `highlighted` (required iff `meta.highlighted`); per-file cap `ASSET_MAX_BYTES` (default 15 MiB); declared dims must match the image | `201 EvidenceAsset` (server fills `path`, `mime`, `sha256`, `status: "stored"`) | PUT-id by content hash: same bytes → `200`; different → `409` | `conflict_immutable`, `invalid_transition`, `gone` (S4); off-record → `202 dropped_off_record` (S4) | `asset.stored` | **S1** |
 | GET | `/api/assets/:aid` | — | `EvidenceAsset` | safe | — (deleted → 404) | — | **S1** |
 | GET | `/api/assets/:aid/original` | — | image bytes, correct `Content-Type`, `Cache-Control: private` | safe | — | — | **S1** |
 | GET | `/api/assets/:aid/highlighted` | — | image bytes (404 if none) | safe | — | — | **S1** |
@@ -214,10 +215,10 @@ Asset reads resolve only under `knowledge/images/` (and S3 case assets under `CA
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| PUT | `/api/sessions/:sid/events/:eid` | `PointingEvent` (`session_id`/`event_id` must match the path; **`asset_id` required** — S1) | `201`/`200 EventAck { event_id, status: "stored", seq }` (`seq` of its `event.stored`, stable on retry) | PUT-id (immutable) | `conflict_immutable`, `asset_not_available`, `off_record`, `invalid_transition` | `event.stored` | **S1** |
+| PUT | `/api/sessions/:sid/events/:eid` | `PointingEvent` (`session_id`/`event_id` must match the path; **`asset_id` required** — S1) | `201`/`200 EventAck { event_id, status: "stored", seq }` (`seq` of its `event.stored`, stable on retry) | PUT-id (immutable) | `conflict_immutable`, `asset_not_available`, `invalid_transition`, `gone` (S4); off-record → `202 dropped_off_record` (S4) | `event.stored` | **S1** |
 | GET | `/api/sessions/:sid/events` | — | `PointingEvent[]` ordered by `captured_at_utc`, then arrival | safe | — | — | **S1** |
 | GET | `/api/sessions/:sid/events/:eid` | — | `PointingEvent` (image refs rewritten, §7) | safe | — | — | **S1** |
-| PUT | `/api/sessions/:sid/exchanges/:xid` | `ExpertExchange` + `rev` (full record each time; answer lines grow) | `201`/`200 ExpertExchange` | PUT-id mutable `rev`; `event_id` immutable after first write | `stale_revision`, `conflict_immutable` (event_id changed), `not_found` (event_id not stored), `off_record` | `exchange.updated` | **S1** |
+| PUT | `/api/sessions/:sid/exchanges/:xid` | `ExpertExchange` + `rev` (full record each time; answer lines grow) | `201`/`200 ExpertExchange` | PUT-id mutable `rev`; `event_id` immutable after first write | `stale_revision`, `conflict_immutable` (event_id changed), `not_found` (event_id not stored), `gone` (S4); off-record → `202 dropped_off_record`, off-record lines cut (S4) | `exchange.updated` | **S1** |
 | GET | `/api/sessions/:sid/exchanges` | — | `ExpertExchange[]` | safe | — | — | **S1** |
 | GET | `/api/sessions/:sid/exchanges/:xid` | — | `ExpertExchange` | safe | — | — | **S1** |
 
@@ -314,18 +315,30 @@ Spec/plan: `specs/005-ws6-newcomer-presave/plan.md` (decisions D29–D41 in §9)
 - **Assessment:** stub `ws6-stub-assessment@0.1.0` written once, on commit or newcomer `end`: `initial_decision`, `assistance` (`"<outcome> on draft_rev <n> (<evaluation_id>)"` for intervene/uncertain), `final_outcome`, `evidence_used` (cited refs), `practice_next: null`, `content: { note, interventions, evaluations, committed, commit_id, escalated, timeline }` with WS5 `buildTimeline` (`proposed → evaluated → guidance_delivered → revised → … → committed`, `intervention: caught_before_save`). `knowledge/assessments/<sid>.json` + `.md`.
 - **Voice:** the tutor voice client reads `feedback_text` from `GET …/evaluations/:id` after `evaluation.updated`; tokens via `GET /api/conversation-token?flow=tutor&session_id=<sid>` (the newcomer session must be `active`).
 
+### 5.14 S4 implementation notes
+
+Code: `web/lib/backend/{off-record,tombstones,cascade,access,diagnostics}.ts`, `web/proxy.ts`, `web/app/diagnostics/page.tsx`, `web/scripts/e2e-integration.mts` (`npm run e2e`). Run docs: `web/README.md`; failures: `notes/ws6-failure-recovery.md`. Decisions D42–D52 in §9.
+
+- **Off-record decision** per write: own label `off_record`, or session `record_state` off now, or capture time (`captured_at_utc` for assets/events, `asked_at_utc` for a new exchange) inside an off-record segment. → `202 { status: "dropped_off_record", kind, id }` + a `dropped` tombstone; no bytes, no record, no SSE. An exchange that is already stored keeps getting on-record updates; its lines spoken inside off-record segments are cut. An identical retry of something stored before the toggle still gets `200` (D13).
+- **Retroactive purge** (`since_utc`): the new off-record segment starts at `since_utc` (it must lie in the current on-record segment). Everything of that session captured since then is removed with `dropped` tombstones; longer exchanges lose the lines spoken since then (`trimmed_exchange_ids`); revisions citing any of it are revoked **and redacted**; derived `draft.json`/`gaps.json` are removed (synthesis rebuilds them).
+- **Deletion** = files removed + `deleted` tombstones (`410 gone` on reuse). Revisions citing deleted evidence are `revoked` (`StatusTransition.reason`) and their body is replaced by a `REDACTED — evidence deleted` marker: frontmatter (IDs, hashes) stays, the expert's words go. Evaluations quoting them lose `quote`/`feedback_text`. **Revocation** (route) keeps the text (it is withdrawn, not private).
+- **Generation tokens:** `Session.generation` is bumped (under the session lock, before the cascade reads anything) for every session a cascade or purge touches. Synthesis jobs record it in `input_revs.generation` and are discarded (`discard_reason: generation_changed:a->b`) if it moved; evaluations become `stale` if their newcomer session's generation moved. A deleted session can never be recreated by a late job: `appendBus` and every session read return `410 gone`.
+- **Access boundary:** `BACKEND_ACCESS_TOKEN` set → `web/proxy.ts` requires `Authorization: Bearer <token>` or the `ws6_access` cookie on `/api/*` except `/api/health`, `/api/access`. Limits: README §5.
+- **Diagnostics:** every route logs one diag line (`component`, `op`, IDs, outcome, duration, error code); jobs and SSE `close` too. `failing_components` = components whose latest outcome is a server failure (`internal`) or a module failure (`synthesis`, `evaluations`); client errors (4xx) do not count.
+
 ### 5.9 Correction, revocation & deletion
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
 | POST | `/api/knowledge/confirmations` with `result: "corrected"` | see 5.7 | Confirmation; new `KnowledgeRevision` follows from synthesis | key | as 5.7 | as 5.7 | S2 |
-| POST | `/api/knowledge/entries/:id/revoke` | `{ reason }` | `200 KnowledgeEntry` (`status: "revoked"`); dependent evaluations → `stale` | idempotent (already revoked → `200`) | — | `entry.revoked`, `evaluation.updated` | S4 |
-| DELETE | `/api/sessions/:sid/events/:eid` | — | `200 { deleted: { event_ids, asset_ids, … } }` (cascade) | idempotent; late re-PUT → `410 gone` | — | `record.deleted` (+ `entry.revoked` for revisions citing it) | S4 |
-| DELETE | `/api/sessions/:sid/exchanges/:xid` | — | `200` cascade summary | idempotent | — | `record.deleted` | S4 |
-| DELETE | `/api/assets/:aid` | — | `200` cascade summary | idempotent | — | `record.deleted` | S4 |
-| DELETE | `/api/sessions/:sid` | — | `200` cascade summary (whole session) | idempotent | — | `record.deleted` | S4 |
+| POST | `/api/knowledge/entries/:id/revoke` | `{ reason, revision_id? }` (default: the current revision) | `200 { entry, revoked_revision_id, cascade: CascadeSummary }`; newcomer evaluations using it → `stale` | idempotent (revoked is terminal) | `not_found` | `entry.revoked` (origin + pinning sessions), `evaluation.updated`, `session.updated` | **S4** |
+| POST | `/api/sessions/:sid/record-state` | `{ state: "off_record", since_utc }` | `200 Session & { purge: CascadeSummary }` | — | `validation_failed` (since outside the current on-record segment) | `record_state.changed`, `record.deleted`, `entry.revoked` | **S4** |
+| DELETE | `/api/sessions/:sid/events/:eid` | — | `200 CascadeSummary` (the event, its asset, exchanges about it, citing revisions) | idempotent; late re-PUT → `410 gone` | `not_found` | `record.deleted`, `entry.revoked` | **S4** |
+| DELETE | `/api/sessions/:sid/exchanges/:xid` | — | `200 CascadeSummary` | idempotent | `not_found` | `record.deleted`, `entry.revoked` | **S4** |
+| DELETE | `/api/assets/:aid` | — | `200 CascadeSummary` (the events showing it follow) | idempotent | `not_found` | `record.deleted` | **S4** |
+| DELETE | `/api/sessions/:sid` | — | `200 CascadeSummary` (whole session; newcomer: learner records and assessment too) | idempotent; afterwards every route on it → `410 gone` | `not_found` | — (the stream is gone) | **S4** |
 
-Cascade order (pure function over stored links): event → assets; exchange → revisions citing it → workflow steps → newcomer sessions pinning them → evaluations (→ `stale`). Tombstones `{ id, deleted_at_utc, reason }` keep late retries from recreating data.
+`CascadeSummary` = `{ deleted: { session_ids, asset_ids, event_ids, exchange_ids }, trimmed_exchange_ids, revoked_revision_ids, stale_evaluation_ids, affected_session_ids }`. Cascade order (pure `computeCascade` over stored links): session → its records; asset ↔ events showing it → exchanges about those events; deleted/trimmed evidence → revisions citing it (or confirmed by a deleted answer) → newcomer sessions pinning them → their evaluations. Tombstones `{ kind, id, session_id, dropped, record_state?, deleted_at_utc, reason }` keep late retries from recreating data.
 
 ### 5.10 Provider tokens
 
@@ -504,3 +517,14 @@ Full rationale: [`specs/001-ws6-foundation-contracts/research.md`](../specs/001-
 | D39 (S3) | Stub assessment from facts + WS5 `buildTimeline`; `practice_next: null` (schema now nullable); written once on commit or `end` | WS5 has no assessment module yet |
 | D40 (S3) | Tutor: stub by default, `WS5_MODULES=real` → WS5 evaluator (merged from `worktree-ws05-sprint-3`, human decision) | deterministic tests/e2e without an API key |
 | D41 (S3) | Newcomer drafts/evaluations allowed in `created`/`active`; `ended`/`aborted`/committed refuse; off-record refuses drafts | prompt + off-record = not stored |
+| D42 (S4) | Off-record writes → `202 dropped_off_record` + tombstone (S1's `403 off_record` kept for learner drafts only) | prompt; a retry must not look like a failure (D8 anticipated it) |
+| D43 (S4) | Off-record by label, current state, or capture time inside an off-record segment; lines cut per `at_utc` | prompt ("based on the server's segment timeline") |
+| D44 (S4) | `since_utc` on record-state = retroactive purge; only inside the current on-record segment | "that last part was off the record" |
+| D45 (S4) | Transient processing: "not persisted, not forwarded to modules"; on-device transient use is WS2/WS3's call | open team decision, documented |
+| D46 (S4) | Cascade: event ↔ its asset ↔ events showing it; exchanges about a deleted event go too; deleting a teach-back answer revokes what it confirmed | no dangling references; WS5: words about an off-record/deleted gesture are not teachable |
+| D47 (S4) | Deletion/purge revokes **and redacts** citing revisions (deletion beats immutability); revocation only revokes | a deleted quote must not survive in a revision file |
+| D48 (S4) | Tombstones under `knowledge/tombstones/` (gitignored); `dropped` → 202, deleted → 410 | survive session deletion; late retries are final |
+| D49 (S4) | `Session.generation` bumped before the cascade loads its graph; jobs and evaluations compare it | closes the job-persists-during-cascade race found by the e2e run |
+| D50 (S4) | No automatic re-pin after revocation: evaluations go stale, the client calls `POST …/pin` | the learner should see that the knowledge changed |
+| D51 (S4) | Access boundary = one shared token via `proxy.ts` (Next 16), cookie holds a SHA-256 of the token | LAN demo; documented limits |
+| D52 (S4) | `failing_components` counts server/module failures only | 4xx are client mistakes, not a failed component |
