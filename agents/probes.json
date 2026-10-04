@@ -602,7 +602,7 @@
             "\\bimpact",
             "what do you recogni[sz]e in (this|that) (region|spike)",
             "when would you stop and ask someone else about (that|the) spike",
-            "let me (record|handle|check|go through|do that)",
+            "let me (record|handle|go through|do that)",
             "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
             "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
             "the system"
@@ -714,7 +714,7 @@
             "roughly",
             "best estimate",
             "what do you think it (could|might) be",
-            "let me (record|handle|check|go through|do that)",
+            "let me (record|handle|go through|do that)",
             "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
             "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
             "the system"
@@ -770,7 +770,7 @@
           },
           {
             "role": "user",
-            "text": "[TEACH_BACK rev-1] The debrief is over: ask no more agenda questions. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
+            "text": "[TEACH_BACK rev-1] The debrief is over; any gaps still open are dropped on purpose: do not ask or mention them. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
           },
           {
             "role": "user",
@@ -815,7 +815,7 @@
             "s-\\d",
             "rev-\\d",
             "\\[TEACH",
-            "let me (record|handle|check|go through|do that)",
+            "let me (record|handle|go through|do that)",
             "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
             "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
             "the system"
@@ -871,7 +871,7 @@
           },
           {
             "role": "user",
-            "text": "[TEACH_BACK rev-1] The debrief is over: ask no more agenda questions. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
+            "text": "[TEACH_BACK rev-1] The debrief is over; any gaps still open are dropped on purpose: do not ask or mention them. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
           },
           {
             "role": "user",
@@ -900,7 +900,7 @@
             }
           ],
           "forbidPatterns": [
-            "let me (record|handle|check|go through|do that)",
+            "let me (record|handle|go through|do that)",
             "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
             "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
             "the system"
@@ -956,7 +956,7 @@
           },
           {
             "role": "user",
-            "text": "[TEACH_BACK rev-1] The debrief is over: ask no more agenda questions. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
+            "text": "[TEACH_BACK rev-1] The debrief is over; any gaps still open are dropped on purpose: do not ask or mention them. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
           },
           {
             "role": "user",
@@ -979,7 +979,7 @@
             }
           ],
           "forbidPatterns": [
-            "let me (record|handle|check|go through|do that)",
+            "let me (record|handle|go through|do that)",
             "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
             "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
             "the system"
@@ -1035,7 +1035,7 @@
           },
           {
             "role": "user",
-            "text": "[TEACH_BACK rev-1] The debrief is over: ask no more agenda questions. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
+            "text": "[TEACH_BACK rev-1] The debrief is over; any gaps still open are dropped on purpose: do not ask or mention them. Now explain the process to the expert as instructions a newcomer could apply (\"First …, if … then …, stop and escalate when …\"), not as a summary of what they said. Keep their qualifiers (\"usually\", \"only if\"). Then ask explicitly whether that is right. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-1: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-1 (step): First scan SYS1 for a narrow spike; it is usually from the wheel set passing a gap. | s-2 (guardrail): If both channels show it at the same moment, stop and call the measurement team. | s-3 (step): On SYS2, ignore a slow drift in the first ten minutes: it is the sensor warming up."
           },
           {
             "role": "user",
@@ -1058,7 +1058,7 @@
             }
           ],
           "forbidPatterns": [
-            "let me (record|handle|check|go through|do that)",
+            "let me (record|handle|go through|do that)",
             "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
             "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
             "the system"
