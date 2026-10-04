@@ -1,6 +1,26 @@
 # WS6 status and pickup guide (read this first)
 
-**Last updated:** 2026-10-04, at the end of the session that implemented Sprints 3 and 4.
+**Last updated:** 2026-10-04, after integration steps I1, I2 and I4 (WS6↔WS7). See §0.
+
+## 0. Integration with WS7 (newest work, read first)
+
+- **Plan:** `notes/ws6-ws7-integration-plan.md` (gaps G1–G20, steps I1–I6, human decisions in §6).
+- **I1 done.** Branch `integration-ws6-ws7` (worktree `.claude/worktrees/integration-ws6-ws7`) = `voice` + `006` + `ws7-sprint-4`; all gates green.
+- **I2 + I4 done** on branch `007-ws6-integration-routes`, cut from `integration-ws6-ws7`, in this worktree. It adds:
+  - `GET /api/cases`
+  - expert `case_id`
+  - the `paused` lifecycle
+  - `GET …/review` and review marks
+  - the wire recordings in `web/fixtures/ws6/wire`
+  - e2e C9
+
+  Contract: api-v0 §5.15 and decisions D53–D58.
+- **Gate:** 52/52 e2e, full vitest green.
+- **Next:**
+  - The human merges `007` into `integration-ws6-ws7`.
+  - WS7 does I3/I5 against it (their gap list in the plan §3).
+  - WS3 answers `notes/ws6-sprints/request-ws3-voice-to-ws6.md`.
+
 
 All five WS6 sprints (S0–S4) are **implemented**. None of S2–S4 is merged yet; each **human gate** is still pending. There is no WS6 code left to write unless a gate or a partner asks for changes.
 
@@ -12,7 +32,9 @@ All five WS6 sprints (S0–S4) are **implemented**. None of S2–S4 is merged ye
 | `002-ws6-expert-capture` | S1 | [handoff-sprint-1.md](handoff-sprint-1.md) | yes |
 | `004-ws6-knowledge-confirmation` | S2 (+ WS5 Sprint 2 merged in) | [handoff-sprint-2.md](handoff-sprint-2.md) | **no** (gate pending) |
 | `005-ws6-newcomer-presave` | S3, branched from `004`; also merges `worktree-ws05-sprint-3` and `voice` @ `289de30` | [handoff-sprint-3.md](handoff-sprint-3.md) | **no** |
-| `006-ws6-trust-demo` | S4, branched from `005`. **This is the tip; it contains S2+S3+S4.** | [handoff-sprint-4.md](handoff-sprint-4.md) | **no** |
+| `006-ws6-trust-demo` | S4, branched from `005`. It contains S2+S3+S4. | [handoff-sprint-4.md](handoff-sprint-4.md) | **no** |
+| `integration-ws6-ws7` | `voice` + `006` + WS7 `ws7-sprint-4` (I1) | integration plan | — (merged into `voice` after the gates) |
+| `007-ws6-integration-routes` | I2 + I4, from `integration-ws6-ws7`. **This is the WS6 tip.** | §0 above, api-v0 §5.15 | **no** |
 
 **The branches are stacked** (human decision): S3 needed S2 merged first, and S4 needed S3. Merging `006-ws6-trust-demo` into `worktree-ws06-backend` delivers S2, S3 and S4 at once. `voice` had no commits beyond what `006` contains as of 2026-10-04.
 
@@ -27,7 +49,7 @@ cd web && npm install
 npm run typecheck                    # exit 0
 npx vitest run                       # 92 files, 1165 tests, all pass (last session: 9 green full runs in a row after the last fix)
 KNOWLEDGE_DIR=.runtime/e2e/knowledge RUNTIME_DIR=.runtime/e2e/runtime npm run dev -- -p 3006   # terminal 1
-npm run e2e -- --runtime-dir .runtime/e2e/runtime                                              # terminal 2: ALL PASS (45 checks)
+npm run e2e -- --runtime-dir .runtime/e2e/runtime                                              # terminal 2: ALL PASS (52 checks since integration I4; 45 before)
 ```
 
 Stop the dev server afterwards (`pkill -f "next dev -p 3006"`). Port 3006 is WS6's.

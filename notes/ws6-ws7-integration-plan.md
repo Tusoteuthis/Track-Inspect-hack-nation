@@ -73,6 +73,9 @@ Already compatible (verified against the code): the error envelope `{error:{code
 4. After the human gates (WS6 S2–S4, WS7 S3–S4), merge `integration-ws6-ws7` into `voice`. Both workstreams then branch their next sprint from `voice`.
 
 ### I2: Contract lock (WS6; parallel with I3)
+
+**Done 2026-10-04** on `007-ws6-integration-routes`: 41 recordings in `web/fixtures/ws6/wire/` (including `stream.*.json` SSE transcripts) and `lib/contracts/wire-recordings.test.ts`. The command is `npm run e2e -- --record fixtures/ws6/wire`, and it only records when every check passes.
+
 - `npm run e2e -- --record web/fixtures/ws6/wire/` writes one real JSON response per route and status that WS7 uses, plus an SSE transcript (`stream.ndjson`).
 - The WS6 vitest checks that each recorded file parses with its zod schema.
 - **This is the shared fixture set**: if a route changes, the recording changes and both sides' tests see it.
@@ -83,6 +86,24 @@ Already compatible (verified against the code): the error envelope `{error:{code
 - `/map`, `/summary` and `/practice` can go live with **no new backend work**.
 
 ### I4: Backend additions (WS6; parallel with I3)
+
+**Done 2026-10-04** on `007-ws6-integration-routes` (api-v0 §5.15, D53–D58).
+- e2e: 52/52, with a new criterion C9.
+- vitest: 111 files / 1416 tests.
+
+**WS7 impact (read before I3/I5):**
+1. **`Session.lifecycle` can now be `"paused"`.** `ws6Mappers.ts` `LIFECYCLE` has no entry for it, so `mapSession` returns `undefined` for a paused session until it is added (`paused → paused`).
+2. **`requestPause(sid, p)`** → `POST …/lifecycle {action: p ? "pause" : "resume", rev}`.
+3. **`startSession(caseId)`** → send `{role:"expert", case_id}` and drop `trace_ref`. Sending both is a 400.
+4. **`listCases()`** → `GET /api/cases?for=expert`. Build `CaseSummary.asset` from `trace.{url,width_px,height_px}`.
+5. **`getReview(sid)`** → `GET /api/sessions/:sid/review`, mapped to `ReviewView`:
+   - `current`/`previous` are Work Map steps; reuse `mapWorkMapStep`.
+   - `open_questions` ← `gaps`.
+   - `confirmations` use `reviewed_revision_id`/`result` (rename to WS3 `revision_id`/`status`).
+   - Re-fetch on `draft.updated`, `confirmation.stored`, `gaps.updated` and `review_mark.stored`.
+6. **`submitReviewMark(mark)`** → `POST /api/sessions/:sid/review-marks` with a stable `idempotency_key`. The response is a `ReviewMark`.
+7. **Mapper tests:** read `web/fixtures/ws6/wire/*.json` (`{method, route, status, body}`) instead of hand-written JSON, and delete `ws6Wire.ts` in favour of `@/lib/contracts` (G16).
+
 - Add G7 `GET /api/cases`, G8 `case_id` on expert create, G9 `GET …/review`, G10 `POST …/review-marks` and G14 the `paused` lifecycle.
 - Each gets zod schemas in `lib/contracts`, an api-v0 entry (§5 table + D53…), checks in `npm run e2e` and the `--record` set.
 

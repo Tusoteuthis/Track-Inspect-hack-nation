@@ -77,6 +77,7 @@ npm run e2e -- --runtime-dir .runtime          # the whole flow; prints a pass/f
 - `--base http://<ip>:3006`;
 - `--token <BACKEND_ACCESS_TOKEN>` (also read from the env);
 - `--runtime-dir <RUNTIME_DIR the server uses>`, so the diag-file content scan can find the files.
+- `--record fixtures/ws6/wire` rewrites the WS7 wire recordings, but only if every check passes. Use it against a fresh server whenever a route or a schema in `lib/contracts` changes, and commit the recordings together with the change (`lib/contracts/wire-recordings.test.ts` checks them).
 
 It runs on fresh or existing data, and every record it writes is labelled `fixture`.
 
@@ -84,7 +85,7 @@ For a completely fresh run:
 
 ```bash
 KNOWLEDGE_DIR=.runtime/e2e/knowledge RUNTIME_DIR=.runtime/e2e/runtime npm run dev -- -p 3006
-npm run e2e -- --runtime-dir .runtime/e2e/runtime
+npm run e2e -- --runtime-dir .runtime/e2e/runtime    # ALL PASS (52 checks, C1–C9)
 ```
 
 ## 5. Access boundary (what it protects and what it does not)

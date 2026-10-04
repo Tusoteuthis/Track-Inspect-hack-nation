@@ -1,13 +1,13 @@
 # WS6 API v0 — pending agreement
 
-**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented), S2 (knowledge revisions & confirmation — implemented), S3 (newcomer session & pre-save enforcement — implemented), S4 (trust, recovery, diagnostics & demo — implemented)
+**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented), S2 (knowledge revisions & confirmation — implemented), S3 (newcomer session & pre-save enforcement — implemented), S4 (trust, recovery, diagnostics & demo — implemented), integration routes for WS7 (I2/I4 — implemented, §5.15)
 **Code:** contracts `web/lib/contracts/` (zod; `SCHEMA_VERSION = "ws6.v0"`), server lib `web/lib/backend/`, routes `web/app/api/`, fixtures `web/fixtures/ws6/`.
 **Record fields:** [`specs/001-ws6-foundation-contracts/data-model.md`](../specs/001-ws6-foundation-contracts/data-model.md). This doc names schemas; it does not repeat every field.
 **Dev server:** `npm run dev -- -p 3006` (add `-H 0.0.0.0` for LAN/iPhone).
 
 ## 1. Status and feedback
 
-- **v0, pending agreement.** Implemented: `GET /api/health` (S0), every route marked **S1** in §5.2–5.5 and §5.10 (notes §5.11), every route marked **S2** in §5.6–5.7 (notes §5.12), every route marked **S3** in §5.8 (notes §5.13), and every route marked **S4** in §5.1 and §5.9 (notes §5.14). All v0 routes are implemented.
+- **v0, pending agreement.** Implemented: `GET /api/health` (S0), every route marked **S1** in §5.2–5.5 and §5.10 (notes §5.11), every route marked **S2** in §5.6–5.7 (notes §5.12), every route marked **S3** in §5.8 (notes §5.13), and every route marked **S4** in §5.1 and §5.9 (notes §5.14). All v0 routes are implemented, plus the integration additions in §5.15 (D53–D58).
 - Route paths below are the ones already promised in `notes/ws6-sprints/sprint-1..4-*.md`. Where this doc deviates from a sprint prompt, the deviation is listed in §9.
 - **How to object:** reply to the WS6 owner or add a note to `notes/ws6-sprints/handoff-sprint-0.md` → "Requests from partners". Objections are collected into the **next sprint's handoff** and the doc is updated there. Please answer the numbered questions in §8 by number (e.g. "WS3-Q2: …").
 - Partner names (WS3 `ws3.v0`, WS5 `ws5.v0`, WS7 `ws7.ui.v0`) are cited from their notes. WS6 does not define their APIs.
@@ -98,6 +98,7 @@
 | `assessment.stored` | — (re-fetch) | assessment (on commit or newcomer `end`) | **S3** |
 | `record.deleted` | one of `asset_id`/`event_id`/`exchange_id` | deletion cascade and off-record purge (on the owning session) | **S4** |
 | `entry.revoked` | `entry_id`, `revision_id` | revoke route and every cascade/purge; on the originating expert session and on newcomer sessions that pinned it | **S4** |
+| `review_mark.stored` | `mark_id`, `entry_id`, `revision_id` | review-mark POST (first store) | **I4** |
 
 Knowledge events (`revision.created`, `confirmation.stored`, `entry.revoked`) are emitted on the **originating expert session's** stream (and `entry.revoked` additionally on affected newcomer streams). A global stream is not in v0 (WS7-Q4).
 
@@ -193,12 +194,12 @@ Legend — **Idem.**: `PUT-id` = idempotency table in §2; `key` = Idempotency-K
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| POST | `/api/sessions` | `{ role: "expert", source?, trace_ref? }` or `{ role: "newcomer", case_id?, source? }`; header `Idempotency-Key?`; newcomer `?allow_fixture_knowledge=1` | `201 Session` (`200` on key replay) | key | `no_confirmed_knowledge`, `case_not_permitted` (newcomer, S3) | — | **S1** (newcomer S3) |
+| POST | `/api/sessions` | `{ role: "expert", source?, trace_ref? \| case_id? }` (I4: `case_id` names a case marked `shown_to_expert`; its trace becomes `trace_ref`; not both) or `{ role: "newcomer", case_id?, source? }`; header `Idempotency-Key?`; newcomer `?allow_fixture_knowledge=1` | `201 Session` (`200` on key replay) | key | `no_confirmed_knowledge`, `case_not_permitted` (newcomer S3; expert `case_id` not shown to the expert, I4) | — | **S1** (newcomer S3, expert `case_id` I4) |
 | GET | `/api/sessions/:sid` | — | `Session` | safe | — | — | **S1** |
-| POST | `/api/sessions/:sid/lifecycle` | `{ action: "start" \| "end" \| "abort", rev }` | `200 Session` | rev; same action already applied → `200` | `stale_revision`, `invalid_transition` | `session.updated` | **S1** |
+| POST | `/api/sessions/:sid/lifecycle` | `{ action: "start" \| "pause" \| "resume" \| "end" \| "abort", rev }` (`pause`/`resume` I4) | `200 Session` | rev; same action already applied → `200` | `stale_revision`, `invalid_transition` | `session.updated` | **S1** |
 | POST | `/api/sessions/:sid/record-state` | `{ state: "on_record" \| "off_record" }` | `200 Session` (new `RecordingSegment` appended; same state → no-op `200`) | idempotent by state | `invalid_transition` (ended session) | `record_state.changed` | **S1** |
 
-Lifecycle: `created → active → ended`; `created | active → aborted`; `ended`, `aborted` terminal.
+Lifecycle: `created → active → ended`; `created | active | paused → aborted`; `active ⇄ paused` (I4, D53); `paused → ended`; `ended`, `aborted` terminal. `paused` is not a privacy state: content writes are still stored (off-record is the privacy control); voice tokens need `active`.
 
 ### 5.3 Assets
 
@@ -287,6 +288,7 @@ Spec: `specs/004-ws6-knowledge-confirmation/` (decisions D16–D28 in §9). Sche
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
+| GET | `/api/cases[?for=expert\|newcomer]` | — | `LearnerCase[]`, every usable case (unusable files skipped); `for` filters by `shown_to_expert` | safe | `validation_failed` (bad `for`) | — | **I4** |
 | GET | `/api/cases/:case_id` | — | `LearnerCase` (learner-visible view only; never evaluator fields) | safe | — | — | **S3** |
 | GET | `/api/cases/:case_id/trace` | — | trace image bytes (`image/png` \| `image/jpeg`) | safe | — | — | **S3** |
 | POST | `/api/sessions` (role newcomer) | `{ role: "newcomer", case_id?, source? }`, `?allow_fixture_knowledge=1` | `201 Session` with `case_id`, `trace_ref`, `pinned_knowledge`, `knowledge_fixture_allowed` | key | `no_confirmed_knowledge`, `case_not_permitted` | — | **S3** |
@@ -325,6 +327,24 @@ Code: `web/lib/backend/{off-record,tombstones,cascade,access,diagnostics}.ts`, `
 - **Generation tokens:** `Session.generation` is bumped (under the session lock, before the cascade reads anything) for every session a cascade or purge touches. Synthesis jobs record it in `input_revs.generation` and are discarded (`discard_reason: generation_changed:a->b`) if it moved; evaluations become `stale` if their newcomer session's generation moved. A deleted session can never be recreated by a late job: `appendBus` and every session read return `410 gone`.
 - **Access boundary:** `BACKEND_ACCESS_TOKEN` set → `web/proxy.ts` requires `Authorization: Bearer <token>` or the `ws6_access` cookie on `/api/*` except `/api/health`, `/api/access`. Limits: README §5.
 - **Diagnostics:** every route logs one diag line (`component`, `op`, IDs, outcome, duration, error code); jobs and SSE `close` too. `failing_components` = components whose latest outcome is a server failure (`internal`) or a module failure (`synthesis`, `evaluations`); client errors (4xx) do not count.
+
+### 5.15 Integration additions for WS7 (I2/I4)
+
+Plan: `notes/ws6-ws7-integration-plan.md` (gaps G7–G10, G14). Code: `web/lib/backend/{review,cases,session-lifecycle,workmap}.ts`, `web/lib/contracts/review.ts`. Decisions D53–D58 in §9.
+
+| Method | Path | Request | Response | Idem. | Errors | SSE | S |
+|---|---|---|---|---|---|---|---|
+| GET | `/api/cases[?for=expert\|newcomer]` | — | `LearnerCase[]` | safe | `validation_failed` | — | **I4** |
+| GET | `/api/sessions/:sid/review` | — | `SessionReviewView` (expert sessions) | safe | `not_found` (newcomer/unknown), `gone` | — | **I4** |
+| POST | `/api/sessions/:sid/review-marks` | `{ entry_id, revision_id, kind: "correction_requested" \| "flag_unresolved", idempotency_key }` | `201 ReviewMark` (same key + body → `200`) | key (per session) | `validation_failed` (`details.reason`: `not_expert_session`, `entry_mismatch`, `revision_not_in_session`), `not_found` (revision), `conflict_immutable` (key reused), `invalid_transition` (aborted) | `review_mark.stored` | **I4** |
+| GET | `/api/sessions/:sid/review-marks` | — | `ReviewMark[]` oldest first | safe | — | — | **I4** |
+
+- **`SessionReviewView`**: `{ session_id, job_id, produced_by, updated_at_utc, revision_ids, current: WorkMapViewStep[], previous: WorkMapViewStep[], excluded, teach_back, flagged_for_reconfirmation, gaps: Gap[], confirmations: Confirmation[], review_marks: ReviewMark[] }`.
+  - `current` has one step per revision in the expert draft's `revision_ids`, built like `include=draft` Work Map steps. Position and title come from the workflow when the entry is linked there.
+  - `previous` has the stored parent of every current revision that has one, so a client can show what changed. Revoked current revisions are listed in `excluded`.
+  - It is in WS6 vocabulary (gaps, `Confirmation`). WS7 maps it to `ReviewView` (`open_questions` ← gaps, `ExpertConfirmation` via the `reviewed_revision_id → revision_id` rename).
+- **Review marks** are requests only. They never change knowledge status (D56). They live in `knowledge/sessions/<sid>/review-marks/`, so deleting the session deletes them.
+- **Wire recordings (I2):** `npm run e2e -- --record fixtures/ws6/wire` writes one real response per WS7 touch point, plus SSE transcripts, but only when all checks pass. `web/lib/contracts/wire-recordings.test.ts` parses each one with its schema and fails on any field the schema does not declare. Re-record in the same commit as any route or schema change (D58). The e2e now has a criterion C9 for the routes above (52 checks).
 
 ### 5.9 Correction, revocation & deletion
 
@@ -432,7 +452,7 @@ Policy (`web/lib/backend/outcome-policy.json`, **default pending WS5 agreement**
 
 | `DataSource` method | WS6 route(s) | Mapping notes |
 |---|---|---|
-| `getSession(sid)` | `GET /api/sessions/:sid` | `lifecycle`: `created → not_started`, `active → active`, `ended → ended` (completed), `aborted → ended` (incomplete); `record_state → recording_state`; `pinned_knowledge[0].revision_id → knowledge_revision_id` (it is a list) |
+| `getSession(sid)` | `GET /api/sessions/:sid` | `lifecycle`: `created → not_started`, `active → active`, `paused → paused` (I4), `ended → ended` (completed), `aborted → ended` (incomplete); `record_state → recording_state`; `pinned_knowledge[0].revision_id → knowledge_revision_id` (it is a list) |
 | `getWorkMap(sid)` | `GET /api/workmap` (+ `?include=draft`) | Work Map is global, not per session (WS7-Q3) |
 | `getPracticeCase(case_id)` | `GET /api/cases/:case_id` + `GET /api/assets/:aid` | learner view only |
 | `getAssessment(sid)` | `GET /api/sessions/:sid/assessment` | `independent/assisted/unresolved` from `content.decisions[].outcome_class` (WS5) |
@@ -440,6 +460,11 @@ Policy (`web/lib/backend/outcome-policy.json`, **default pending WS5 agreement**
 | `submitDraftForReview(draft)` | `PUT /api/sessions/:sid/draft` then `POST /api/sessions/:sid/evaluations` | evaluation completes asynchronously → `evaluation.updated` → `GET …/evaluations/:id`; `draft_id → session_id`, `draft_revision → draft_rev`, `region → visual_context[0].region` |
 | `commitDraft(draft, eval)` | `POST /api/sessions/:sid/commit` | send a stable `idempotency_key` per click-intent; `committed_at_utc ← Commit.at_utc` |
 | `subscribe(sid, cb)` | `GET /api/sessions/:sid/stream` (EventSource) | `BusEvent` → re-fetch by ID → `SourceUpdate` |
+| `listCases()` | `GET /api/cases?for=expert` (I4) | `CaseSummary.asset` ← `trace` (`url`, `width_px`, `height_px`) |
+| `startSession(case_id)` | `POST /api/sessions {role:"expert", case_id}` + `Idempotency-Key`, then lifecycle `start` (I4) | send `case_id`, not `trace_ref` |
+| `requestPause(sid, paused)` | `POST /api/sessions/:sid/lifecycle {action: paused ? "pause" : "resume", rev}` (I4) | ack = `200 Session` |
+| `getReview(sid)` | `GET /api/sessions/:sid/review` (I4) | see §5.15 |
+| `submitReviewMark(mark)` | `POST /api/sessions/:sid/review-marks` (I4) | stable `idempotency_key` per click-intent |
 
 **Answers to `notes/ws7-ui-contracts-v0.md` §3:**
 
@@ -447,7 +472,7 @@ Policy (`web/lib/backend/outcome-policy.json`, **default pending WS5 agreement**
 |---|---|---|
 | 1 | Connection per component | `backend`: derived by the client from the EventSource state (open → connected, error/retrying → reconnecting, closed → disconnected). `capture` and `agent`: **no authoritative signal in v0 → show `unknown`** (WS7-Q1). |
 | 2 | Recording state with pending | Client shows `*_pending` from the POST until the `200 Session` response or `record_state.changed`. The ack means **WS6 persistence** applied it (content writes refused). Whether capture/audio stopped is WS2/WS3's responsibility and is not vouched for by WS6. |
-| 3 | Lifecycle | `created/active/ended/aborted` (mapping above). **No `paused`** in v0 (WS7-Q2). |
+| 3 | Lifecycle | `created/active/paused/ended/aborted` (mapping above). `paused` added in I4 (WS7-Q2 answered: D53). |
 | 4 | Live updates | SSE per session (§2 table): `event.stored` (then GET for `mapping_status`), `revision.created`, `confirmation.stored`, `evaluation.updated`, `commit.stored`, `record_state.changed`, `record.deleted`, `session.updated`. |
 | 5 | Revision identity | Confirmations name `reviewed_revision_id`; evaluations name `draft_rev` + `knowledge_revision_ids`; commits name `draft_rev` + `evaluation_id`; Work Map steps name `entry_id` + `revision_id`. |
 | 6 | Learner review boundary | `draft_rev` (server-assigned), evaluation `status: pending`, commit errors `evaluation_required/pending/stale`, `commit_blocked`; double submit safe via `idempotency_key`. |
@@ -528,3 +553,9 @@ Full rationale: [`specs/001-ws6-foundation-contracts/research.md`](../specs/001-
 | D50 (S4) | No automatic re-pin after revocation: evaluations go stale, the client calls `POST …/pin` | the learner should see that the knowledge changed |
 | D51 (S4) | Access boundary = one shared token via `proxy.ts` (Next 16), cookie holds a SHA-256 of the token | LAN demo; documented limits |
 | D52 (S4) | `failing_components` counts server/module failures only | 4xx are client mistakes, not a failed component |
+| D53 (I4) | `paused` lifecycle via `pause`/`resume`: `active ⇄ paused`, `paused → end/abort`; writes still stored; voice tokens need `active` | human decision 2026-10-04 (integration plan §6 Q2); pausing is not off-record |
+| D54 (I4) | `GET /api/cases` returns `LearnerCase[]`, skips unusable case files, `?for=expert\|newcomer` filters by `shown_to_expert` | WS7 expert setup needs the case list; one bad file must not hide the rest |
+| D55 (I4) | Expert sessions take `case_id`, only for cases marked `shown_to_expert`; `trace_ref` is then the case trace; `case_id` and `trace_ref` are exclusive | every other case is reserved for newcomers (unseen-case rule) |
+| D56 (I4) | Review marks are stored requests (`review_mark.stored`) and never change knowledge status | only the expert's spoken teach-back confirms or corrects (S2 rule) |
+| D57 (I4) | `GET …/review` is one WS6-vocabulary composite (draft revisions + parents, gaps, confirmations, marks); WS7 maps it | human decision 2026-10-04 (plan §6 Q3); the adapter seam stays in WS7 |
+| D58 (I2) | Wire recordings in `fixtures/ws6/wire` are re-recorded in the same commit as any contract change; the schema test fails on undeclared fields | the two sides cannot drift unnoticed |
