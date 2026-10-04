@@ -1,0 +1,15 @@
+{
+  "method": "PUT",
+  "route": "/api/sessions/:sid/events/:eid",
+  "status": 410,
+  "body": {
+    "error": {
+      "code": "gone",
+      "message": "This event was deleted; its ID cannot be reused.",
+      "details": {
+        "event_id": "evt-ic-1",
+        "deleted_at_utc": "2026-10-04T09:17:27.854Z"
+      }
+    }
+  }
+}

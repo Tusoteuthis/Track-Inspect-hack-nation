@@ -1,0 +1,19 @@
+{
+  "method": "POST",
+  "route": "/api/knowledge/confirmations",
+  "status": 409,
+  "body": {
+    "error": {
+      "code": "stale_revision",
+      "message": "A reviewed revision is no longer current; review the current one.",
+      "details": {
+        "stale_revision_ids": [
+          "rev-20261004091724-hymei5"
+        ],
+        "current_revision_ids": [
+          "rev-20261004091725-bvtezu"
+        ]
+      }
+    }
+  }
+}

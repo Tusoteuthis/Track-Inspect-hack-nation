@@ -1,0 +1,36 @@
+{
+  "method": "GET",
+  "route": "/api/sessions/:sid/draft",
+  "status": 200,
+  "body": {
+    "session_id": "ses-20261004091722-a5s82o",
+    "job_id": "job-20261004091725-r1tgpu",
+    "produced_by": {
+      "id": "ws5-synthesis",
+      "version": "0.2.0",
+      "source": "live"
+    },
+    "revision_ids": [
+      "rev-20261004091724-fhdsn7",
+      "rev-20261004091724-hymei5",
+      "rev-20261004091724-eqhqp2"
+    ],
+    "reviewed": [
+      {
+        "entry_id": "ent-evt-001-step",
+        "revision_id": "rev-20261004091724-fhdsn7"
+      },
+      {
+        "entry_id": "ent-evt-002-step",
+        "revision_id": "rev-20261004091724-hymei5"
+      },
+      {
+        "entry_id": "ent-evt-002-guardrail",
+        "revision_id": "rev-20261004091724-eqhqp2"
+      }
+    ],
+    "teach_back": "To interpret a trace like this: First, at the first region you pointed to, check what you described: \"FIXTURE e2e: here I read FIXTURE pattern A\" and \"FIXTURE e2e: and only on the upper channel\". Then, at the second region you pointed to, check what you described: \"Because FIXTURE cue B is present\" and \"I never save it when FIXTURE condition C is visible\"; your reason: \"Because FIXTURE cue B is present\" and \"I never save it when FIXTURE condition C is visible\". Stop and do not continue at the second region you pointed to when this applies: \"I never save it when FIXTURE condition C is visible\". Is that right, or what should I change?",
+    "flagged_for_reconfirmation": [],
+    "updated_at_utc": "2026-10-04T09:17:25.125Z"
+  }
+}

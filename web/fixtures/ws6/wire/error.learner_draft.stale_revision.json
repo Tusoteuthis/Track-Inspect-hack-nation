@@ -1,0 +1,15 @@
+{
+  "method": "PUT",
+  "route": "/api/sessions/:sid/draft",
+  "status": 409,
+  "body": {
+    "error": {
+      "code": "stale_revision",
+      "message": "The draft changed since you loaded it.",
+      "details": {
+        "current_draft_rev": 1,
+        "received_base_draft_rev": 0
+      }
+    }
+  }
+}

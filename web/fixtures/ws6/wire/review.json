@@ -1,0 +1,729 @@
+{
+  "method": "GET",
+  "route": "/api/sessions/:sid/review",
+  "status": 200,
+  "body": {
+    "session_id": "ses-20261004091722-a5s82o",
+    "job_id": "job-20261004091725-41wj9c",
+    "produced_by": {
+      "id": "ws5-synthesis",
+      "version": "0.2.0",
+      "source": "live"
+    },
+    "updated_at_utc": "2026-10-04T09:17:25.892Z",
+    "revision_ids": [
+      "rev-20261004091724-fhdsn7",
+      "rev-20261004091725-bvtezu",
+      "rev-20261004091725-x62ux1",
+      "rev-20261004091724-eqhqp2"
+    ],
+    "current": [
+      {
+        "position": 1,
+        "entry_id": "ent-evt-001-step",
+        "revision_id": "rev-20261004091724-fhdsn7",
+        "revision_no": 1,
+        "status": "confirmed",
+        "is_current": true,
+        "source": "fixture",
+        "title": "Step at evt-001",
+        "evidence": [
+          {
+            "event_id": "evt-001",
+            "asset_id": "mn-mutlxjok-a1",
+            "original_url": "/api/assets/mn-mutlxjok-a1/original",
+            "highlighted_url": "/api/assets/mn-mutlxjok-a1/highlighted",
+            "region": {
+              "x": 0.2,
+              "y": 0.15,
+              "width": 0.15,
+              "height": 0.25,
+              "coordinate_space": "original_frame_normalized",
+              "frame_width_px": 320,
+              "frame_height_px": 180
+            }
+          }
+        ],
+        "exchanges": [
+          {
+            "exchange_id": "x-1",
+            "question": "FIXTURE e2e question x-1",
+            "answer_lines": [
+              {
+                "text": "FIXTURE e2e: here I read FIXTURE pattern A.",
+                "at_utc": "2026-10-04T09:17:25.481Z",
+                "transcript_line_id": "x-1-l1"
+              },
+              {
+                "text": "FIXTURE e2e: and only on the upper channel.",
+                "at_utc": "2026-10-04T09:17:26.481Z",
+                "transcript_line_id": "x-1-l2"
+              }
+            ]
+          }
+        ],
+        "content": {
+          "position": 1,
+          "entry_id": "ent-evt-001-step",
+          "revision_id": "rev-20261004091724-fhdsn7",
+          "status": "confirmed",
+          "kind": "step",
+          "title": "Step at evt-001",
+          "expert_words": [
+            {
+              "exchange_id": "x-1",
+              "question": "FIXTURE e2e question x-1",
+              "quote": "FIXTURE e2e: here I read FIXTURE pattern A."
+            },
+            {
+              "exchange_id": "x-1",
+              "question": "FIXTURE e2e question x-1",
+              "quote": "FIXTURE e2e: and only on the upper channel."
+            }
+          ],
+          "synthesis": [
+            {
+              "type": "ai_synthesis",
+              "text": "Look at the region the expert pointed to and check it as the expert described."
+            },
+            {
+              "type": "ai_synthesis",
+              "text": "The expert pointed at a region of trace fixture-trace-e2e, channel FIXTURE-CH1 (event evt-001)."
+            }
+          ],
+          "guardrails": [],
+          "visual": [
+            {
+              "event_id": "evt-001",
+              "asset_id": "mn-mutlxjok-a1",
+              "original_ref": "/api/assets/mn-mutlxjok-a1/original",
+              "highlighted_ref": "/api/assets/mn-mutlxjok-a1/highlighted",
+              "region": {
+                "x": 0.2,
+                "y": 0.15,
+                "width": 0.15,
+                "height": 0.25,
+                "coordinate_space": "original_frame_normalized",
+                "frame_width_px": 320,
+                "frame_height_px": 180
+              }
+            }
+          ],
+          "confirmation": {
+            "confirmation_id": "cnf-20261004091726-lsqhbr",
+            "revision_id_reviewed": "rev-1",
+            "result": "confirmed",
+            "expert_response_exchange_id": "x-tb2"
+          },
+          "broken_links": []
+        },
+        "broken_links": []
+      },
+      {
+        "position": 2,
+        "entry_id": "ent-evt-002-step",
+        "revision_id": "rev-20261004091725-bvtezu",
+        "revision_no": 2,
+        "status": "confirmed",
+        "is_current": true,
+        "source": "fixture",
+        "title": "Decision at evt-002",
+        "evidence": [
+          {
+            "event_id": "evt-002",
+            "asset_id": "mn-mutlxjok-a2",
+            "original_url": "/api/assets/mn-mutlxjok-a2/original",
+            "highlighted_url": "/api/assets/mn-mutlxjok-a2/highlighted",
+            "region": {
+              "x": 0.2,
+              "y": 0.15,
+              "width": 0.15,
+              "height": 0.25,
+              "coordinate_space": "original_frame_normalized",
+              "frame_width_px": 320,
+              "frame_height_px": 180
+            }
+          }
+        ],
+        "exchanges": [
+          {
+            "exchange_id": "x-2",
+            "question": "FIXTURE e2e question x-2",
+            "answer_lines": [
+              {
+                "text": "Because FIXTURE cue B is present.",
+                "at_utc": "2026-10-04T09:17:35.481Z",
+                "transcript_line_id": "x-2-l1"
+              },
+              {
+                "text": "I never save it when FIXTURE condition C is visible.",
+                "at_utc": "2026-10-04T09:17:36.481Z",
+                "transcript_line_id": "x-2-l2"
+              },
+              {
+                "text": "FIXTURE e2e correction: only if cue D is present too.",
+                "at_utc": "2026-10-04T09:17:38.481Z",
+                "transcript_line_id": "x-2-l3"
+              }
+            ]
+          }
+        ],
+        "content": {
+          "position": 2,
+          "entry_id": "ent-evt-002-step",
+          "revision_id": "rev-20261004091725-bvtezu",
+          "status": "confirmed",
+          "kind": "decision",
+          "title": "Decision at evt-002",
+          "expert_words": [
+            {
+              "exchange_id": "x-2",
+              "question": "FIXTURE e2e question x-2",
+              "quote": "Because FIXTURE cue B is present."
+            },
+            {
+              "exchange_id": "x-2",
+              "question": "FIXTURE e2e question x-2",
+              "quote": "I never save it when FIXTURE condition C is visible."
+            },
+            {
+              "exchange_id": "x-2",
+              "question": "FIXTURE e2e question x-2",
+              "quote": "FIXTURE e2e correction: only if cue D is present too."
+            }
+          ],
+          "synthesis": [
+            {
+              "type": "ai_synthesis",
+              "text": "Look at the region the expert pointed to, check it as the expert described, and decide for the reasons the expert gave."
+            },
+            {
+              "type": "ai_synthesis",
+              "text": "The expert pointed at a region of trace fixture-trace-e2e, channel FIXTURE-CH1 (event evt-002)."
+            }
+          ],
+          "guardrails": [],
+          "visual": [
+            {
+              "event_id": "evt-002",
+              "asset_id": "mn-mutlxjok-a2",
+              "original_ref": "/api/assets/mn-mutlxjok-a2/original",
+              "highlighted_ref": "/api/assets/mn-mutlxjok-a2/highlighted",
+              "region": {
+                "x": 0.2,
+                "y": 0.15,
+                "width": 0.15,
+                "height": 0.25,
+                "coordinate_space": "original_frame_normalized",
+                "frame_width_px": 320,
+                "frame_height_px": 180
+              }
+            }
+          ],
+          "confirmation": {
+            "confirmation_id": "cnf-20261004091726-ytl9t4",
+            "revision_id_reviewed": "rev-2",
+            "result": "confirmed",
+            "expert_response_exchange_id": "x-tb2"
+          },
+          "broken_links": []
+        },
+        "broken_links": []
+      },
+      {
+        "position": 3,
+        "entry_id": "ent-evt-002-exception",
+        "revision_id": "rev-20261004091725-x62ux1",
+        "revision_no": 1,
+        "status": "confirmed",
+        "is_current": true,
+        "source": "fixture",
+        "title": "Exception at evt-002",
+        "evidence": [
+          {
+            "event_id": "evt-002",
+            "asset_id": "mn-mutlxjok-a2",
+            "original_url": "/api/assets/mn-mutlxjok-a2/original",
+            "highlighted_url": "/api/assets/mn-mutlxjok-a2/highlighted",
+            "region": {
+              "x": 0.2,
+              "y": 0.15,
+              "width": 0.15,
+              "height": 0.25,
+              "coordinate_space": "original_frame_normalized",
+              "frame_width_px": 320,
+              "frame_height_px": 180
+            }
+          }
+        ],
+        "exchanges": [
+          {
+            "exchange_id": "x-2",
+            "question": "FIXTURE e2e question x-2",
+            "answer_lines": [
+              {
+                "text": "Because FIXTURE cue B is present.",
+                "at_utc": "2026-10-04T09:17:35.481Z",
+                "transcript_line_id": "x-2-l1"
+              },
+              {
+                "text": "I never save it when FIXTURE condition C is visible.",
+                "at_utc": "2026-10-04T09:17:36.481Z",
+                "transcript_line_id": "x-2-l2"
+              },
+              {
+                "text": "FIXTURE e2e correction: only if cue D is present too.",
+                "at_utc": "2026-10-04T09:17:38.481Z",
+                "transcript_line_id": "x-2-l3"
+              }
+            ]
+          }
+        ],
+        "content": {
+          "position": 3,
+          "entry_id": "ent-evt-002-exception",
+          "revision_id": "rev-20261004091725-x62ux1",
+          "status": "confirmed",
+          "kind": "exception",
+          "title": "Exception at evt-002",
+          "expert_words": [
+            {
+              "exchange_id": "x-2",
+              "question": "FIXTURE e2e question x-2",
+              "quote": "FIXTURE e2e correction: only if cue D is present too."
+            }
+          ],
+          "synthesis": [
+            {
+              "type": "ai_synthesis",
+              "text": "Before deciding, check whether the exception the expert stated applies."
+            },
+            {
+              "type": "ai_synthesis",
+              "text": "The expert pointed at a region of trace fixture-trace-e2e, channel FIXTURE-CH1 (event evt-002)."
+            },
+            {
+              "type": "ai_synthesis",
+              "text": "Apply the exception the expert stated instead of the usual step."
+            }
+          ],
+          "guardrails": [
+            {
+              "trigger": {
+                "type": "expert_quote",
+                "exchange_id": "x-2",
+                "quote": "FIXTURE e2e correction: only if cue D is present too."
+              },
+              "action": {
+                "type": "ai_synthesis",
+                "text": "Apply the exception the expert stated instead of the usual step."
+              },
+              "expert_words": [
+                {
+                  "exchange_id": "x-2",
+                  "question": "FIXTURE e2e question x-2",
+                  "quote": "FIXTURE e2e correction: only if cue D is present too."
+                }
+              ]
+            }
+          ],
+          "visual": [
+            {
+              "event_id": "evt-002",
+              "asset_id": "mn-mutlxjok-a2",
+              "original_ref": "/api/assets/mn-mutlxjok-a2/original",
+              "highlighted_ref": "/api/assets/mn-mutlxjok-a2/highlighted",
+              "region": {
+                "x": 0.2,
+                "y": 0.15,
+                "width": 0.15,
+                "height": 0.25,
+                "coordinate_space": "original_frame_normalized",
+                "frame_width_px": 320,
+                "frame_height_px": 180
+              }
+            }
+          ],
+          "confirmation": {
+            "confirmation_id": "cnf-20261004091726-nchfqv",
+            "revision_id_reviewed": "rev-1",
+            "result": "confirmed",
+            "expert_response_exchange_id": "x-tb2"
+          },
+          "broken_links": []
+        },
+        "broken_links": []
+      },
+      {
+        "position": 4,
+        "entry_id": "ent-evt-002-guardrail",
+        "revision_id": "rev-20261004091724-eqhqp2",
+        "revision_no": 1,
+        "status": "confirmed",
+        "is_current": true,
+        "source": "fixture",
+        "title": "Guardrail at evt-002",
+        "evidence": [
+          {
+            "event_id": "evt-002",
+            "asset_id": "mn-mutlxjok-a2",
+            "original_url": "/api/assets/mn-mutlxjok-a2/original",
+            "highlighted_url": "/api/assets/mn-mutlxjok-a2/highlighted",
+            "region": {
+              "x": 0.2,
+              "y": 0.15,
+              "width": 0.15,
+              "height": 0.25,
+              "coordinate_space": "original_frame_normalized",
+              "frame_width_px": 320,
+              "frame_height_px": 180
+            }
+          }
+        ],
+        "exchanges": [
+          {
+            "exchange_id": "x-2",
+            "question": "FIXTURE e2e question x-2",
+            "answer_lines": [
+              {
+                "text": "Because FIXTURE cue B is present.",
+                "at_utc": "2026-10-04T09:17:35.481Z",
+                "transcript_line_id": "x-2-l1"
+              },
+              {
+                "text": "I never save it when FIXTURE condition C is visible.",
+                "at_utc": "2026-10-04T09:17:36.481Z",
+                "transcript_line_id": "x-2-l2"
+              },
+              {
+                "text": "FIXTURE e2e correction: only if cue D is present too.",
+                "at_utc": "2026-10-04T09:17:38.481Z",
+                "transcript_line_id": "x-2-l3"
+              }
+            ]
+          }
+        ],
+        "content": {
+          "position": 4,
+          "entry_id": "ent-evt-002-guardrail",
+          "revision_id": "rev-20261004091724-eqhqp2",
+          "status": "confirmed",
+          "kind": "guardrail",
+          "title": "Guardrail at evt-002",
+          "expert_words": [
+            {
+              "exchange_id": "x-2",
+              "question": "FIXTURE e2e question x-2",
+              "quote": "I never save it when FIXTURE condition C is visible."
+            }
+          ],
+          "synthesis": [
+            {
+              "type": "ai_synthesis",
+              "text": "Before saving, check the stop condition the expert stated; if it applies, stop."
+            },
+            {
+              "type": "ai_synthesis",
+              "text": "The expert pointed at a region of trace fixture-trace-e2e, channel FIXTURE-CH1 (event evt-002)."
+            },
+            {
+              "type": "ai_synthesis",
+              "text": "Stop; do not continue past this point."
+            }
+          ],
+          "guardrails": [
+            {
+              "trigger": {
+                "type": "expert_quote",
+                "exchange_id": "x-2",
+                "quote": "I never save it when FIXTURE condition C is visible."
+              },
+              "action": {
+                "type": "ai_synthesis",
+                "text": "Stop; do not continue past this point."
+              },
+              "expert_words": [
+                {
+                  "exchange_id": "x-2",
+                  "question": "FIXTURE e2e question x-2",
+                  "quote": "I never save it when FIXTURE condition C is visible."
+                }
+              ]
+            }
+          ],
+          "visual": [
+            {
+              "event_id": "evt-002",
+              "asset_id": "mn-mutlxjok-a2",
+              "original_ref": "/api/assets/mn-mutlxjok-a2/original",
+              "highlighted_ref": "/api/assets/mn-mutlxjok-a2/highlighted",
+              "region": {
+                "x": 0.2,
+                "y": 0.15,
+                "width": 0.15,
+                "height": 0.25,
+                "coordinate_space": "original_frame_normalized",
+                "frame_width_px": 320,
+                "frame_height_px": 180
+              }
+            }
+          ],
+          "confirmation": {
+            "confirmation_id": "cnf-20261004091726-yrzudy",
+            "revision_id_reviewed": "rev-1",
+            "result": "confirmed",
+            "expert_response_exchange_id": "x-tb2"
+          },
+          "broken_links": []
+        },
+        "broken_links": []
+      }
+    ],
+    "previous": [
+      {
+        "position": 2,
+        "entry_id": "ent-evt-002-step",
+        "revision_id": "rev-20261004091724-hymei5",
+        "revision_no": 1,
+        "status": "confirmed",
+        "is_current": false,
+        "source": "fixture",
+        "title": "Decision at evt-002",
+        "evidence": [
+          {
+            "event_id": "evt-002",
+            "asset_id": "mn-mutlxjok-a2",
+            "original_url": "/api/assets/mn-mutlxjok-a2/original",
+            "highlighted_url": "/api/assets/mn-mutlxjok-a2/highlighted",
+            "region": {
+              "x": 0.2,
+              "y": 0.15,
+              "width": 0.15,
+              "height": 0.25,
+              "coordinate_space": "original_frame_normalized",
+              "frame_width_px": 320,
+              "frame_height_px": 180
+            }
+          }
+        ],
+        "exchanges": [
+          {
+            "exchange_id": "x-2",
+            "question": "FIXTURE e2e question x-2",
+            "answer_lines": [
+              {
+                "text": "Because FIXTURE cue B is present.",
+                "at_utc": "2026-10-04T09:17:35.481Z",
+                "transcript_line_id": "x-2-l1"
+              },
+              {
+                "text": "I never save it when FIXTURE condition C is visible.",
+                "at_utc": "2026-10-04T09:17:36.481Z",
+                "transcript_line_id": "x-2-l2"
+              },
+              {
+                "text": "FIXTURE e2e correction: only if cue D is present too.",
+                "at_utc": "2026-10-04T09:17:38.481Z",
+                "transcript_line_id": "x-2-l3"
+              }
+            ]
+          }
+        ],
+        "content": {
+          "position": 2,
+          "entry_id": "ent-evt-002-step",
+          "revision_id": "rev-20261004091724-hymei5",
+          "status": "confirmed",
+          "kind": "decision",
+          "title": "Decision at evt-002",
+          "expert_words": [
+            {
+              "exchange_id": "x-2",
+              "question": "FIXTURE e2e question x-2",
+              "quote": "Because FIXTURE cue B is present."
+            },
+            {
+              "exchange_id": "x-2",
+              "question": "FIXTURE e2e question x-2",
+              "quote": "I never save it when FIXTURE condition C is visible."
+            }
+          ],
+          "synthesis": [
+            {
+              "type": "ai_synthesis",
+              "text": "Look at the region the expert pointed to, check it as the expert described, and decide for the reasons the expert gave."
+            },
+            {
+              "type": "ai_synthesis",
+              "text": "The expert pointed at a region of trace fixture-trace-e2e, channel FIXTURE-CH1 (event evt-002)."
+            }
+          ],
+          "guardrails": [],
+          "visual": [
+            {
+              "event_id": "evt-002",
+              "asset_id": "mn-mutlxjok-a2",
+              "original_ref": "/api/assets/mn-mutlxjok-a2/original",
+              "highlighted_ref": "/api/assets/mn-mutlxjok-a2/highlighted",
+              "region": {
+                "x": 0.2,
+                "y": 0.15,
+                "width": 0.15,
+                "height": 0.25,
+                "coordinate_space": "original_frame_normalized",
+                "frame_width_px": 320,
+                "frame_height_px": 180
+              }
+            }
+          ],
+          "confirmation": {
+            "confirmation_id": "cnf-20261004091725-d5s93x",
+            "revision_id_reviewed": "rev-1",
+            "result": "confirmed",
+            "expert_response_exchange_id": "x-tb"
+          },
+          "broken_links": []
+        },
+        "broken_links": []
+      }
+    ],
+    "excluded": [],
+    "teach_back": "To interpret a trace like this: First, at the first region you pointed to, check what you described: \"FIXTURE e2e: here I read FIXTURE pattern A\" and \"FIXTURE e2e: and only on the upper channel\". Then, at the second region you pointed to, check what you described: \"Because FIXTURE cue B is present\" and \"I never save it when FIXTURE condition C is visible\" and \"FIXTURE e2e correction: only if cue D is present too\"; your reason: \"Because FIXTURE cue B is present\" and \"I never save it when FIXTURE condition C is visible\" and \"FIXTURE e2e correction: only if cue D is present too\". If your exception applies at the second region you pointed to (\"FIXTURE e2e correction: only if cue D is present too\"), apply it instead of the usual step. Stop and do not continue at the second region you pointed to when this applies: \"I never save it when FIXTURE condition C is visible\". Is that right, or what should I change?",
+    "flagged_for_reconfirmation": [],
+    "gaps": [
+      {
+        "gap_id": "gap-missing_reason-evt-001",
+        "kind": "missing_reason",
+        "description": "The expert explained what they see at evt-001 but gave no reason for it.",
+        "related_event_ids": [
+          "evt-001"
+        ],
+        "related_exchange_ids": [
+          "x-1"
+        ],
+        "priority": 2
+      }
+    ],
+    "confirmations": [
+      {
+        "confirmation_id": "cnf-20261004091725-ca4n8y",
+        "reviewed_revision_id": "rev-20261004091724-eqhqp2",
+        "result": "confirmed",
+        "expert_response_exchange_id": "x-tb",
+        "at_utc": "2026-10-04T09:17:25.799Z",
+        "step_ids_reviewed": [
+          "ent-evt-001-step",
+          "ent-evt-002-guardrail",
+          "ent-evt-002-step"
+        ],
+        "source": "fixture",
+        "session_id": "ses-20261004091722-a5s82o",
+        "entry_id": "ent-evt-002-guardrail"
+      },
+      {
+        "confirmation_id": "cnf-20261004091725-d5s93x",
+        "reviewed_revision_id": "rev-20261004091724-hymei5",
+        "result": "confirmed",
+        "expert_response_exchange_id": "x-tb",
+        "at_utc": "2026-10-04T09:17:25.799Z",
+        "step_ids_reviewed": [
+          "ent-evt-001-step",
+          "ent-evt-002-guardrail",
+          "ent-evt-002-step"
+        ],
+        "source": "fixture",
+        "session_id": "ses-20261004091722-a5s82o",
+        "entry_id": "ent-evt-002-step"
+      },
+      {
+        "confirmation_id": "cnf-20261004091725-ndnpvi",
+        "reviewed_revision_id": "rev-20261004091724-fhdsn7",
+        "result": "confirmed",
+        "expert_response_exchange_id": "x-tb",
+        "at_utc": "2026-10-04T09:17:25.799Z",
+        "step_ids_reviewed": [
+          "ent-evt-001-step",
+          "ent-evt-002-guardrail",
+          "ent-evt-002-step"
+        ],
+        "source": "fixture",
+        "session_id": "ses-20261004091722-a5s82o",
+        "entry_id": "ent-evt-001-step"
+      },
+      {
+        "confirmation_id": "cnf-20261004091726-lsqhbr",
+        "reviewed_revision_id": "rev-20261004091724-fhdsn7",
+        "result": "confirmed",
+        "expert_response_exchange_id": "x-tb2",
+        "at_utc": "2026-10-04T09:17:26.029Z",
+        "step_ids_reviewed": [
+          "ent-evt-001-step",
+          "ent-evt-002-exception",
+          "ent-evt-002-guardrail",
+          "ent-evt-002-step"
+        ],
+        "source": "fixture",
+        "session_id": "ses-20261004091722-a5s82o",
+        "entry_id": "ent-evt-001-step"
+      },
+      {
+        "confirmation_id": "cnf-20261004091726-nchfqv",
+        "reviewed_revision_id": "rev-20261004091725-x62ux1",
+        "result": "confirmed",
+        "expert_response_exchange_id": "x-tb2",
+        "at_utc": "2026-10-04T09:17:26.029Z",
+        "step_ids_reviewed": [
+          "ent-evt-001-step",
+          "ent-evt-002-exception",
+          "ent-evt-002-guardrail",
+          "ent-evt-002-step"
+        ],
+        "source": "fixture",
+        "session_id": "ses-20261004091722-a5s82o",
+        "entry_id": "ent-evt-002-exception"
+      },
+      {
+        "confirmation_id": "cnf-20261004091726-yrzudy",
+        "reviewed_revision_id": "rev-20261004091724-eqhqp2",
+        "result": "confirmed",
+        "expert_response_exchange_id": "x-tb2",
+        "at_utc": "2026-10-04T09:17:26.029Z",
+        "step_ids_reviewed": [
+          "ent-evt-001-step",
+          "ent-evt-002-exception",
+          "ent-evt-002-guardrail",
+          "ent-evt-002-step"
+        ],
+        "source": "fixture",
+        "session_id": "ses-20261004091722-a5s82o",
+        "entry_id": "ent-evt-002-guardrail"
+      },
+      {
+        "confirmation_id": "cnf-20261004091726-ytl9t4",
+        "reviewed_revision_id": "rev-20261004091725-bvtezu",
+        "result": "confirmed",
+        "expert_response_exchange_id": "x-tb2",
+        "at_utc": "2026-10-04T09:17:26.029Z",
+        "step_ids_reviewed": [
+          "ent-evt-001-step",
+          "ent-evt-002-exception",
+          "ent-evt-002-guardrail",
+          "ent-evt-002-step"
+        ],
+        "source": "fixture",
+        "session_id": "ses-20261004091722-a5s82o",
+        "entry_id": "ent-evt-002-step"
+      }
+    ],
+    "review_marks": [
+      {
+        "mark_id": "mrk-20261004091729-o04b8p",
+        "session_id": "ses-20261004091722-a5s82o",
+        "entry_id": "ent-evt-001-step",
+        "revision_id": "rev-20261004091724-fhdsn7",
+        "kind": "correction_requested",
+        "at_utc": "2026-10-04T09:17:29.068Z"
+      }
+    ]
+  }
+}

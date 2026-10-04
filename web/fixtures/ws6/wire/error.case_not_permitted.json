@@ -1,0 +1,15 @@
+{
+  "method": "POST",
+  "route": "/api/sessions",
+  "status": 409,
+  "body": {
+    "error": {
+      "code": "case_not_permitted",
+      "message": "This case is reserved for newcomers; the expert needs a case marked shown_to_expert.",
+      "details": {
+        "case_id": "fx-n01",
+        "reason": "not_shown_to_expert"
+      }
+    }
+  }
+}

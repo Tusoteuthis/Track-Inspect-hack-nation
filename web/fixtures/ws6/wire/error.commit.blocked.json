@@ -1,0 +1,17 @@
+{
+  "method": "POST",
+  "route": "/api/sessions/:sid/commit",
+  "status": 409,
+  "body": {
+    "error": {
+      "code": "commit_blocked",
+      "message": "The tutor's outcome does not permit saving this draft.",
+      "details": {
+        "policy_code": "blocked_by_outcome",
+        "outcome": "intervene",
+        "consequence": "block",
+        "evaluation_id": "evl-20261004091733-zu0ejx"
+      }
+    }
+  }
+}

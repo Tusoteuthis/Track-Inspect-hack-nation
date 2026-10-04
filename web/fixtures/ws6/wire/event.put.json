@@ -1,0 +1,10 @@
+{
+  "method": "PUT",
+  "route": "/api/sessions/:sid/events/:eid",
+  "status": 201,
+  "body": {
+    "event_id": "evt-ic-1",
+    "status": "stored",
+    "seq": 4
+  }
+}

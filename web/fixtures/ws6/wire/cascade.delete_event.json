@@ -1,0 +1,23 @@
+{
+  "method": "DELETE",
+  "route": "/api/sessions/:sid/events/:eid",
+  "status": 200,
+  "body": {
+    "deleted": {
+      "session_ids": [],
+      "asset_ids": [
+        "ic-mutlxjok-a1"
+      ],
+      "event_ids": [
+        "evt-ic-1"
+      ],
+      "exchange_ids": []
+    },
+    "trimmed_exchange_ids": [],
+    "revoked_revision_ids": [],
+    "stale_evaluation_ids": [],
+    "affected_session_ids": [
+      "ses-20261004091727-84c8i8"
+    ]
+  }
+}

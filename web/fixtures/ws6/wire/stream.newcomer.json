@@ -1,0 +1,93 @@
+{
+  "method": "GET",
+  "route": "/api/sessions/:sid/stream",
+  "status": 200,
+  "body": [
+    {
+      "seq": 1,
+      "type": "draft.updated",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {
+        "draft_rev": "1"
+      },
+      "at_utc": "2026-10-04T09:17:32.208Z"
+    },
+    {
+      "seq": 2,
+      "type": "evaluation.updated",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {
+        "evaluation_id": "evl-20261004091733-zu0ejx",
+        "draft_rev": "1"
+      },
+      "at_utc": "2026-10-04T09:17:33.316Z"
+    },
+    {
+      "seq": 3,
+      "type": "evaluation.updated",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {
+        "evaluation_id": "evl-20261004091733-zu0ejx",
+        "draft_rev": "1"
+      },
+      "at_utc": "2026-10-04T09:17:33.349Z"
+    },
+    {
+      "seq": 4,
+      "type": "evaluation.updated",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {
+        "evaluation_id": "evl-20261004091733-zu0ejx",
+        "draft_rev": "1"
+      },
+      "at_utc": "2026-10-04T09:17:33.880Z"
+    },
+    {
+      "seq": 5,
+      "type": "draft.updated",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {
+        "draft_rev": "2"
+      },
+      "at_utc": "2026-10-04T09:17:33.880Z"
+    },
+    {
+      "seq": 6,
+      "type": "evaluation.updated",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {
+        "evaluation_id": "evl-20261004091733-90q1dt",
+        "draft_rev": "2"
+      },
+      "at_utc": "2026-10-04T09:17:33.909Z"
+    },
+    {
+      "seq": 7,
+      "type": "evaluation.updated",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {
+        "evaluation_id": "evl-20261004091733-90q1dt",
+        "draft_rev": "2"
+      },
+      "at_utc": "2026-10-04T09:17:33.926Z"
+    },
+    {
+      "seq": 8,
+      "type": "commit.stored",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {
+        "commit_id": "cmt-20261004091734-h9r9eu",
+        "evaluation_id": "evl-20261004091733-90q1dt",
+        "draft_rev": "2"
+      },
+      "at_utc": "2026-10-04T09:17:34.056Z"
+    },
+    {
+      "seq": 9,
+      "type": "assessment.stored",
+      "session_id": "ses-20261004091731-1xaocq",
+      "ids": {},
+      "at_utc": "2026-10-04T09:17:34.056Z"
+    }
+  ]
+}

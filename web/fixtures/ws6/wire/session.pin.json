@@ -1,0 +1,40 @@
+{
+  "method": "POST",
+  "route": "/api/sessions/:sid/pin",
+  "status": 200,
+  "body": {
+    "session_id": "ses-20261004091736-pcqqph",
+    "role": "newcomer",
+    "lifecycle": "created",
+    "record_state": "on_record",
+    "recording_segments": [
+      {
+        "segment_id": "seg-20261004091736-d0a8ff",
+        "state": "on_record",
+        "started_at_utc": "2026-10-04T09:17:36.118Z",
+        "ended_at_utc": null
+      }
+    ],
+    "case_id": "fx-n01",
+    "trace_ref": "/api/cases/fx-n01/trace",
+    "pinned_knowledge": [
+      {
+        "entry_id": "ent-evt-002-exception",
+        "revision_id": "rev-20261004091725-x62ux1"
+      },
+      {
+        "entry_id": "ent-evt-002-guardrail",
+        "revision_id": "rev-20261004091724-eqhqp2"
+      },
+      {
+        "entry_id": "ent-evt-002-step",
+        "revision_id": "rev-20261004091725-bvtezu"
+      }
+    ],
+    "generation": 1,
+    "knowledge_fixture_allowed": true,
+    "source": "fixture",
+    "created_at_utc": "2026-10-04T09:17:36.118Z",
+    "rev": 3
+  }
+}

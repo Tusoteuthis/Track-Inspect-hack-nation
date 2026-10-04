@@ -1,0 +1,43 @@
+{
+  "method": "GET",
+  "route": "/api/sessions/:sid",
+  "status": 200,
+  "body": {
+    "session_id": "ses-20261004091731-1xaocq",
+    "role": "newcomer",
+    "lifecycle": "created",
+    "record_state": "on_record",
+    "recording_segments": [
+      {
+        "segment_id": "seg-20261004091731-txreue",
+        "state": "on_record",
+        "started_at_utc": "2026-10-04T09:17:31.151Z",
+        "ended_at_utc": null
+      }
+    ],
+    "case_id": "fx-n01",
+    "trace_ref": "/api/cases/fx-n01/trace",
+    "pinned_knowledge": [
+      {
+        "entry_id": "ent-evt-001-step",
+        "revision_id": "rev-20261004091724-fhdsn7"
+      },
+      {
+        "entry_id": "ent-evt-002-exception",
+        "revision_id": "rev-20261004091725-x62ux1"
+      },
+      {
+        "entry_id": "ent-evt-002-guardrail",
+        "revision_id": "rev-20261004091724-eqhqp2"
+      },
+      {
+        "entry_id": "ent-evt-002-step",
+        "revision_id": "rev-20261004091725-bvtezu"
+      }
+    ],
+    "knowledge_fixture_allowed": true,
+    "source": "fixture",
+    "created_at_utc": "2026-10-04T09:17:31.151Z",
+    "rev": 1
+  }
+}

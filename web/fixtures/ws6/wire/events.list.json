@@ -1,0 +1,59 @@
+{
+  "method": "GET",
+  "route": "/api/sessions/:sid/events",
+  "status": 200,
+  "body": [
+    {
+      "schema_version": "ws3.v0",
+      "session_id": "ses-20261004091722-a5s82o",
+      "event_id": "evt-001",
+      "source": "fixture",
+      "captured_at_utc": "2026-10-04T09:17:22.481Z",
+      "session_time_ms": 5000,
+      "frame_id": "frame-evt-001",
+      "image_ref": "/api/assets/mn-mutlxjok-a1/original",
+      "highlighted_image_ref": "/api/assets/mn-mutlxjok-a1/highlighted",
+      "region": {
+        "x": 0.2,
+        "y": 0.15,
+        "width": 0.15,
+        "height": 0.25,
+        "coordinate_space": "original_frame_normalized",
+        "frame_width_px": 320,
+        "frame_height_px": 180
+      },
+      "mapping_status": "resolved",
+      "trace_id": "fixture-trace-e2e",
+      "channel_id": "FIXTURE-CH1",
+      "signal_interval": null,
+      "record_state": "on_record",
+      "asset_id": "mn-mutlxjok-a1"
+    },
+    {
+      "schema_version": "ws3.v0",
+      "session_id": "ses-20261004091722-a5s82o",
+      "event_id": "evt-002",
+      "source": "fixture",
+      "captured_at_utc": "2026-10-04T09:17:32.481Z",
+      "session_time_ms": 15000,
+      "frame_id": "frame-evt-002",
+      "image_ref": "/api/assets/mn-mutlxjok-a2/original",
+      "highlighted_image_ref": "/api/assets/mn-mutlxjok-a2/highlighted",
+      "region": {
+        "x": 0.2,
+        "y": 0.15,
+        "width": 0.15,
+        "height": 0.25,
+        "coordinate_space": "original_frame_normalized",
+        "frame_width_px": 320,
+        "frame_height_px": 180
+      },
+      "mapping_status": "resolved",
+      "trace_id": "fixture-trace-e2e",
+      "channel_id": "FIXTURE-CH1",
+      "signal_interval": null,
+      "record_state": "on_record",
+      "asset_id": "mn-mutlxjok-a2"
+    }
+  ]
+}

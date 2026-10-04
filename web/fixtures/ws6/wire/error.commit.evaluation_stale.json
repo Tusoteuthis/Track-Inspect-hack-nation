@@ -1,0 +1,18 @@
+{
+  "method": "POST",
+  "route": "/api/sessions/:sid/commit",
+  "status": 409,
+  "body": {
+    "error": {
+      "code": "evaluation_stale",
+      "message": "The draft changed after it was evaluated; evaluate the current draft.",
+      "details": {
+        "policy_code": "evaluation_stale",
+        "evaluation_id": "evl-20261004091733-zu0ejx",
+        "evaluation_draft_rev": 1,
+        "current_draft_rev": 2,
+        "request_draft_rev": 2
+      }
+    }
+  }
+}

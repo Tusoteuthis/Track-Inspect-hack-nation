@@ -1,0 +1,14 @@
+{
+  "method": "GET",
+  "route": "/api/sessions/:sid",
+  "status": 404,
+  "body": {
+    "error": {
+      "code": "not_found",
+      "message": "Session not found.",
+      "details": {
+        "session_id": "ses-nope"
+      }
+    }
+  }
+}

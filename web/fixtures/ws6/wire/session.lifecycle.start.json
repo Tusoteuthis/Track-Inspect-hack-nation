@@ -1,0 +1,25 @@
+{
+  "method": "POST",
+  "route": "/api/sessions/:sid/lifecycle",
+  "status": 200,
+  "body": {
+    "session_id": "ses-20261004091727-84c8i8",
+    "role": "expert",
+    "lifecycle": "active",
+    "record_state": "on_record",
+    "recording_segments": [
+      {
+        "segment_id": "seg-20261004091727-b8lioq",
+        "state": "on_record",
+        "started_at_utc": "2026-10-04T09:17:27.745Z",
+        "ended_at_utc": null
+      }
+    ],
+    "case_id": "fx-e01",
+    "trace_ref": "/api/cases/fx-e01/trace",
+    "pinned_knowledge": null,
+    "source": "fixture",
+    "created_at_utc": "2026-10-04T09:17:27.745Z",
+    "rev": 2
+  }
+}

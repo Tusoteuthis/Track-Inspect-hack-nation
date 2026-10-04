@@ -1,0 +1,30 @@
+{
+  "method": "PUT",
+  "route": "/api/sessions/:sid/assets/:aid",
+  "status": 201,
+  "body": {
+    "asset_id": "ic-mutlxjok-a1",
+    "session_id": "ses-20261004091727-84c8i8",
+    "event_id": "evt-ic-1",
+    "kind": "frame",
+    "original": {
+      "path": "original.png",
+      "mime": "image/png",
+      "width_px": 320,
+      "height_px": 180,
+      "sha256": "eb900185cbb5efd0a18f695f7c0f518db99e3394e4742c11cf2cbf0472866728"
+    },
+    "highlighted": {
+      "path": "highlighted.png",
+      "mime": "image/png",
+      "width_px": 320,
+      "height_px": 180,
+      "sha256": "498d0ef16c022f2ac6d714de0349d69ff92a080285ffe28acbc68b74c09d8360"
+    },
+    "coordinate_space": "original_frame_normalized",
+    "captured_at_utc": "2026-10-04T09:17:27.781Z",
+    "record_state": "on_record",
+    "source": "fixture",
+    "status": "stored"
+  }
+}

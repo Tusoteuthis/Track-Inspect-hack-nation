@@ -1,0 +1,21 @@
+{
+  "method": "GET",
+  "route": "/api/sessions/:sid/commit",
+  "status": 200,
+  "body": {
+    "commit_id": "cmt-20261004091734-h9r9eu",
+    "session_id": "ses-20261004091731-1xaocq",
+    "draft_rev": 2,
+    "evaluation_id": "evl-20261004091733-90q1dt",
+    "at_utc": "2026-10-04T09:17:34.056Z",
+    "outcome": "ok",
+    "escalated": false,
+    "knowledge_revision_ids": [
+      "rev-20261004091724-fhdsn7",
+      "rev-20261004091725-x62ux1",
+      "rev-20261004091724-eqhqp2",
+      "rev-20261004091725-bvtezu"
+    ],
+    "idempotency_key_sha256": "dde12b91e8899f199a2be40fe94d376a7d1bf3270bea1a682c14a75fa4369414"
+  }
+}

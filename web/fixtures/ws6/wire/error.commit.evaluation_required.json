@@ -1,0 +1,15 @@
+{
+  "method": "POST",
+  "route": "/api/sessions/:sid/commit",
+  "status": 409,
+  "body": {
+    "error": {
+      "code": "evaluation_required",
+      "message": "Get a tutor evaluation of the current draft before saving.",
+      "details": {
+        "policy_code": "evaluation_required",
+        "reason": "no_evaluation"
+      }
+    }
+  }
+}

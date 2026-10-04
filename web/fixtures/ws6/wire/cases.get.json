@@ -1,0 +1,21 @@
+{
+  "method": "GET",
+  "route": "/api/cases/:case_id",
+  "status": 200,
+  "body": {
+    "case_id": "fx-n01",
+    "title": "FIXTURE unseen newcomer case 1",
+    "shown_to_expert": false,
+    "source": "fixture",
+    "visible_context": [
+      "FIXTURE visible context: placeholder trace, not a real sensor recording."
+    ],
+    "decision_options": null,
+    "trace": {
+      "url": "/api/cases/fx-n01/trace",
+      "mime": "image/png",
+      "width_px": 320,
+      "height_px": 180
+    }
+  }
+}

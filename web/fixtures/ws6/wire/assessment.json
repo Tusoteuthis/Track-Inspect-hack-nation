@@ -1,0 +1,76 @@
+{
+  "method": "GET",
+  "route": "/api/sessions/:sid/assessment",
+  "status": 200,
+  "body": {
+    "session_id": "ses-20261004091731-1xaocq",
+    "initial_decision": "FIXTURE_WRONG",
+    "assistance": [
+      "intervene on draft_rev 1 (evl-20261004091733-zu0ejx)"
+    ],
+    "final_outcome": "ok",
+    "evidence_used": [
+      {
+        "entry_id": "ent-evt-001-step",
+        "revision_id": "rev-20261004091724-fhdsn7"
+      }
+    ],
+    "practice_next": null,
+    "source": "fixture",
+    "created_at_utc": "2026-10-04T09:17:34.056Z",
+    "content": {
+      "note": "STUB assessment built from stored facts only; practice_next requires WS5.",
+      "interventions": 1,
+      "evaluations": 2,
+      "committed": true,
+      "commit_id": "cmt-20261004091734-h9r9eu",
+      "escalated": false,
+      "timeline": [
+        {
+          "at_utc": "2026-10-04T09:17:32.208Z",
+          "kind": "proposed",
+          "draft_rev": 1
+        },
+        {
+          "at_utc": "2026-10-04T09:17:33.349Z",
+          "kind": "evaluated",
+          "draft_rev": 1,
+          "evaluation_id": "evl-20261004091733-zu0ejx",
+          "outcome": "intervene",
+          "intervention": "caught_before_save"
+        },
+        {
+          "at_utc": "2026-10-04T09:17:33.349Z",
+          "kind": "guidance_delivered",
+          "draft_rev": 1,
+          "evaluation_id": "evl-20261004091733-zu0ejx",
+          "outcome": "intervene"
+        },
+        {
+          "at_utc": "2026-10-04T09:17:33.880Z",
+          "kind": "revised",
+          "draft_rev": 2
+        },
+        {
+          "at_utc": "2026-10-04T09:17:33.926Z",
+          "kind": "evaluated",
+          "draft_rev": 2,
+          "evaluation_id": "evl-20261004091733-90q1dt",
+          "outcome": "ok"
+        },
+        {
+          "at_utc": "2026-10-04T09:17:34.056Z",
+          "kind": "committed",
+          "draft_rev": 2,
+          "evaluation_id": "evl-20261004091733-90q1dt",
+          "commit_id": "cmt-20261004091734-h9r9eu"
+        }
+      ]
+    },
+    "produced_by": {
+      "module": "ws6-stub-assessment",
+      "version": "0.1.0",
+      "source": "stub"
+    }
+  }
+}
