@@ -1,0 +1,35 @@
+{
+  "source": "fixture",
+  "shown_to_expert": false,
+  "case_view": {
+    "case_id": "fx-case-201",
+    "title": "FIXTURE unseen practice trace 201",
+    "visible_context": [
+      "FIXTURE pattern A in a region on the upper channel",
+      "FIXTURE cue A1 is visible",
+      "FIXTURE cue A2 is visible",
+      "FIXTURE condition C is visible on the lower channel"
+    ],
+    "source": "fixture"
+  },
+  "learner_region": {
+    "frame_id": "fx-case-201-frame",
+    "coordinate_space": "original_frame_normalized",
+    "x": 0.18,
+    "y": 0.12,
+    "width": 0.2,
+    "height": 0.3,
+    "mapping_status": "resolved"
+  },
+  "frame_size": { "width_px": 1600, "height_px": 900 },
+  "drafts": [
+    {
+      "decision": "FIXTURE decision A",
+      "reason": "FIXTURE pattern A with FIXTURE cue A1 and FIXTURE cue A2, so it is decision A."
+    },
+    {
+      "decision": "Not FIXTURE decision A",
+      "reason": "FIXTURE condition C is visible on the lower channel, and the expert never saves decision A then."
+    }
+  ]
+}

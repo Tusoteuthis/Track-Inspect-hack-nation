@@ -68,3 +68,57 @@ export {
   type Ws6TutorEvaluator,
   type Ws6TutorEvaluatorOptions,
 } from "./adapters/ws6-tutor-evaluator";
+
+// Sprint 4: screen observation, tutor context blocks, assessment, trust propagation.
+export {
+  assertLearnerScreenContext,
+  describeScreenContext,
+  fromPracticeState,
+  fromWs6VisualContext,
+  ScreenContextError,
+  screenContextFor,
+  toWs6VisualContext,
+  type LearnerScreenContext,
+  type ScreenContextSource,
+  type Ws6VisualContext,
+  type Ws7FrameRef,
+  type Ws7Region,
+} from "./observation";
+export {
+  buildEvaluationContextBlock,
+  buildKnowledgeChangedBlock,
+  buildSessionContextBlock,
+  TutorContextError,
+  type ContextBlock,
+  type ContextEvaluation,
+  type EvaluationBlockInput,
+} from "./tutor-context";
+export {
+  ASSESSMENT_MODULE,
+  buildAssessment,
+  MASTERY_DISCLAIMER,
+  renderAssessmentMarkdown,
+  type Assessment,
+  type AssessmentCommit,
+  type AssessmentDraft,
+  type AssessmentEvaluation,
+  type AssessmentInput,
+  type Decision,
+  type EntryNote,
+  type HelpNote,
+  type Intervention,
+  type OutcomeClass,
+  type PracticeItem,
+  type SkillNote,
+  type TransferNote,
+} from "./assessment";
+export { checkPinnedKnowledge, flagDependents, type DependentFlag, type PinCheck } from "./trust";
+export {
+  createWs6AssessmentModule,
+  type Ws6Assessment,
+  type Ws6AssessmentInput,
+  type Ws6AssessmentModule,
+  type Ws6AssessmentOptions,
+  type Ws6Commit,
+  type Ws6Evaluation,
+} from "./adapters/ws6-assessment-module";
