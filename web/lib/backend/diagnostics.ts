@@ -2,7 +2,6 @@
  * Diagnostics (S4): the ID chain of one session across components, plus per-component last
  * error from the diag log. IDs, statuses, timestamps and error codes only — never content.
  */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { ErrorCode } from "@/lib/contracts";
 import { getConfig } from "./config";
@@ -16,16 +15,17 @@ import { listAllRevisions, revisionStatus } from "./knowledge";
 import { listEvaluations, loadCommit } from "./learner-store";
 import { sessionDir } from "./paths";
 import { getSession, loadSession } from "./sessions";
+import { getBlobStore, listNames } from "./blobstore";
 
 const DIAG_DAYS = 2;
 
 /** The diag lines of the last `DIAG_DAYS` files, oldest first. Torn lines are skipped. */
 export async function readDiagLines(): Promise<DiagLine[]> {
   const dir = path.join(getConfig().runtimeDir, "diag");
-  const files = (await fs.readdir(dir).catch(() => [] as string[])).filter(f => /^\d{4}-\d{2}-\d{2}\.ndjson$/.test(f)).sort().slice(-DIAG_DAYS);
+  const files = (await listNames(dir).catch(() => [] as string[])).filter(f => /^\d{4}-\d{2}-\d{2}\.ndjson$/.test(f)).sort().slice(-DIAG_DAYS);
   const out: DiagLine[] = [];
   for (const f of files) {
-    const text = await fs.readFile(path.join(dir, f), "utf8").catch(() => "");
+    const text = (await getBlobStore().getText(path.join(dir, f)).catch(() => "")) ?? "";
     for (const line of text.split("\n")) {
       if (!line.trim()) continue;
       try {
@@ -99,7 +99,7 @@ async function newcomerChain(sid: string) {
 
 async function listSessionIds(): Promise<string[]> {
   const root = path.dirname(sessionDir("x"));
-  return (await fs.readdir(root).catch(() => [] as string[])).filter(isValidId).sort();
+  return (await listNames(root).catch(() => [] as string[])).filter(isValidId).sort();
 }
 
 /** For an expert session: event → exchanges → revisions → confirmations → newcomer sessions → evaluations → commit. */
