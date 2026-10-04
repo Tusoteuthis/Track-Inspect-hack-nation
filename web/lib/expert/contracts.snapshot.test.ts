@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  type DraftRevision,
   type ExpertExchange,
   SCHEMA_VERSION,
   type SessionSnapshot,
@@ -9,6 +10,9 @@ import {
   type Topic,
   isValidSessionId,
   validateBeginQuestionParams,
+  validateConfirmRevisionParams,
+  validateProposeDraftParams,
+  validateRecordCoverageParams,
   validateExpertExchange,
   validateSessionSnapshot,
   validateTimingMark,
@@ -37,6 +41,8 @@ function exchange(): ExpertExchange {
     source: "fixture",
     topic_id: "top-001",
     related_event_ids: [],
+    gap_id: null,
+    revision_id: null,
   };
 }
 
@@ -94,6 +100,13 @@ function snapshot(): SessionSnapshot {
     unlinked_agent_questions: [],
     topics: [topic()],
     interview_config: { ...DEFAULT_INTERVIEW_CONFIG },
+    phase: "live",
+    phase_log: [],
+    coverage: [],
+    open_questions: [],
+    debrief_agenda: [],
+    revisions: [],
+    confirmations: [],
   };
 }
 
@@ -102,7 +115,10 @@ const errors = <T>(r: { ok: true; value: T } | { ok: false; errors: string[] }) 
 describe("validateBeginQuestionParams", () => {
   it("accepts a valid call", () => {
     const r = validateBeginQuestionParams({ event_id: "evt-001", kind: "explain", question: "What is going on here?" });
-    expect(r).toEqual({ ok: true, value: { event_id: "evt-001", kind: "explain", question: "What is going on here?" } });
+    expect(r).toEqual({
+      ok: true,
+      value: { event_id: "evt-001", kind: "explain", question: "What is going on here?", phase: null, gap_id: null },
+    });
   });
 
   it('maps event_id "none" (and null) to null', () => {
@@ -256,5 +272,76 @@ describe("Sprint 2 contract additions", () => {
     const bad = snapshot();
     bad.interview_config = { ...DEFAULT_INTERVIEW_CONFIG, pause_ms: -1 };
     expect(errors(validateSessionSnapshot(bad)).join(" ")).toMatch(/interview_config\.pause_ms/);
+  });
+});
+
+describe("Sprint 3 tool params", () => {
+  it("begin_question takes phase and gap_id; 'none' gap = null", () => {
+    const r = validateBeginQuestionParams({ event_id: "none", kind: "gap", question: "Q?", phase: "debrief", gap_id: "gap-evt-001-reason" });
+    expect(r.ok && [r.value.phase, r.value.gap_id]).toEqual(["debrief", "gap-evt-001-reason"]);
+    const n = validateBeginQuestionParams({ event_id: "evt-001", kind: "explain", question: "Q?", gap_id: "none" });
+    expect(n.ok && n.value.gap_id).toBeNull();
+    expect(errors(validateBeginQuestionParams({ event_id: "evt-001", kind: "explain", question: "Q?", phase: "done" }))).toEqual([
+      expect.stringContaining("phase"),
+    ]);
+  });
+
+  it("record_coverage validates dimensions and statuses, accepts a JSON-string array", () => {
+    const ok = validateRecordCoverageParams({
+      exchange_id: "ex-001",
+      dimensions: JSON.stringify([{ dimension: "reason", status: "covered", note: " width " }]),
+    });
+    expect(ok).toEqual({ ok: true, value: { exchange_id: "ex-001", dimensions: [{ dimension: "reason", status: "covered", note: "width" }] } });
+    const bad = errors(validateRecordCoverageParams({ exchange_id: "", dimensions: [{ dimension: "mood", status: "missing" }] }));
+    expect(bad.join(" ")).toMatch(/exchange_id.*dimension.*status/s);
+    expect(validateRecordCoverageParams({ exchange_id: "ex-1", dimensions: [] }).ok).toBe(false);
+  });
+
+  it("propose_draft validates steps", () => {
+    const ok = validateProposeDraftParams({ steps: [{ kind: "guardrail", text: "Stop.", event_ids: ["evt-001"], exchange_ids: ["ex-002"] }] });
+    expect(ok.ok && ok.value.change_reason).toBeNull();
+    expect(errors(validateProposeDraftParams({ steps: [{ kind: "rule", text: "", event_ids: "x" }] })).length).toBe(3);
+  });
+
+  it("confirm_revision validates status and step ids", () => {
+    const ok = validateConfirmRevisionParams({ revision_id: "rev-1", status: "corrected", step_ids_reviewed: [] });
+    expect(ok.ok && ok.value.step_ids_reviewed).toBeNull();
+    expect(errors(validateConfirmRevisionParams({ revision_id: "rev-1", status: "yes" }))).toEqual([expect.stringContaining("status")]);
+  });
+});
+
+describe("Sprint 3 snapshot records", () => {
+  const rev = (id: string, parent: string | null): DraftRevision => ({
+    revision_id: id,
+    session_id: "ses-20261004-010000-abcd",
+    created_at_utc: "2026-10-04T01:10:00.000Z",
+    parent_revision_id: parent,
+    steps: [{ step_id: "s-1", text: "First check the spike.", kind: "step", supporting_event_ids: ["evt-001"], supporting_exchange_ids: ["ex-001"], supported: true }],
+    change_reason: null,
+    change_exchange_ids: [],
+  });
+
+  it("accepts coverage, agenda, revisions and confirmations that link to known records", () => {
+    const s = snapshot();
+    s.phase = "confirmed";
+    s.phase_log = [{ phase: "debrief", at_utc: "2026-10-04T01:05:00.000Z", trigger: "agent_tool" }];
+    s.coverage = [{ dimension: "reason", event_id: "evt-001", status: "covered", supporting_exchange_ids: ["ex-001"], note: "AI", resolution: "answered" }];
+    s.debrief_agenda = [
+      { gap_id: "gap-evt-001-guardrails", event_id: "evt-001", topic_id: "top-001", dimension: "guardrails", open_question_id: null, description: "d", status_at_start: "missing", state: "asked", exchange_ids: ["ex-001"] },
+    ];
+    s.revisions = [rev("rev-1", null), rev("rev-2", "rev-1")];
+    s.confirmations = [{ confirmation_id: "conf-001", revision_id: "rev-2", status: "confirmed", step_ids_reviewed: ["s-1"], expert_response_exchange_id: "ex-001", at_utc: "2026-10-04T01:11:00.000Z" }];
+    expect(errors(validateSessionSnapshot(s))).toEqual([]);
+  });
+
+  it("rejects broken links", () => {
+    const s = snapshot();
+    s.phase = "finished" as never;
+    s.coverage = [{ dimension: "reason", event_id: "evt-404", status: "covered", supporting_exchange_ids: ["ex-404"], note: null, resolution: null }];
+    s.revisions = [rev("rev-2", "rev-1")];
+    s.confirmations = [{ confirmation_id: "c", revision_id: "rev-9", status: "confirmed", step_ids_reviewed: [], expert_response_exchange_id: "ex-404", at_utc: "2026-10-04T01:11:00.000Z" }];
+    s.exchanges = [{ ...exchange(), gap_id: "gap-x", revision_id: "rev-7" }];
+    const e = errors(validateSessionSnapshot(s)).join(" | ");
+    for (const re of [/phase must/, /evt-404/, /ex-404/, /parent_revision_id/, /rev-9/, /gap-x/, /rev-7/]) expect(e).toMatch(re);
   });
 });

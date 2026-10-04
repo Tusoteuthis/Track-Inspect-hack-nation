@@ -8,7 +8,11 @@ export const SCHEMA_VERSION = "ws3.v0";
 export type Source = "live" | "fixture";
 export type RecordState = "on_record" | "off_record";
 export type MappingStatus = "resolved" | "ambiguous" | "unresolved";
+/** Phase an exchange was asked in. */
 export type Phase = "live" | "debrief" | "teach_back";
+/** Phase of the whole session; `confirmed` / `incomplete` are terminal. */
+export type SessionPhase = Phase | "confirmed" | "incomplete";
+export type PhaseTrigger = "agent_tool" | "console" | "confirmation" | "session_end";
 export type ExchangeKind =
   | "explain"
   | "reasoning"
@@ -17,7 +21,9 @@ export type ExchangeKind =
   | "guardrail"
   | "exception"
   | "clarify_reference"
-  | "gap";
+  | "gap"
+  | "teach_back"
+  | "correction";
 export type CoverageDimension = "decision" | "reason" | "cues" | "alternatives" | "guardrails" | "unresolved";
 export type CoverageStatus = "missing" | "partial" | "covered";
 export type StepKind = "step" | "decision" | "guardrail" | "exception";
@@ -41,7 +47,10 @@ export type TopicState =
   | "answered"
   | "deferred_to_debrief"
   | "dropped_off_record";
-export type DeferredReason = "budget" | "moved_on" | "release_timeout";
+export type DeferredReason = "budget" | "moved_on" | "release_timeout" | "task_complete";
+/** How a coverage item was closed: answered, or the expert said it is unknown / would escalate. */
+export type CoverageResolution = "answered" | "unknown_escalate";
+export type DebriefItemState = "open" | "asked" | "partial" | "resolved" | "unknown";
 
 /** Normalized box in the original saved frame, origin top-left, values in [0, 1]. */
 export type Region = {
@@ -102,6 +111,10 @@ export type ExpertExchange = {
   question_planned: string | null;
   /** The expert's words, verbatim. Never edited or summarized. */
   answer_lines: AnswerLine[];
+  /** Debrief agenda gap this question is about (debrief phase only). */
+  gap_id: string | null;
+  /** Draft revision this exchange reviews (teach_back phase only). */
+  revision_id: string | null;
   asked_at_utc: string;
   answer_started_at_utc: string | null;
   answer_ended_at_utc: string | null;
@@ -110,14 +123,33 @@ export type ExpertExchange = {
   source: Source;
 };
 
+/** One cell of the coverage grid. Row key: (`event_id` = topic primary event, or null for the session row, `dimension`). */
 export type CoverageItem = {
   dimension: CoverageDimension;
   event_id: string | null;
+  /** missing < partial < covered; only ever upgraded. */
   status: CoverageStatus;
   supporting_exchange_ids: string[];
   /** AI synthesis, not expert words. */
   note: string | null;
+  resolution: CoverageResolution | null;
 };
+
+/** Something the debrief should ask about. Descriptions are templates: no interpretation. */
+export type Gap = {
+  gap_id: string;
+  event_id: string | null;
+  topic_id: string | null;
+  dimension: CoverageDimension;
+  open_question_id: string | null;
+  description: string;
+  status_at_start: "missing" | "partial";
+};
+
+/** A gap on the frozen debrief agenda and what happened to it. */
+export type DebriefItem = Gap & { state: DebriefItemState; exchange_ids: string[] };
+
+export type PhaseChange = { phase: SessionPhase; at_utc: string; trigger: PhaseTrigger };
 
 export type OpenQuestion = {
   open_question_id: string;
@@ -135,6 +167,8 @@ export type DraftStep = {
   kind: StepKind;
   supporting_event_ids: string[];
   supporting_exchange_ids: string[];
+  /** false = missing event or exchange evidence: never taught as fact, kept as an open question. */
+  supported: boolean;
 };
 
 /** Immutable once created; a correction produces rev-(n+1) with parent_revision_id = rev-n. */
@@ -145,6 +179,8 @@ export type DraftRevision = {
   parent_revision_id: string | null;
   steps: DraftStep[];
   change_reason: string | null;
+  /** Exchanges holding the expert's correction that caused this revision. */
+  change_exchange_ids: string[];
 };
 
 /** Explicit expert response about one exact revision. Silence never creates one. */
@@ -236,7 +272,28 @@ export type InterviewConfig = {
 };
 
 /** Parameters of the `begin_question` client tool, after normalization ("none" → null). */
-export type BeginQuestionParams = { event_id: string | null; kind: ExchangeKind; question: string };
+export type BeginQuestionParams = {
+  event_id: string | null;
+  kind: ExchangeKind;
+  question: string;
+  /** Phase the agent believes it is in; null = not given. */
+  phase: Phase | null;
+  gap_id: string | null;
+};
+
+export type CoverageStatusParam = "partial" | "covered" | "unknown_escalate";
+export type RecordCoverageParams = {
+  exchange_id: string;
+  dimensions: { dimension: CoverageDimension; status: CoverageStatusParam; note: string | null }[];
+};
+export type ProposedStep = { kind: StepKind; text: string; event_ids: string[]; exchange_ids: string[] };
+export type ProposeDraftParams = { steps: ProposedStep[]; change_reason: string | null };
+export type ConfirmRevisionParams = {
+  revision_id: string;
+  status: ConfirmationStatus;
+  /** null = the steps taught in the current teach-back. */
+  step_ids_reviewed: string[] | null;
+};
 
 /** One final transcript line, tagged with the exchange that was active when it arrived. */
 export type TranscriptEntry = {
@@ -269,6 +326,15 @@ export type SessionSnapshot = {
   unlinked_agent_questions: UnlinkedQuestion[];
   topics: Topic[];
   interview_config: InterviewConfig;
+  phase: SessionPhase;
+  phase_log: PhaseChange[];
+  coverage: CoverageItem[];
+  open_questions: OpenQuestion[];
+  /** Frozen when the debrief starts. */
+  debrief_agenda: DebriefItem[];
+  /** Append-only; never edited. */
+  revisions: DraftRevision[];
+  confirmations: ExpertConfirmation[];
 };
 
 // --- validation of external input ------------------------------------------
@@ -373,6 +439,8 @@ const EXCHANGE_KINDS: readonly ExchangeKind[] = [
   "exception",
   "clarify_reference",
   "gap",
+  "teach_back",
+  "correction",
 ];
 const PHASES: readonly Phase[] = ["live", "debrief", "teach_back"];
 const TIMING_MARKS: readonly TimingMarkName[] = [
@@ -395,7 +463,22 @@ const TOPIC_STATES: readonly TopicState[] = [
   "deferred_to_debrief",
   "dropped_off_record",
 ];
-const DEFERRED_REASONS: readonly DeferredReason[] = ["budget", "moved_on", "release_timeout"];
+const DEFERRED_REASONS: readonly DeferredReason[] = ["budget", "moved_on", "release_timeout", "task_complete"];
+export const COVERAGE_DIMENSIONS: readonly CoverageDimension[] = [
+  "decision",
+  "reason",
+  "cues",
+  "alternatives",
+  "guardrails",
+  "unresolved",
+];
+const COVERAGE_STATUSES: readonly CoverageStatus[] = ["missing", "partial", "covered"];
+const COVERAGE_STATUS_PARAMS: readonly CoverageStatusParam[] = ["partial", "covered", "unknown_escalate"];
+const SESSION_PHASES: readonly SessionPhase[] = ["live", "debrief", "teach_back", "confirmed", "incomplete"];
+const PHASE_TRIGGERS: readonly PhaseTrigger[] = ["agent_tool", "console", "confirmation", "session_end"];
+const STEP_KINDS: readonly StepKind[] = ["step", "decision", "guardrail", "exception"];
+const CONFIRMATION_STATUSES: readonly ConfirmationStatus[] = ["confirmed", "corrected", "unresolved"];
+const DEBRIEF_STATES: readonly DebriefItemState[] = ["open", "asked", "partial", "resolved", "unknown"];
 const CONFIG_KEYS: readonly (keyof InterviewConfig)[] = [
   "dedup_window_ms",
   "dedup_min_iou",
@@ -435,6 +518,12 @@ export function validateBeginQuestionParams(input: unknown): ValidationResult<Be
   if (!noEvent && !isNonEmptyString(raw)) errors.push(`event_id must be an event id or "${NO_EVENT}"`);
   if (!oneOf(EXCHANGE_KINDS, input.kind)) errors.push(`kind must be one of ${EXCHANGE_KINDS.join(", ")}`);
   if (!isNonEmptyString(input.question)) errors.push("question must be a non-empty string");
+  const phase = input.phase;
+  const noPhase = phase === undefined || phase === null || phase === "";
+  if (!noPhase && !oneOf(PHASES, phase)) errors.push(`phase must be one of ${PHASES.join(", ")}`);
+  const gap = input.gap_id;
+  const noGap = gap === undefined || gap === null || (typeof gap === "string" && ["", NO_EVENT].includes(gap.trim().toLowerCase()));
+  if (!noGap && !isNonEmptyString(gap)) errors.push("gap_id must be a gap id or omitted");
   if (errors.length) return { ok: false, errors };
   return {
     ok: true,
@@ -442,6 +531,100 @@ export function validateBeginQuestionParams(input: unknown): ValidationResult<Be
       event_id: noEvent ? null : (raw as string).trim(),
       kind: input.kind as ExchangeKind,
       question: (input.question as string).trim(),
+      phase: noPhase ? null : (phase as Phase),
+      gap_id: noGap ? null : (gap as string).trim(),
+    },
+  };
+}
+
+/** LLMs sometimes send arrays as JSON strings; accept both. */
+function asArray(v: unknown): unknown[] | null {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    try {
+      const parsed: unknown = JSON.parse(v);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+const idList = (v: unknown): string[] | null => {
+  if (v === undefined || v === null) return [];
+  const list = asArray(v);
+  return list && list.every(isNonEmptyString) ? list.map(s => (s as string).trim()) : null;
+};
+
+export function validateRecordCoverageParams(input: unknown): ValidationResult<RecordCoverageParams> {
+  if (!isRecord(input)) return { ok: false, errors: ["params must be an object"] };
+  const errors: string[] = [];
+  if (!isNonEmptyString(input.exchange_id)) errors.push("exchange_id must be a non-empty string");
+  const list = asArray(input.dimensions);
+  const dimensions: RecordCoverageParams["dimensions"] = [];
+  if (!list || list.length === 0) errors.push("dimensions must be a non-empty array");
+  else {
+    list.forEach((d, i) => {
+      if (!isRecord(d)) return errors.push(`dimensions[${i}] must be an object`);
+      if (!oneOf(COVERAGE_DIMENSIONS, d.dimension)) {
+        errors.push(`dimensions[${i}].dimension must be one of ${COVERAGE_DIMENSIONS.join(", ")}`);
+      }
+      if (!oneOf(COVERAGE_STATUS_PARAMS, d.status)) {
+        errors.push(`dimensions[${i}].status must be one of ${COVERAGE_STATUS_PARAMS.join(", ")}`);
+      }
+      if (d.note !== undefined && d.note !== null && typeof d.note !== "string") errors.push(`dimensions[${i}].note must be a string`);
+      if (oneOf(COVERAGE_DIMENSIONS, d.dimension) && oneOf(COVERAGE_STATUS_PARAMS, d.status)) {
+        const note = typeof d.note === "string" && d.note.trim() ? d.note.trim() : null;
+        dimensions.push({ dimension: d.dimension, status: d.status, note });
+      }
+    });
+  }
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, value: { exchange_id: (input.exchange_id as string).trim(), dimensions } };
+}
+
+export function validateProposeDraftParams(input: unknown): ValidationResult<ProposeDraftParams> {
+  if (!isRecord(input)) return { ok: false, errors: ["params must be an object"] };
+  const errors: string[] = [];
+  const list = asArray(input.steps);
+  const steps: ProposedStep[] = [];
+  if (!list || list.length === 0) errors.push("steps must be a non-empty array");
+  else {
+    list.forEach((st, i) => {
+      if (!isRecord(st)) return errors.push(`steps[${i}] must be an object`);
+      if (!oneOf(STEP_KINDS, st.kind)) errors.push(`steps[${i}].kind must be one of ${STEP_KINDS.join(", ")}`);
+      if (!isNonEmptyString(st.text)) errors.push(`steps[${i}].text must be a non-empty string`);
+      const event_ids = idList(st.event_ids);
+      const exchange_ids = idList(st.exchange_ids);
+      if (!event_ids) errors.push(`steps[${i}].event_ids must be an array of ids`);
+      if (!exchange_ids) errors.push(`steps[${i}].exchange_ids must be an array of ids`);
+      if (oneOf(STEP_KINDS, st.kind) && isNonEmptyString(st.text) && event_ids && exchange_ids) {
+        steps.push({ kind: st.kind, text: st.text.trim(), event_ids, exchange_ids });
+      }
+    });
+  }
+  const reason = input.change_reason;
+  if (reason !== undefined && reason !== null && typeof reason !== "string") errors.push("change_reason must be a string");
+  if (errors.length) return { ok: false, errors };
+  return { ok: true, value: { steps, change_reason: typeof reason === "string" && reason.trim() ? reason.trim() : null } };
+}
+
+export function validateConfirmRevisionParams(input: unknown): ValidationResult<ConfirmRevisionParams> {
+  if (!isRecord(input)) return { ok: false, errors: ["params must be an object"] };
+  const errors: string[] = [];
+  if (!isNonEmptyString(input.revision_id)) errors.push("revision_id must be a non-empty string");
+  if (!oneOf(CONFIRMATION_STATUSES, input.status)) errors.push(`status must be one of ${CONFIRMATION_STATUSES.join(", ")}`);
+  const raw = input.step_ids_reviewed;
+  const ids = raw === undefined || raw === null ? null : idList(raw);
+  if (raw !== undefined && raw !== null && !ids) errors.push("step_ids_reviewed must be an array of step ids");
+  if (errors.length) return { ok: false, errors };
+  return {
+    ok: true,
+    value: {
+      revision_id: (input.revision_id as string).trim(),
+      status: input.status as ConfirmationStatus,
+      step_ids_reviewed: ids && ids.length ? ids : null,
     },
   };
 }
@@ -475,6 +658,9 @@ export function validateExpertExchange(input: unknown): ValidationResult<ExpertE
   if (!isNullableString(input.question_planned)) errors.push("question_planned must be a non-empty string or null");
   if (!isNullableString(input.topic_id)) errors.push("topic_id must be a non-empty string or null");
   if (!isStringList(input.related_event_ids)) errors.push("related_event_ids must be an array of strings");
+  for (const key of ["gap_id", "revision_id"] as const) {
+    if (!isNullableString(input[key])) errors.push(`${key} must be a non-empty string or null`);
+  }
   checkAnswerLines(input.answer_lines, "answer_lines", errors);
   if (!isTimestamp(input.asked_at_utc)) errors.push("asked_at_utc must be an ISO-8601 timestamp");
   for (const key of ["answer_started_at_utc", "answer_ended_at_utc"] as const) {
@@ -543,6 +729,97 @@ export function validateInterviewConfig(input: unknown): ValidationResult<Interv
   }
   if (isFiniteNumber(input.dedup_min_iou) && input.dedup_min_iou > 1) errors.push("dedup_min_iou must be ≤ 1");
   return errors.length ? { ok: false, errors } : { ok: true, value: input as InterviewConfig };
+}
+
+export function validateCoverageItem(input: unknown): ValidationResult<CoverageItem> {
+  if (!isRecord(input)) return { ok: false, errors: ["coverage item must be an object"] };
+  const errors: string[] = [];
+  if (!oneOf(COVERAGE_DIMENSIONS, input.dimension)) errors.push(`dimension must be one of ${COVERAGE_DIMENSIONS.join(", ")}`);
+  if (!isNullableString(input.event_id)) errors.push("event_id must be a non-empty string or null");
+  if (!oneOf(COVERAGE_STATUSES, input.status)) errors.push(`status must be one of ${COVERAGE_STATUSES.join(", ")}`);
+  if (!isStringList(input.supporting_exchange_ids)) errors.push("supporting_exchange_ids must be an array of strings");
+  if (!isNullableString(input.note)) errors.push("note must be a non-empty string or null");
+  if (input.resolution !== null && !oneOf(["answered", "unknown_escalate"] as const, input.resolution)) {
+    errors.push("resolution must be answered, unknown_escalate or null");
+  }
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as CoverageItem };
+}
+
+export function validateOpenQuestion(input: unknown): ValidationResult<OpenQuestion> {
+  if (!isRecord(input)) return { ok: false, errors: ["open question must be an object"] };
+  const errors: string[] = [];
+  for (const key of ["open_question_id", "missing_fact", "why_it_matters"] as const) {
+    if (!isNonEmptyString(input[key])) errors.push(`${key} must be a non-empty string`);
+  }
+  for (const key of ["related_event_ids", "related_exchange_ids"] as const) {
+    if (!isStringList(input[key])) errors.push(`${key} must be an array of strings`);
+  }
+  if (!isNullableString(input.answered_by_exchange_id)) errors.push("answered_by_exchange_id must be a non-empty string or null");
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as OpenQuestion };
+}
+
+export function validateDebriefItem(input: unknown): ValidationResult<DebriefItem> {
+  if (!isRecord(input)) return { ok: false, errors: ["debrief item must be an object"] };
+  const errors: string[] = [];
+  for (const key of ["gap_id", "description"] as const) {
+    if (!isNonEmptyString(input[key])) errors.push(`${key} must be a non-empty string`);
+  }
+  for (const key of ["event_id", "topic_id", "open_question_id"] as const) {
+    if (!isNullableString(input[key])) errors.push(`${key} must be a non-empty string or null`);
+  }
+  if (!oneOf(COVERAGE_DIMENSIONS, input.dimension)) errors.push(`dimension must be one of ${COVERAGE_DIMENSIONS.join(", ")}`);
+  if (!oneOf(["missing", "partial"] as const, input.status_at_start)) errors.push("status_at_start must be missing or partial");
+  if (!oneOf(DEBRIEF_STATES, input.state)) errors.push(`state must be one of ${DEBRIEF_STATES.join(", ")}`);
+  if (!isStringList(input.exchange_ids)) errors.push("exchange_ids must be an array of strings");
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as DebriefItem };
+}
+
+export function validateDraftRevision(input: unknown): ValidationResult<DraftRevision> {
+  if (!isRecord(input)) return { ok: false, errors: ["revision must be an object"] };
+  const errors: string[] = [];
+  for (const key of ["revision_id", "session_id"] as const) {
+    if (!isNonEmptyString(input[key])) errors.push(`${key} must be a non-empty string`);
+  }
+  if (!isTimestamp(input.created_at_utc)) errors.push("created_at_utc must be an ISO-8601 timestamp");
+  for (const key of ["parent_revision_id", "change_reason"] as const) {
+    if (!isNullableString(input[key])) errors.push(`${key} must be a non-empty string or null`);
+  }
+  if (!isStringList(input.change_exchange_ids)) errors.push("change_exchange_ids must be an array of strings");
+  if (!Array.isArray(input.steps)) errors.push("steps must be an array");
+  else {
+    input.steps.forEach((st, i) => {
+      if (!isRecord(st)) return errors.push(`steps[${i}] must be an object`);
+      if (!isNonEmptyString(st.step_id)) errors.push(`steps[${i}].step_id must be a non-empty string`);
+      if (!isNonEmptyString(st.text)) errors.push(`steps[${i}].text must be a non-empty string`);
+      if (!oneOf(STEP_KINDS, st.kind)) errors.push(`steps[${i}].kind must be one of ${STEP_KINDS.join(", ")}`);
+      for (const key of ["supporting_event_ids", "supporting_exchange_ids"] as const) {
+        if (!isStringList(st[key])) errors.push(`steps[${i}].${key} must be an array of strings`);
+      }
+      if (typeof st.supported !== "boolean") errors.push(`steps[${i}].supported must be a boolean`);
+    });
+  }
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as DraftRevision };
+}
+
+export function validateExpertConfirmation(input: unknown): ValidationResult<ExpertConfirmation> {
+  if (!isRecord(input)) return { ok: false, errors: ["confirmation must be an object"] };
+  const errors: string[] = [];
+  for (const key of ["confirmation_id", "revision_id", "expert_response_exchange_id"] as const) {
+    if (!isNonEmptyString(input[key])) errors.push(`${key} must be a non-empty string`);
+  }
+  if (!oneOf(CONFIRMATION_STATUSES, input.status)) errors.push(`status must be one of ${CONFIRMATION_STATUSES.join(", ")}`);
+  if (!isStringList(input.step_ids_reviewed)) errors.push("step_ids_reviewed must be an array of strings");
+  if (!isTimestamp(input.at_utc)) errors.push("at_utc must be an ISO-8601 timestamp");
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as ExpertConfirmation };
+}
+
+function validatePhaseChange(input: unknown): ValidationResult<PhaseChange> {
+  if (!isRecord(input)) return { ok: false, errors: ["phase change must be an object"] };
+  const errors: string[] = [];
+  if (!oneOf(SESSION_PHASES, input.phase)) errors.push(`phase must be one of ${SESSION_PHASES.join(", ")}`);
+  if (!isTimestamp(input.at_utc)) errors.push("at_utc must be an ISO-8601 timestamp");
+  if (!oneOf(PHASE_TRIGGERS, input.trigger)) errors.push(`trigger must be one of ${PHASE_TRIGGERS.join(", ")}`);
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as PhaseChange };
 }
 
 function checkTranscriptEntry(entry: unknown, path: string, errors: string[]): void {
@@ -658,5 +935,82 @@ export function validateSessionSnapshot(input: unknown): ValidationResult<Sessio
     if (v !== null && !(typeof v === "string" && exchangeIds.has(v))) errors.push(`${key} must be a known exchange id or null`);
   }
 
+  checkPhaseRecords(input, eventIds, exchangeIds, exchanges, errors);
+
   return errors.length ? { ok: false, errors } : { ok: true, value: input as SessionSnapshot };
+}
+
+/** Sprint 3 records: phase, coverage, agenda, revisions and confirmations, and their links. */
+function checkPhaseRecords(
+  input: Record<string, unknown>,
+  eventIds: Set<string>,
+  exchangeIds: Set<string>,
+  exchanges: ExpertExchange[],
+  errors: string[]
+): void {
+  if (!oneOf(SESSION_PHASES, input.phase)) errors.push(`phase must be one of ${SESSION_PHASES.join(", ")}`);
+  checkList(input.phase_log, "phase_log", validatePhaseChange, errors);
+  const coverage = checkList(input.coverage, "coverage", validateCoverageItem, errors);
+  const openQuestions = checkList(input.open_questions, "open_questions", validateOpenQuestion, errors);
+  const agenda = checkList(input.debrief_agenda, "debrief_agenda", validateDebriefItem, errors);
+  const revisions = checkList(input.revisions, "revisions", validateDraftRevision, errors);
+  const confirmations = checkList(input.confirmations, "confirmations", validateExpertConfirmation, errors);
+
+  const knownEvent = (id: string | null) => id === null || eventIds.has(id);
+  const unknownExchanges = (ids: string[]) => ids.filter(id => !exchangeIds.has(id));
+
+  const cells = new Set<string>();
+  coverage.forEach((c, i) => {
+    const key = `${c.event_id ?? "session"}|${c.dimension}`;
+    if (cells.has(key)) errors.push(`duplicate coverage item ${key}`);
+    cells.add(key);
+    if (!knownEvent(c.event_id)) errors.push(`coverage[${i}].event_id ${c.event_id} is not a known event`);
+    for (const x of unknownExchanges(c.supporting_exchange_ids)) errors.push(`coverage[${i}] supporting exchange ${x} is unknown`);
+  });
+
+  const oqIds = new Set(openQuestions.map(q => q.open_question_id));
+  openQuestions.forEach((q, i) => {
+    for (const e of q.related_event_ids) if (!eventIds.has(e)) errors.push(`open_questions[${i}] related event ${e} is unknown`);
+    for (const x of unknownExchanges(q.related_exchange_ids)) errors.push(`open_questions[${i}] related exchange ${x} is unknown`);
+    if (q.answered_by_exchange_id !== null && !exchangeIds.has(q.answered_by_exchange_id)) {
+      errors.push(`open_questions[${i}].answered_by_exchange_id is unknown`);
+    }
+  });
+
+  const gapIds = new Set<string>();
+  agenda.forEach((g, i) => {
+    if (gapIds.has(g.gap_id)) errors.push(`duplicate gap_id ${g.gap_id}`);
+    gapIds.add(g.gap_id);
+    if (!knownEvent(g.event_id)) errors.push(`debrief_agenda[${i}].event_id ${g.event_id} is not a known event`);
+    if (g.open_question_id !== null && !oqIds.has(g.open_question_id)) errors.push(`debrief_agenda[${i}].open_question_id is unknown`);
+    for (const x of unknownExchanges(g.exchange_ids)) errors.push(`debrief_agenda[${i}] exchange ${x} is unknown`);
+  });
+
+  const revIds = new Set<string>();
+  revisions.forEach((r, i) => {
+    if (revIds.has(r.revision_id)) errors.push(`duplicate revision_id ${r.revision_id}`);
+    if (r.parent_revision_id !== null && !revIds.has(r.parent_revision_id)) {
+      errors.push(`revisions[${i}].parent_revision_id must name an earlier revision`);
+    }
+    revIds.add(r.revision_id);
+    for (const x of unknownExchanges(r.change_exchange_ids)) errors.push(`revisions[${i}] change exchange ${x} is unknown`);
+    r.steps.forEach((st, j) => {
+      for (const e of st.supporting_event_ids) if (!eventIds.has(e)) errors.push(`revisions[${i}].steps[${j}] event ${e} is unknown`);
+      for (const x of unknownExchanges(st.supporting_exchange_ids)) errors.push(`revisions[${i}].steps[${j}] exchange ${x} is unknown`);
+    });
+  });
+
+  confirmations.forEach((c, i) => {
+    const rev = revisions.find(r => r.revision_id === c.revision_id);
+    if (!rev) errors.push(`confirmations[${i}].revision_id ${c.revision_id} is unknown`);
+    if (!exchangeIds.has(c.expert_response_exchange_id)) errors.push(`confirmations[${i}].expert_response_exchange_id is unknown`);
+    for (const s of c.step_ids_reviewed) {
+      if (rev && !rev.steps.some(st => st.step_id === s)) errors.push(`confirmations[${i}] reviewed step ${s} is not in ${c.revision_id}`);
+    }
+  });
+
+  exchanges.forEach((x, i) => {
+    if (x.gap_id !== null && !gapIds.has(x.gap_id)) errors.push(`exchanges[${i}].gap_id ${x.gap_id} is not on the agenda`);
+    if (x.revision_id !== null && !revIds.has(x.revision_id)) errors.push(`exchanges[${i}].revision_id ${x.revision_id} is unknown`);
+  });
 }

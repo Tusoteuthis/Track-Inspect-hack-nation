@@ -6,7 +6,7 @@ TDD: each logic task writes its vitest file first.
 - [X] T001 Spec artifacts in specs/20261004-003657-ws3-sprint-3-debrief-confirmation/
 
 ## Phase 2: Foundational
-- [ ] T002 Contract types, validators and snapshot cross-checks in web/lib/expert/contracts.ts (+ contracts.snapshot.test.ts)
+- [X] T002 Contract types, validators and snapshot cross-checks in web/lib/expert/contracts.ts (+ contracts.snapshot.test.ts)
 
 ## Phase 3: US1 Debrief
 - [ ] T003 [US1] Test-first: coverage grid, monotonic applyCoverage, selectGaps (excludes covered/asked, deferred → open question, priority) in web/lib/expert/coverage.ts + coverage.test.ts
