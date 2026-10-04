@@ -540,6 +540,18 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "What do you recognise in this region?"
           },
           {
@@ -548,11 +560,57 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "When would you stop and ask someone else about that spike?"
           },
           {
             "role": "user",
             "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
           },
           {
             "role": "user",
@@ -622,6 +680,18 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "What do you recognise in this region?"
           },
           {
@@ -630,11 +700,57 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "When would you stop and ask someone else about that spike?"
           },
           {
             "role": "user",
             "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
           },
           {
             "role": "user",
@@ -650,11 +766,56 @@
           },
           {
             "role": "agent",
-            "text": "What about the region you pointed at on SYS2, what do you see and decide there?"
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-002",
+                "kind": "gap",
+                "phase": "debrief",
+                "gap_id": "gap-oq-001",
+                "question": "What do you see and decide at the region you pointed at on SYS2?"
+              },
+              "result": "ok exchange_id=ex-003. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you see and decide at the region you pointed at on SYS2?"
           },
           {
             "role": "user",
             "text": "That drift is the sensor warming up, I ignore it in the first ten minutes."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-003",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "covered",
+                    "note": "ignores early drift"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "gap",
+                "phase": "debrief",
+                "gap_id": "gap-evt-001-alternatives",
+                "question": "What could look similar to that spike on SYS1, and how would you tell them apart?"
+              },
+              "result": "ok exchange_id=ex-004. Now say the question out loud, word for word."
+            }
           },
           {
             "role": "agent",
@@ -734,6 +895,18 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "What do you recognise in this region?"
           },
           {
@@ -742,11 +915,57 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "When would you stop and ask someone else about that spike?"
           },
           {
             "role": "user",
             "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
           },
           {
             "role": "user",
@@ -762,11 +981,42 @@
           },
           {
             "role": "agent",
-            "text": "What about the region you pointed at on SYS2, what do you see and decide there?"
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-002",
+                "kind": "gap",
+                "phase": "debrief",
+                "gap_id": "gap-oq-001",
+                "question": "What do you see and decide at the region you pointed at on SYS2?"
+              },
+              "result": "ok exchange_id=ex-003. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you see and decide at the region you pointed at on SYS2?"
           },
           {
             "role": "user",
             "text": "That drift is the sensor warming up, I ignore it in the first ten minutes."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-003",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "covered",
+                    "note": "ignores early drift"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+            }
           },
           {
             "role": "user",
@@ -835,6 +1085,18 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "What do you recognise in this region?"
           },
           {
@@ -843,11 +1105,57 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "When would you stop and ask someone else about that spike?"
           },
           {
             "role": "user",
             "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
           },
           {
             "role": "user",
@@ -863,11 +1171,42 @@
           },
           {
             "role": "agent",
-            "text": "What about the region you pointed at on SYS2, what do you see and decide there?"
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-002",
+                "kind": "gap",
+                "phase": "debrief",
+                "gap_id": "gap-oq-001",
+                "question": "What do you see and decide at the region you pointed at on SYS2?"
+              },
+              "result": "ok exchange_id=ex-003. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you see and decide at the region you pointed at on SYS2?"
           },
           {
             "role": "user",
             "text": "That drift is the sensor warming up, I ignore it in the first ten minutes."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-003",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "covered",
+                    "note": "ignores early drift"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+            }
           },
           {
             "role": "user",
@@ -920,6 +1259,18 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "What do you recognise in this region?"
           },
           {
@@ -928,11 +1279,57 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "When would you stop and ask someone else about that spike?"
           },
           {
             "role": "user",
             "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
           },
           {
             "role": "user",
@@ -948,11 +1345,42 @@
           },
           {
             "role": "agent",
-            "text": "What about the region you pointed at on SYS2, what do you see and decide there?"
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-002",
+                "kind": "gap",
+                "phase": "debrief",
+                "gap_id": "gap-oq-001",
+                "question": "What do you see and decide at the region you pointed at on SYS2?"
+              },
+              "result": "ok exchange_id=ex-003. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you see and decide at the region you pointed at on SYS2?"
           },
           {
             "role": "user",
             "text": "That drift is the sensor warming up, I ignore it in the first ten minutes."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-003",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "covered",
+                    "note": "ignores early drift"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+            }
           },
           {
             "role": "user",
@@ -999,6 +1427,18 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "What do you recognise in this region?"
           },
           {
@@ -1007,11 +1447,57 @@
           },
           {
             "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
             "text": "When would you stop and ask someone else about that spike?"
           },
           {
             "role": "user",
             "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
           },
           {
             "role": "user",
@@ -1027,11 +1513,42 @@
           },
           {
             "role": "agent",
-            "text": "What about the region you pointed at on SYS2, what do you see and decide there?"
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-002",
+                "kind": "gap",
+                "phase": "debrief",
+                "gap_id": "gap-oq-001",
+                "question": "What do you see and decide at the region you pointed at on SYS2?"
+              },
+              "result": "ok exchange_id=ex-003. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you see and decide at the region you pointed at on SYS2?"
           },
           {
             "role": "user",
             "text": "That drift is the sensor warming up, I ignore it in the first ten minutes."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-003",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "covered",
+                    "note": "ignores early drift"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-002: decision=covered. Open gaps: gap-evt-001-alternatives, gap-evt-001-reason, gap-session-guardrails, gap-session-alternatives"
+            }
           },
           {
             "role": "user",

@@ -42,7 +42,10 @@ type Expect = {
 };
 type ToolMatch = { name: string; paramsPattern?: string };
 type LegacyCase = { name: string; user: string[] };
-type HistoryCase = { name: string; history: { role: "user" | "agent"; text: string }[]; expect?: Expect };
+/** A replayed client tool call (agent turn with toolCalls + toolResults), so histories match what the app produced. */
+type ToolTurn = { role: "agent"; tool: { name: string; params: Record<string, unknown>; result: string } };
+type TextTurn = { role: "user" | "agent"; text: string };
+type HistoryCase = { name: string; history: (TextTurn | ToolTurn)[]; expect?: Expect };
 type Case = LegacyCase | HistoryCase;
 // { "<agent>": { "envVar": "...", "language": "en", "cases": [...] } }
 type Probes = Record<string, { envVar: string; language?: string; cases: Case[] }>;
@@ -125,7 +128,17 @@ if (summary.some(s => s.passed !== null)) {
 function buildHistory(c: Case, first: string): Turn[] {
   const history: Turn[] = [{ role: "agent", message: first, timeInCallSecs: 0 }];
   if ("history" in c) {
-    c.history.forEach((t, i) => history.push({ role: t.role, message: t.text, timeInCallSecs: (i + 1) * 5 }));
+    c.history.forEach((t, i) => {
+      const timeInCallSecs = (i + 1) * 5;
+      if (!("tool" in t)) return history.push({ role: t.role, message: t.text, timeInCallSecs });
+      const requestId = `${t.tool.name}_${i}`;
+      history.push({
+        role: "agent",
+        timeInCallSecs,
+        toolCalls: [{ type: "client", requestId, toolName: t.tool.name, paramsAsJson: JSON.stringify(t.tool.params), toolHasBeenCalled: true }],
+        toolResults: [{ type: "client", requestId, toolName: t.tool.name, resultValue: t.tool.result, isError: false, toolHasBeenCalled: true }],
+      });
+    });
   } else {
     c.user.forEach((u, i) => {
       if (i > 0) history.push({ role: "agent", message: "Understood.", timeInCallSecs: i * 10 - 5 });
@@ -136,7 +149,7 @@ function buildHistory(c: Case, first: string): Turn[] {
 }
 
 async function simulate(agentId: string, history: Turn[], language: string, expect?: Expect): Promise<RunResult> {
-  const lastUser = [...history].reverse().find(t => t.role === "user")?.message ?? "";
+  const lastUser = [...history].reverse().find(t => t.role === "user" && t.message)?.message ?? "";
   let turns: OutTurn[];
   try {
     const res = await client.conversationalAi.agents.simulateConversation(agentId, {

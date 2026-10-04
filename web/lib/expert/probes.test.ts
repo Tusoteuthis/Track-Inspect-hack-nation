@@ -5,9 +5,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { PointingEvent } from "./contracts";
 import { controlNudge, formatPointingEventUpdate } from "./context-update";
-import { probeSystemLines } from "./probe-lines";
+import { PROBE_TOOL_PARAMS, probeSystemLines } from "./probe-lines";
 
-type Probes = { expert: { cases: { name: string; history?: { role: string; text: string }[] }[] } };
+type ToolTurn = { name: string; params: unknown; result: string };
+type Probes = { expert: { cases: { name: string; history?: { role: string; text?: string; tool?: ToolTurn }[] }[] } };
 
 const root = join(__dirname, "..", "..", "..");
 const dir = join(__dirname, "..", "..", "fixtures", "pointing-events");
@@ -28,12 +29,26 @@ for (const text of [phase.debrief, phase.controlDebrief, phase.teachBack, phase.
 describe.each(["probes.json", "probes.example.json"])("%s", file => {
   const probes: Probes = JSON.parse(readFileSync(join(root, "agents", file), "utf8"));
   const lines = probes.expert.cases.flatMap(c =>
-    (c.history ?? []).filter(t => /^\[(POINTING_EVENT|CONTROL|PHASE|TEACH_BACK)/.test(t.text)).map(t => [c.name, t.text] as const)
+    (c.history ?? [])
+      .filter((t): t is { role: string; text: string } => typeof t.text === "string" && /^\[(POINTING_EVENT|CONTROL|PHASE|TEACH_BACK)/.test(t.text))
+      .map(t => [c.name, t.text] as const)
   );
 
   it("has system lines to check", () => expect(lines.length).toBeGreaterThan(5));
 
   it.each(lines)("%s: system line matches the app's wording", (_name, text) => {
     expect(sendable.has(text)).toBe(true);
+  });
+});
+
+describe.each(["probes.json", "probes.example.json"])("%s replayed tool calls", file => {
+  const probes: Probes = JSON.parse(readFileSync(join(root, "agents", file), "utf8"));
+  const tools = probes.expert.cases.flatMap(c => (c.history ?? []).flatMap(t => (t.tool ? [[c.name, t.tool] as const] : [])));
+  const known = Object.entries(PROBE_TOOL_PARAMS).map(([key, params]) => ({ params, result: phase.results[key] }));
+
+  it("has tool turns to check", () => expect(tools.length).toBeGreaterThan(10));
+
+  it.each(tools)("%s: tool params and result are what the app produces", (_name, tool) => {
+    expect(known).toContainEqual({ params: tool.params, result: tool.result });
   });
 });
