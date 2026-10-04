@@ -15,12 +15,9 @@ export const ErrorCodeSchema = z.enum([
   "commit_blocked",
   "invalid_transition",
   "internal",
-  // S3: newcomer session and commit policy codes (canCommit codes are returned as-is).
+  // S3 (reserved by D12). canCommit codes travel in `details.policy_code` (D10).
   "no_confirmed_knowledge",
   "case_not_permitted",
-  "knowledge_changed",
-  "blocked_by_outcome",
-  "already_committed",
 ]);
 export type ErrorCode = z.output<typeof ErrorCodeSchema>;
 
@@ -43,9 +40,6 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, ErrorStatus>> = {
   internal: 500,
   no_confirmed_knowledge: 409,
   case_not_permitted: 409,
-  knowledge_changed: 409,
-  blocked_by_outcome: 409,
-  already_committed: 409,
 };
 
 /** `{error: {code, message, details?}}` body returned by every failing route. */

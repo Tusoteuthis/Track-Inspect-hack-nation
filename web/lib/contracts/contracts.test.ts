@@ -299,9 +299,6 @@ describe("errors", () => {
       "internal",
       "no_confirmed_knowledge",
       "case_not_permitted",
-      "knowledge_changed",
-      "blocked_by_outcome",
-      "already_committed",
     ]);
     expect(ERROR_STATUS).toMatchObject({
       validation_failed: 400,

@@ -1,13 +1,13 @@
 # WS6 API v0 — pending agreement
 
-**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented), S2 (knowledge revisions & confirmation — implemented)
+**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented), S2 (knowledge revisions & confirmation — implemented), S3 (newcomer session & pre-save enforcement — implemented)
 **Code:** contracts `web/lib/contracts/` (zod; `SCHEMA_VERSION = "ws6.v0"`), server lib `web/lib/backend/`, routes `web/app/api/`, fixtures `web/fixtures/ws6/`.
 **Record fields:** [`specs/001-ws6-foundation-contracts/data-model.md`](../specs/001-ws6-foundation-contracts/data-model.md). This doc names schemas; it does not repeat every field.
 **Dev server:** `npm run dev -- -p 3006` (add `-H 0.0.0.0` for LAN/iPhone).
 
 ## 1. Status and feedback
 
-- **v0, pending agreement.** Implemented: `GET /api/health` (S0), every route marked **S1** in §5.2–5.5 and §5.10 (notes §5.11), and every route marked **S2** in §5.6–5.7 (notes §5.12). Every other route is a promise with its owning sprint (S1–S4).
+- **v0, pending agreement.** Implemented: `GET /api/health` (S0), every route marked **S1** in §5.2–5.5 and §5.10 (notes §5.11), every route marked **S2** in §5.6–5.7 (notes §5.12), and every route marked **S3** in §5.8 (notes §5.13). Every other route is a promise with its owning sprint (S1–S4).
 - Route paths below are the ones already promised in `notes/ws6-sprints/sprint-1..4-*.md`. Where this doc deviates from a sprint prompt, the deviation is listed in §9.
 - **How to object:** reply to the WS6 owner or add a note to `notes/ws6-sprints/handoff-sprint-0.md` → "Requests from partners". Objections are collected into the **next sprint's handoff** and the doc is updated there. Please answer the numbered questions in §8 by number (e.g. "WS3-Q2: …").
 - Partner names (WS3 `ws3.v0`, WS5 `ws5.v0`, WS7 `ws7.ui.v0`) are cited from their notes. WS6 does not define their APIs.
@@ -92,9 +92,9 @@ Reserved, added to `ErrorCode` when their sprint lands: `no_confirmed_knowledge`
 | `draft.updated` | expert: `revision_ids`; newcomer: `draft_rev` | synthesis draft (S2) / learner draft PUT (S3) | S2/S3 |
 | `gaps.updated` | — (re-fetch gaps) | synthesis | **S2** |
 | `confirmation.stored` | `confirmation_ids`, `revision_ids` | confirmation POST | **S2** |
-| `evaluation.updated` | `evaluation_id` | pending → done \| failed \| stale | S3 |
-| `commit.stored` | `commit_id`, `evaluation_id` | commit POST | S3 |
-| `assessment.stored` | — (re-fetch) | assessment module | S3 |
+| `evaluation.updated` | `evaluation_id`, `draft_rev` | created (pending) and every status change: done \| failed \| stale | **S3** |
+| `commit.stored` | `commit_id`, `evaluation_id`, `draft_rev` | commit POST | **S3** |
+| `assessment.stored` | — (re-fetch) | assessment (on commit or newcomer `end`) | **S3** |
 | `record.deleted` | one of `asset_id`/`event_id`/`exchange_id` | deletion cascade | S4 |
 | `entry.revoked` | `entry_id`, `revision_id` | revoke route; also emitted on newcomer sessions that pinned it | S4 |
 
@@ -122,7 +122,8 @@ knowledge/
   workflow.md                    regenerated from WS5 synthesis (S2)
   confirmations/<confirmation_id>.json   Confirmation (immutable)
   learner/<session_id>/
-    draft.json                   LearnerDraft (mutable, draft_rev)
+    draft.json                   LearnerDraft (current; mutable, draft_rev)
+    drafts/<draft_rev>.json      LearnerDraft history (immutable, S3)
     evaluations/<evaluation_id>.json     Evaluation
     commit.json                  Commit (immutable)
   assessments/<session_id>.md (+ .json)  Assessment
@@ -130,6 +131,7 @@ web/.runtime/
   diag/<yyyy-mm-dd>.ndjson       IDs + timings only
   jobs/<job_id>.json             job state (S2)
   evaluator/                     WS4 evaluator-only material — NEVER served
+cases/learner/<case_id>/         CASES_DIR (WS4): case.json + trace image; fallback web/fixtures/ws6/cases (S3)
 ```
 
 **Git:** ignored = `knowledge/sessions/`, `knowledge/images/`, `knowledge/assessments/`, `web/.runtime/`. Committable (human decides) = `knowledge/workflow.md`, `knowledge/entries/`. Currently **not** ignored and probably should be (proposal for the S0 merge): `knowledge/learner/`, `knowledge/confirmations/`.
@@ -284,13 +286,33 @@ Spec: `specs/004-ws6-knowledge-confirmation/` (decisions D16–D28 in §9). Sche
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| GET | `/api/cases/:case_id` | — | `LearnerCase` (learner-visible view only; never evaluator fields) | safe | — | — | S3 |
-| POST | `/api/sessions` (role newcomer) | see 5.2 | `Session` with `case_id`, `pinned_knowledge` | key | `no_confirmed_knowledge`, `case_not_permitted` | — | S3 |
-| PUT | `/api/sessions/:sid/draft` | `{ base_draft_rev, decision, reason, visual_context }` (`base_draft_rev: 0` for the first) | `200`/`201 LearnerDraft` (server sets `draft_rev = base + 1`) | rev (retry with same base + same body → `200`) | `stale_revision`, `invalid_transition` (committed/ended), `off_record` | `draft.updated`, `evaluation.updated` (earlier evals → `stale`) | S3 |
-| POST | `/api/sessions/:sid/evaluations` | `{ draft_rev }` | `202 Evaluation` (`status: "pending"`, `knowledge_revision_ids` = pinned); same `draft_rev` while one exists → `200` existing | one per (session, draft_rev) | `stale_revision` | `evaluation.updated` | S3 |
-| GET | `/api/sessions/:sid/evaluations/:evaluation_id` | — | `Evaluation` | safe | — | — | S3 |
-| POST | `/api/sessions/:sid/commit` | `{ draft_rev, evaluation_id, escalated?: boolean, idempotency_key }` | `201 Commit` (replay with same key → `200`) | key, under session lock | `evaluation_required`, `evaluation_pending`, `evaluation_stale`, `commit_blocked`, `invalid_transition` | `commit.stored`, `assessment.stored` | S3 |
-| GET | `/api/sessions/:sid/assessment` | — | `Assessment` | safe | — | — | S3 |
+| GET | `/api/cases/:case_id` | — | `LearnerCase` (learner-visible view only; never evaluator fields) | safe | — | — | **S3** |
+| GET | `/api/cases/:case_id/trace` | — | trace image bytes (`image/png` \| `image/jpeg`) | safe | — | — | **S3** |
+| POST | `/api/sessions` (role newcomer) | `{ role: "newcomer", case_id?, source? }`, `?allow_fixture_knowledge=1` | `201 Session` with `case_id`, `trace_ref`, `pinned_knowledge`, `knowledge_fixture_allowed` | key | `no_confirmed_knowledge`, `case_not_permitted` | — | **S3** |
+| POST | `/api/sessions/:sid/pin` | — | `200 Session` re-pinned to the knowledge eligible now | idempotent (same pins → unchanged) | `no_confirmed_knowledge`, `invalid_transition` | `session.updated`, `evaluation.updated` (→ stale) | **S3** |
+| GET | `/api/sessions/:sid/draft` | — | newcomer: `LearnerDraft` (`404` before the first PUT); expert: S2 draft view | safe | — | — | **S3** |
+| PUT | `/api/sessions/:sid/draft` | `{ base_draft_rev, decision, reason, visual_context? }` (`base_draft_rev: 0` for the first) | `201` first / `200` later `LearnerDraft` (server sets `draft_rev = base + 1`) | retry with same base + same body → `200` current | `stale_revision`, `invalid_transition` (committed/ended/expert), `off_record`, `asset_not_available` | `draft.updated`, `evaluation.updated` (earlier evals → `stale`) | **S3** |
+| POST | `/api/sessions/:sid/evaluations` | `{ draft_rev }` | `202 Evaluation` (`status: "pending"`, `knowledge_revision_ids` = pinned); a pending/done one for that `draft_rev` → `200` existing | one live per (session, draft_rev) | `stale_revision`, `evaluation_stale` (`policy_code: knowledge_changed`), `invalid_transition` | `evaluation.updated` | **S3** |
+| GET | `/api/sessions/:sid/evaluations` | — | `{ evaluations: Evaluation[] }` oldest first | safe | — | — | **S3** |
+| GET | `/api/sessions/:sid/evaluations/:evaluation_id` | — | `Evaluation` | safe | — | — | **S3** |
+| POST | `/api/sessions/:sid/commit` | `{ draft_rev, evaluation_id, escalated?: boolean, idempotency_key }` | `201 Commit` (replay with same key → `200`) | key, under session lock | `evaluation_required`, `evaluation_pending`, `evaluation_stale`, `commit_blocked` (all with `details.policy_code`), `invalid_transition` | `commit.stored`, `assessment.stored` | **S3** |
+| GET | `/api/sessions/:sid/commit` | — | `Commit` (`404` before commit) | safe | — | — | **S3** |
+| GET | `/api/sessions/:sid/assessment` | — | `Assessment` (`404` before commit/end) | safe | — | — | **S3** |
+
+### 5.13 S3 implementation notes
+
+Spec/plan: `specs/005-ws6-newcomer-presave/plan.md` (decisions D29–D41 in §9). Code: `web/lib/backend/{cases,newcomer,learner,learner-store,commit-policy,assessment,tutor-stub,ws5-content}.ts`, `outcome-policy.json`.
+
+- **Cases** (`CASES_DIR`; default `<repo>/cases/learner` if it exists, else the labelled fixtures `web/fixtures/ws6/cases`: `fx-n01`, `fx-n02` unseen, `fx-e01` shown to the expert). `case.json` = strict `{ case_id, title, trace_asset, shown_to_expert, source, visible_context?, decision_options? }`; any other key (incl. WS5's forbidden evaluator names) → the case is unusable (`404 reason: invalid | evaluator_material`). `LearnerCase` = `{ case_id, title, shown_to_expert, source, visible_context, decision_options, trace: { url, mime, width_px, height_px } }`.
+- **Evaluator separation:** `imagesRoot/assetDir/casesRoot/caseDir` refuse any directory inside (or containing) `EVALUATOR_DIR`; a test greps every route handler and `lib/backend` module for the evaluator dir (only `config.ts`, `paths.ts`, `assets.ts` guards may name it). The tutor receives the learner case view only (WS5 also rejects evaluator keys).
+- **Pinning:** WS5 `selectEligible` over every entry's current revision, with WS6 status, confirmation and revocation injected; `allow_fixture` = `?allow_fixture_knowledge=1`. Stub-synthesis revisions are never WS5 content and count as fixture material (pinned only with the flag, confirmed and current). Revisions in their session's `flagged_for_reconfirmation` are excluded. Empty → `409 no_confirmed_knowledge` with `details.excluded[{ entry_id, revision_id, reason }]` (reason codes only). An `Idempotency-Key` replay returns the stored session without re-pinning.
+- **Pinned knowledge is current** while every pinned revision is still its entry's `current_revision_id` and its status is `confirmed`. When it is not, evaluations are refused (`evaluation_stale`, `policy_code: knowledge_changed`) and commits too, until `POST …/pin` re-pins (all earlier evaluations become `stale`, `stale_reason: knowledge_changed`).
+- **Learner draft:** generic task, `decision`/`reason` are opaque strings (≤4000/≤8000 chars); `visual_context[].asset_id` must be an asset stored for this newcomer session (upload with the S1 asset PUT). Every edit marks pending/done evaluations `stale` (`stale_reason: draft_changed`). Refused when the session is committed, `ended`/`aborted` (`invalid_transition`) or off the record (`off_record`).
+- **Evaluation:** runs in-process after `202`. On finish (under the session lock) it is stored as `done` only if the draft rev and the pinned knowledge are unchanged; otherwise `stale` with the result kept for audit. A module error → `failed` (`error_code: module_error`, no content; never turned into `uncertain`); a pending evaluation found after a restart → `failed` (`interrupted`) and a new one starts. Citations or an escalation naming non-pinned knowledge fail the evaluation. New optional fields: `completed_at_utc`, `stale_reason`, `error_code`, `uncertainty`, `evidence`, `guard_notes` (WS5-Q4 answered).
+- **Tutor module:** stub by default (`ws6-stub-tutor@0.1.0`, `source: "stub"`; decision `FIXTURE_WRONG` → `intervene`, `FIXTURE_UNCERTAIN` → `uncertain`, `FIXTURE_FAIL` → module error, else `ok`; cites the first pinned revision's exchanges with the first verbatim answer line). `WS5_MODULES=real` → WS5 `createWs6TutorEvaluator` (`ws5-tutor@0.3.0`, Anthropic judge, needs `ANTHROPIC_API_KEY`). `GET /api/health.modules` = `{ synthesis, tutor, assessment }`.
+- **Commit:** `canCommit` (pure, `commit-policy.ts`) returns `evaluation_required | evaluation_pending | evaluation_stale | knowledge_changed | blocked_by_outcome | already_committed`; they travel as `error.details.policy_code` under the S0 codes (D10): `knowledge_changed` → `evaluation_stale`, `blocked_by_outcome`/`already_committed` → `commit_blocked`. Details also carry `evaluation_id`, `outcome`, `consequence`, `requires: "escalated"`, rev numbers. `allow_with_escalation` needs `escalated: true` in the request. `commit.json` = `Commit` + `outcome`, `escalated`, `knowledge_revision_ids`, `idempotency_key_sha256` (the raw key is never stored).
+- **Assessment:** stub `ws6-stub-assessment@0.1.0` written once, on commit or newcomer `end`: `initial_decision`, `assistance` (`"<outcome> on draft_rev <n> (<evaluation_id>)"` for intervene/uncertain), `final_outcome`, `evidence_used` (cited refs), `practice_next: null`, `content: { note, interventions, evaluations, committed, commit_id, escalated, timeline }` with WS5 `buildTimeline` (`proposed → evaluated → guidance_delivered → revised → … → committed`, `intervention: caught_before_save`). `knowledge/assessments/<sid>.json` + `.md`.
+- **Voice:** the tutor voice client reads `feedback_text` from `GET …/evaluations/:id` after `evaluation.updated`; tokens via `GET /api/conversation-token?flow=tutor&session_id=<sid>` (the newcomer session must be `active`).
 
 ### 5.9 Correction, revocation & deletion
 
@@ -313,18 +335,23 @@ Cascade order (pure function over stored links): event → assets; exchange → 
 
 ## 6. Commit rule (enforced S3; policy table pending WS5)
 
-`POST /api/sessions/:sid/commit` succeeds only if, re-read from disk under the session lock:
+`POST /api/sessions/:sid/commit` re-reads everything from disk under the session lock, then:
 
-| Check (in order) | Failure |
+| Check (in order) | Failure (`error.code` / `details.policy_code`) |
 |---|---|
-| Session is newcomer, not ended, not already committed with a different key | `invalid_transition` / `commit_blocked` (`already_committed`) |
-| Same `idempotency_key` as an existing commit | `200` + that commit (double submit is idempotent; concurrent submits → exactly one commit) |
-| An evaluation exists for the current `draft_rev` | `evaluation_required` |
+| Session is a newcomer session | `invalid_transition` |
+| A commit exists with the same `idempotency_key` | `200` + that commit (double submit is idempotent; concurrent submits → exactly one commit) |
+| A commit exists with another key | `commit_blocked` / `already_committed` |
+| Session not `ended`/`aborted` | `invalid_transition` |
+| A draft exists and the named evaluation exists for this session | `evaluation_required` / `evaluation_required` (`reason: no_draft \| no_evaluation`) |
+| The evaluation is not `failed` | `evaluation_required` (`reason: evaluation_failed`) |
 | It is not `pending` | `evaluation_pending` |
-| It is bound to the current `draft_rev` **and** the session's pinned knowledge revisions are still current/non-revoked, `status: "done"` | `evaluation_stale` (`reason: draft_changed \| knowledge_changed`) |
-| Its `outcome` is permitted by the policy | `commit_blocked` (`blocked_by_outcome`) |
+| It was not made stale by changed knowledge | `evaluation_stale` / `knowledge_changed` |
+| It is `done` for the current `draft_rev`, and the request names that `draft_rev` | `evaluation_stale` / `evaluation_stale` |
+| The pinned revisions are still current + confirmed, and equal the evaluation's `knowledge_revision_ids` | `evaluation_stale` / `knowledge_changed` |
+| The policy for its `outcome` is `allow`, or `allow_with_escalation` with `escalated: true` (unknown outcomes block) | `commit_blocked` / `blocked_by_outcome` |
 
-Policy (`web/lib/backend/outcome-policy.json`, **default pending WS5 agreement**): `ok → allow`, `intervene → block`, `uncertain → allow_with_escalation` (commit records `escalated: true`). After `intervene` the learner must edit the draft (new `draft_rev`) and get a new evaluation. `failed` evaluations never permit a commit. WS6 enforces the policy; WS5 defines outcomes.
+Policy (`web/lib/backend/outcome-policy.json`, **default pending WS5 agreement**): `ok → allow`, `intervene → block`, `uncertain → allow_with_escalation` (commit records `escalated: true`). After `intervene` the learner must edit the draft (new `draft_rev`) and get a new evaluation. WS6 enforces the policy; WS5 defines outcomes.
 
 ## 7. Asset mapping
 
@@ -464,3 +491,16 @@ Full rationale: [`specs/001-ws6-foundation-contracts/research.md`](../specs/001-
 | D26 (S2) | Work Map default = confirmed ∧ current ∧ WS5 `isTeachable` (fixtures allowed, labelled); broken links never exclude | prompt + WS5 eligibility; Work Map is a view, not teaching |
 | D27 (S2) | `confirmation.stored` instead of the prompt's `knowledge.confirmed` | D9 naming |
 | D28 (S2) | WS5 Sprint 2 merged into the S2 branch (human decision); lanes implemented sequentially | WS5 was not on `voice`; lanes share the store and lock order |
+| D29 (S3) | `CASES_DIR` → `<repo>/cases/learner` if present → labelled fixture cases; strict `case.json`, trace served only by `/api/cases/:id/trace` | WS4 cases not merged yet; fixtures must say `fixture` |
+| D30 (S3) | Served-path resolvers refuse `EVALUATOR_DIR` (inside or containing); grep test over routes + backend modules | prompt: no route/module may reach the answer key |
+| D31 (S3) | Pinning = WS5 `selectEligible` on current revisions with WS6 status/confirmation/revocation injected; stub revisions = fixture material; flagged revisions excluded | WS5 owns eligibility; stub output is not expert knowledge |
+| D32 (S3) | `POST /api/sessions/:sid/pin` re-pins; earlier evaluations → `stale` | otherwise a session whose knowledge changed is stuck forever |
+| D33 (S3) | Draft history `drafts/<rev>.json`; `visual_context` assets must be stored for this session | assessment needs the initial draft; no dangling references |
+| D34 (S3) | One live evaluation per `(session, draft_rev)`; failed/stale may be retried; restart → `interrupted` | prompt + no stuck pending |
+| D35 (S3) | SSE keeps D9: `evaluation.updated` / `commit.stored` (prompt: `evaluation.done/stale`, `draft.committed`) | published v0 names; clients re-fetch status |
+| D36 (S3) | `canCommit` codes → `details.policy_code` under the S0 codes (D10) | published v0 error union stays stable |
+| D37 (S3) | `allow_with_escalation` needs `escalated: true`; unknown outcomes block | explicit learner choice; fail closed |
+| D38 (S3) | `Commit` + `outcome`, `escalated`, `knowledge_revision_ids`, `idempotency_key_sha256` | audit without storing the raw key |
+| D39 (S3) | Stub assessment from facts + WS5 `buildTimeline`; `practice_next: null` (schema now nullable); written once on commit or `end` | WS5 has no assessment module yet |
+| D40 (S3) | Tutor: stub by default, `WS5_MODULES=real` → WS5 evaluator (merged from `worktree-ws05-sprint-3`, human decision) | deterministic tests/e2e without an API key |
+| D41 (S3) | Newcomer drafts/evaluations allowed in `created`/`active`; `ended`/`aborted`/committed refuse; off-record refuses drafts | prompt + off-record = not stored |

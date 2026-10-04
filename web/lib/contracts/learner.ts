@@ -88,6 +88,8 @@ export const EvaluationSchema = z.object({
   created_at_utc: UtcSchema,
   updated_at_utc: UtcSchema,
   produced_by: ProducedBySchema,
+  /** S3: when the tutor finished (`updated_at_utc` moves again when it later becomes stale). */
+  completed_at_utc: UtcSchema.nullable().optional(),
   /** S3: why it became stale. */
   stale_reason: z.enum(["draft_changed", "knowledge_changed"]).nullable().optional(),
   /** S3: set when `failed` (`module_error`, `interrupted`); never module text. */

@@ -80,7 +80,7 @@ describe("newcomer routes", () => {
     expect(blocked.status).toBe(409);
     const blockedBody = await blocked.json();
     expect(parseApiErrorBody(blockedBody).ok).toBe(true);
-    expect(blockedBody.error).toMatchObject({ code: "blocked_by_outcome", details: { policy_code: "blocked_by_outcome", outcome: "intervene" } });
+    expect(blockedBody.error).toMatchObject({ code: "commit_blocked", details: { policy_code: "blocked_by_outcome", outcome: "intervene" } });
 
     const missingEval = await commitRoute(json("POST", `/api/sessions/${sid}/commit`, { draft_rev: 1, idempotency_key: "k0" }), sidCtx(sid));
     expect((await missingEval.json()).error.code).toBe("evaluation_required");

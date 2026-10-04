@@ -55,7 +55,8 @@ export async function storeAssessmentLocked(sid: string, now: Date): Promise<Ass
   const timeline = drafts.length
     ? buildTimeline(
         drafts.map(d => ({ draft_rev: d.draft_rev, updated_at_utc: d.updated_at_utc })),
-        evaluations,
+        // The timeline needs when guidance was given, not when a later edit made it stale.
+        evaluations.map(e => ({ ...e, updated_at_utc: e.completed_at_utc ?? e.updated_at_utc })),
         commit ? [{ commit_id: commit.commit_id, draft_rev: commit.draft_rev, evaluation_id: commit.evaluation_id, at_utc: commit.at_utc }] : [],
       )
     : [];

@@ -30,11 +30,14 @@ evaluator), `voice` (WS3 S1, WS7 S1/S2).
   `(session, draft_rev)`: a repeat returns it (`200`); a `failed` or `stale` one may be retried (`202` new).
   Completion re-checks draft rev + pinned currency under the session lock; changed → stored as `stale`
   with `stale_reason`, never `done`. Module throw → `failed` (`error_code: module_error`), no content.
-- **D35 SSE types.** `evaluation.pending|done|failed|stale`, `draft.updated`, `draft.committed`,
-  `assessment.stored`, `session.updated` (pinning). Replaces the planned single `evaluation.updated`.
-- **D36 Commit guard.** `canCommit` is pure (`commit-policy.ts`); error codes are the policy codes themselves
-  (`evaluation_required|evaluation_pending|evaluation_stale|knowledge_changed|blocked_by_outcome|
-  already_committed`), all `409`, `details.policy_code` repeated for WS7. `commit_blocked` stays reserved.
+- **D35 SSE types (keeps S0 D9).** `evaluation.updated {evaluation_id, draft_rev}` on every status change
+  (pending, done, failed, stale), `draft.updated {draft_rev}`, `commit.stored {commit_id, evaluation_id,
+  draft_rev}`, `assessment.stored`, `session.updated` (re-pin). The S3 prompt's `evaluation.done|stale` /
+  `draft.committed` are not used; clients re-fetch the evaluation for its status.
+- **D36 Commit guard (keeps S0 D10).** `canCommit` is pure (`commit-policy.ts`) and returns the prompt's six
+  codes. They travel as `error.details.policy_code` under the stable S0 error codes: `evaluation_required`,
+  `evaluation_pending`, `evaluation_stale` (policy `evaluation_stale` or `knowledge_changed`), `commit_blocked`
+  (policy `blocked_by_outcome` or `already_committed`). All `409`.
 - **D37 Escalation.** `allow_with_escalation` requires `escalated: true` in the commit request (the learner
   explicitly saves-and-escalates); otherwise `blocked_by_outcome` with `details.requires = "escalated"`.
   Unknown outcomes → `block` (fail closed). `failed` evaluations → `evaluation_required`.

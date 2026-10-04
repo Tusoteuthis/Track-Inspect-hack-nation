@@ -26,7 +26,7 @@ import { loadCaseFile } from "./cases";
 import { canCommit, DEFAULT_OUTCOME_POLICY, type CommitPolicyCode } from "./commit-policy";
 import { diag } from "./diag";
 import { listConfirmations } from "./confirmations";
-import { ApiError } from "./errors";
+import { ApiError, type ErrorCode } from "./errors";
 import { assertSafeId, newId } from "./ids";
 import { listEntries, readRevision, readStatusLog, revisionStatus } from "./knowledge";
 import { tutorProvider, type TutorHost, type TutorProvider, type TutorResult } from "./modules";
@@ -82,7 +82,7 @@ export async function markEvaluationsStale(sid: string, reason: StaleReason, now
       stale_reason: reason,
       updated_at_utc: now.toISOString(),
     } satisfies Evaluation);
-    await appendBus(sid, "evaluation.stale", { evaluation_id: e.evaluation_id, draft_rev: String(e.draft_rev) }, now);
+    await appendBus(sid, "evaluation.updated", { evaluation_id: e.evaluation_id, draft_rev: String(e.draft_rev) }, now);
   }
 }
 
@@ -170,11 +170,11 @@ export async function requestEvaluation(sid: string, req: EvaluationRequest, now
       // Pending on disk but not running in this process: the server restarted mid-evaluation.
       const failed: Evaluation = { ...e, status: "failed", error_code: "interrupted", updated_at_utc: now.toISOString() };
       await writeJsonAtomic(evaluationFile(sid, e.evaluation_id), failed);
-      await appendBus(sid, "evaluation.failed", { evaluation_id: e.evaluation_id }, now);
+      await appendBus(sid, "evaluation.updated", { evaluation_id: e.evaluation_id, draft_rev: String(e.draft_rev) }, now);
     }
     const pins = pinsOf(session);
     if (!(await pinnedKnowledgeCurrent(pins))) {
-      throw new ApiError("knowledge_changed", "The pinned knowledge changed; re-pin the session (POST …/pin) first.", {
+      throw new ApiError("evaluation_stale", "The pinned knowledge changed; re-pin the session (POST …/pin) first.", {
         policy_code: "knowledge_changed",
       });
     }
@@ -193,7 +193,7 @@ export async function requestEvaluation(sid: string, req: EvaluationRequest, now
       produced_by: { module: provider.info.id, version: provider.info.version, source: provider.info.source },
     };
     await putImmutable(evaluationFile(sid, evaluation.evaluation_id), evaluation, EvaluationSchema);
-    await appendBus(sid, "evaluation.pending", { evaluation_id: evaluation.evaluation_id, draft_rev: String(draft.draft_rev) }, now);
+    await appendBus(sid, "evaluation.updated", { evaluation_id: evaluation.evaluation_id, draft_rev: String(draft.draft_rev) }, now);
     return { start: evaluation };
   });
   if (!("start" in started)) return started;
@@ -312,10 +312,11 @@ async function finishEvaluation(sid: string, eid: string, fields: Partial<Evalua
       status: staleReason ? "stale" : fields ? "done" : "failed",
       stale_reason: staleReason,
       error_code: errorCode,
+      completed_at_utc: now.toISOString(),
       updated_at_utc: now.toISOString(),
     };
     await writeJsonAtomic(evaluationFile(sid, eid), EvaluationSchema.parse(next));
-    if (e.status === "pending") await appendBus(sid, `evaluation.${next.status}`, { evaluation_id: eid, draft_rev: String(e.draft_rev) }, now);
+    if (e.status === "pending") await appendBus(sid, "evaluation.updated", { evaluation_id: eid, draft_rev: String(e.draft_rev) }, now);
     return next;
   });
 }
@@ -346,6 +347,16 @@ export async function repinSession(sid: string, now: Date = new Date()): Promise
 }
 
 // --- commit -----------------------------------------------------------------------
+
+/** canCommit code → the S0 error code it travels under (D10); the policy code stays in `details`. */
+const POLICY_ERROR: Record<CommitPolicyCode, ErrorCode> = {
+  evaluation_required: "evaluation_required",
+  evaluation_pending: "evaluation_pending",
+  evaluation_stale: "evaluation_stale",
+  knowledge_changed: "evaluation_stale",
+  blocked_by_outcome: "commit_blocked",
+  already_committed: "commit_blocked",
+};
 
 const POLICY_MESSAGES: Record<CommitPolicyCode, string> = {
   evaluation_required: "Get a tutor evaluation of the current draft before saving.",
@@ -383,7 +394,7 @@ export async function commitDraft(sid: string, req: CommitRequest, now: Date = n
       DEFAULT_OUTCOME_POLICY,
     );
     if (!decision.ok) {
-      throw new ApiError(decision.code, POLICY_MESSAGES[decision.code], { policy_code: decision.code, ...(decision.details ?? {}) });
+      throw new ApiError(POLICY_ERROR[decision.code], POLICY_MESSAGES[decision.code], { policy_code: decision.code, ...(decision.details ?? {}) });
     }
     const commit: Commit = {
       commit_id: newId("cmt", now),
@@ -397,7 +408,7 @@ export async function commitDraft(sid: string, req: CommitRequest, now: Date = n
       idempotency_key_sha256: hash,
     };
     await putImmutable(commitFile(sid), commit, CommitSchema);
-    await appendBus(sid, "draft.committed", { commit_id: commit.commit_id, evaluation_id: commit.evaluation_id, draft_rev: String(commit.draft_rev) }, now);
+    await appendBus(sid, "commit.stored", { commit_id: commit.commit_id, evaluation_id: commit.evaluation_id, draft_rev: String(commit.draft_rev) }, now);
     await storeAssessmentLocked(sid, now);
     return { status: 201, commit };
   });

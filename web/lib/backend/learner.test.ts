@@ -62,6 +62,7 @@ const commitReq = (over: Partial<CommitRequest> = {}): CommitRequest => ({
 const evaluate = async (draftRev: number) => (await requestEvaluation(sid, { draft_rev: draftRev })).done;
 const busTypes = async () => (await readBusAfter(sid, 0)).map(e => e.type);
 const pins = () => session.pinned_knowledge as KnowledgeRef[];
+const policyOf = (err: unknown) => (err as { details?: { policy_code?: string } }).details?.policy_code;
 
 /** A tutor whose evaluation finishes only when `release()` is called. */
 function gatedTutor(outcome = "ok") {
@@ -141,7 +142,7 @@ describe("evaluation", () => {
     expect(done.feedback_text).toMatch(/^STUB TUTOR/);
     expect((await requestEvaluation(sid, { draft_rev: 1 })).evaluation.evaluation_id).toBe(first.evaluation.evaluation_id);
     expect(await listEvaluations(sid)).toHaveLength(1);
-    expect(await busTypes()).toEqual(expect.arrayContaining(["evaluation.pending", "evaluation.done"]));
+    expect((await busTypes()).filter(t => t === "evaluation.updated")).toHaveLength(2); // pending, done
   });
 
   it("a module failure → failed (no content), and a retry starts a new evaluation", async () => {
@@ -163,8 +164,7 @@ describe("evaluation", () => {
     gated.release();
     const result = await run.done;
     expect(result).toMatchObject({ status: "stale", stale_reason: "draft_changed", outcome: "ok" });
-    expect(await busTypes()).toContain("evaluation.stale");
-    expect(await busTypes()).not.toContain("evaluation.done");
+    expect((await loadEvaluation(sid, result.evaluation_id))!.status).toBe("stale");
   });
 
   it("knowledge revoked while the evaluation runs → stale (knowledge_changed)", async () => {
@@ -175,7 +175,7 @@ describe("evaluation", () => {
     await revoke(pins()[0]);
     gated.release();
     expect(await run.done).toMatchObject({ status: "stale", stale_reason: "knowledge_changed" });
-    expect((await errorOf(requestEvaluation(sid, { draft_rev: 1 }))).code).toBe("knowledge_changed");
+    expect(policyOf(await errorOf(requestEvaluation(sid, { draft_rev: 1 })))).toBe("knowledge_changed");
   });
 
   it("an edit after evaluation marks it stale (status + SSE)", async () => {
@@ -183,8 +183,8 @@ describe("evaluation", () => {
     const e = await evaluate(1);
     await putLearnerDraft(sid, draftReq(1, "edited"));
     expect(await loadEvaluation(sid, e.evaluation_id)).toMatchObject({ status: "stale", stale_reason: "draft_changed" });
-    const staleEvents = (await readBusAfter(sid, 0)).filter(x => x.type === "evaluation.stale");
-    expect(staleEvents.map(x => x.ids.evaluation_id)).toEqual([e.evaluation_id]);
+    const updates = (await readBusAfter(sid, 0)).filter(x => x.type === "evaluation.updated");
+    expect(updates.map(x => x.ids.evaluation_id)).toEqual([e.evaluation_id, e.evaluation_id, e.evaluation_id]); // pending, done, stale
   });
 
   it("the real WS5 evaluator runs through the adapter (scripted judge) and cites pinned knowledge verbatim", async () => {
@@ -247,7 +247,7 @@ describe("commit guard", () => {
     await putLearnerDraft(sid, draftReq(0));
     const e1 = await evaluate(1);
     await putLearnerDraft(sid, draftReq(1, "edited"));
-    expect((await errorOf(commitDraft(sid, commitReq({ draft_rev: 1, evaluation_id: e1.evaluation_id })))).code).toBe("evaluation_stale");
+    expect(policyOf(await errorOf(commitDraft(sid, commitReq({ draft_rev: 1, evaluation_id: e1.evaluation_id }))))).toBe("evaluation_stale");
     expect((await errorOf(commitDraft(sid, commitReq({ draft_rev: 2, evaluation_id: e1.evaluation_id })))).code).toBe("evaluation_stale");
     const e2 = await evaluate(2);
     expect((await errorOf(commitDraft(sid, commitReq({ draft_rev: 1, evaluation_id: e2.evaluation_id })))).code).toBe("evaluation_stale");
@@ -259,7 +259,7 @@ describe("commit guard", () => {
     const e = await evaluate(1);
     expect(e.outcome).toBe("intervene");
     const err = await errorOf(commitDraft(sid, commitReq({ evaluation_id: e.evaluation_id })));
-    expect(err).toMatchObject({ code: "blocked_by_outcome", details: { policy_code: "blocked_by_outcome", outcome: "intervene", consequence: "block" } });
+    expect(err).toMatchObject({ code: "commit_blocked", details: { policy_code: "blocked_by_outcome", outcome: "intervene", consequence: "block" } });
   });
 
   it("uncertain needs an explicit escalation; the commit records it", async () => {
@@ -274,7 +274,10 @@ describe("commit guard", () => {
     await putLearnerDraft(sid, draftReq(0));
     const e = await evaluate(1);
     await revoke(pins()[0]);
-    expect((await errorOf(commitDraft(sid, commitReq({ evaluation_id: e.evaluation_id })))).code).toBe("knowledge_changed");
+    expect(await errorOf(commitDraft(sid, commitReq({ evaluation_id: e.evaluation_id })))).toMatchObject({
+      code: "evaluation_stale",
+      details: { policy_code: "knowledge_changed" },
+    });
   });
 
   it("rejects when pinned knowledge is revised after evaluation; re-pin + re-evaluate recovers", async () => {
@@ -288,7 +291,10 @@ describe("commit guard", () => {
       answer_lines: [...x1.answer_lines, { text: "FIXTURE correction: only with cue D.", at_utc: "2026-10-03T10:00:30.000Z", transcript_line_id: "x-1-l9" }],
     });
     expect((await (await requestSynthesis(expertSid)).done).status).toBe("done");
-    expect((await errorOf(commitDraft(sid, commitReq({ evaluation_id: e.evaluation_id })))).code).toBe("knowledge_changed");
+    expect(await errorOf(commitDraft(sid, commitReq({ evaluation_id: e.evaluation_id })))).toMatchObject({
+      code: "evaluation_stale",
+      details: { policy_code: "knowledge_changed" },
+    });
 
     // The new revision is a draft, so only the untouched confirmed revisions stay pinned.
     const repinned = await repinSession(sid);
@@ -305,7 +311,7 @@ describe("commit guard", () => {
     expect(a.status).toBe(201);
     expect(await commitDraft(sid, commitReq({ evaluation_id: e.evaluation_id }))).toEqual({ status: 200, commit: a.commit });
     const err = await errorOf(commitDraft(sid, commitReq({ evaluation_id: e.evaluation_id, idempotency_key: "save-2" })));
-    expect(err).toMatchObject({ code: "already_committed", details: { policy_code: "already_committed" } });
+    expect(err).toMatchObject({ code: "commit_blocked", details: { policy_code: "already_committed" } });
     expect((await errorOf(putLearnerDraft(sid, draftReq(1, "after commit")))).code).toBe("invalid_transition");
     expect((await errorOf(requestEvaluation(sid, { draft_rev: 1 }))).code).toBe("invalid_transition");
   });
@@ -320,8 +326,8 @@ describe("commit guard", () => {
     const ok = results.filter(r => r.status === "fulfilled");
     const rejected = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
     expect(ok).toHaveLength(1);
-    expect(rejected.map(r => (r.reason as { code: string }).code)).toEqual(["already_committed"]);
-    expect((await readBusAfter(sid, 0)).filter(x => x.type === "draft.committed")).toHaveLength(1);
+    expect(rejected.map(r => policyOf(r.reason))).toEqual(["already_committed"]);
+    expect((await readBusAfter(sid, 0)).filter(x => x.type === "commit.stored")).toHaveLength(1);
   });
 
   it("two concurrent commits with the same key (double submit) → one commit, both see it", async () => {
@@ -351,7 +357,8 @@ describe("happy path and assessment", () => {
     expect(exchangeText).toContain(c.quote);
     expect(wrong.feedback_text).toContain(c.quote);
 
-    expect((await errorOf(commitDraft(sid, commitReq({ evaluation_id: wrong.evaluation_id })))).code).toBe("blocked_by_outcome");
+    expect(policyOf(await errorOf(commitDraft(sid, commitReq({ evaluation_id: wrong.evaluation_id }))))).toBe("blocked_by_outcome");
+    await new Promise(r => setTimeout(r, 5)); // distinct timestamps for the timeline order
     await putLearnerDraft(sid, draftReq(1, "FIXTURE corrected decision", "FIXTURE better reason"));
     const ok = await evaluate(2);
     expect(ok.outcome).toBe("ok");
@@ -371,13 +378,12 @@ describe("happy path and assessment", () => {
     expect(a.assistance).toEqual([`intervene on draft_rev 1 (${wrong.evaluation_id})`]);
     expect(a.evidence_used).toEqual([{ entry_id: c.entry_id, revision_id: c.revision_id }]);
     const timeline = (a.content as { timeline: { kind: string; intervention?: string }[] }).timeline;
-    // Same-millisecond steps tie-break by kind inside WS5's buildTimeline, so compare as a multiset.
-    expect(timeline.map(t => t.kind).sort()).toEqual(["committed", "evaluated", "evaluated", "guidance_delivered", "proposed", "revised"]);
+    expect(timeline.map(t => t.kind)).toEqual(["proposed", "evaluated", "guidance_delivered", "revised", "evaluated", "committed"]);
     expect(timeline.find(t => t.intervention)?.intervention).toBe("caught_before_save");
     const md = await fsp.readFile(path.join(assessmentsDir(), `${sid}.md`), "utf8");
     expect(md).toMatch(/STUB ASSESSMENT/);
 
-    expect(await busTypes()).toEqual(expect.arrayContaining(["draft.committed", "assessment.stored"]));
+    expect(await busTypes()).toEqual(expect.arrayContaining(["commit.stored", "assessment.stored"]));
   });
 
   it("ending a newcomer session without a commit still writes the assessment", async () => {
