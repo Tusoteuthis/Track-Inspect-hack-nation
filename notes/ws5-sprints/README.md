@@ -16,7 +16,7 @@ Everything for WS5 (knowledge & newcomer tutor) lives in this folder. The source
 |---|---|---|---|---|
 | 1 ✅ done | `sprint-1-knowledge-schema.md` | Entry schema + Markdown, invariants, status rules, eligibility/pinning, retrieval, fixtures, schema doc | ~1.5–2 h | ~15 min: read the schema, share it with WS3/WS6/WS7 |
 | 2 ✅ done | `sprint-2-synthesis-workmap.md` | Synthesis, revisions on correction, genuine gaps, teach-back, Work Map content, WS3/WS6 adapters | ~2–3 h | ~20 min: workflow reads as a process, gaps are real |
-| 3 | `sprint-3-tutor-evaluation.md` | Guarded tutor evaluator, intervention with verbatim citations, anti-cheating tests, timeline | ~3–4 h | ~25 min: wrong draft caught, uncovered case escalated |
+| 3 🟡 built, LLM harness pending key | `sprint-3-tutor-evaluation.md` | Guarded tutor evaluator, intervention with verbatim citations, anti-cheating tests, timeline | ~3–4 h | ~25 min: wrong draft caught, uncovered case escalated |
 | 4 | `sprint-4-voice-assessment.md` | Tutor voice agent + probes, screen-context contract, assessment, trust propagation, end-to-end | ~3 h | ~30 min live: full newcomer run |
 
 ## Worktrees, branches, ports

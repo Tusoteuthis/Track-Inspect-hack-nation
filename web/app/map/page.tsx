@@ -1,17 +1,29 @@
 "use client";
 
-import { PlaceholderPage } from "@/components/shell/PlaceholderPage";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { WorkMapScreen } from "@/components/workmap/WorkMapScreen";
 import { FIXTURE_IDS } from "@/lib/data/fixtureSource";
+import { mapHref } from "@/lib/workmap/deepLink";
+
+// The address carries the selection (?entry=&rev=) so the demo can deep-link to an item.
+function BoundWorkMap() {
+  const params = useSearchParams();
+  const router = useRouter();
+  return (
+    <WorkMapScreen
+      sessionId={FIXTURE_IDS.expertSession}
+      entryId={params.get("entry")}
+      revisionId={params.get("rev")}
+      onSelect={(entry, rev) => router.replace(mapHref(entry, rev), { scroll: false })}
+    />
+  );
+}
 
 export default function WorkMapPage() {
   return (
-    <PlaceholderPage
-      title="Work Map"
-      sprint="Sprint 1"
-      description="The clickable interpretation workflow: every step and guardrail opens its trace region and the expert's own words."
-      queryKey={`workmap:${FIXTURE_IDS.expertSession}`}
-      load={source => source.getWorkMap(FIXTURE_IDS.expertSession)}
-      summarize={m => `${m.steps.length} Work Map items loaded.`}
-    />
+    <Suspense fallback={<p className="state-message">Loading…</p>}>
+      <BoundWorkMap />
+    </Suspense>
   );
 }

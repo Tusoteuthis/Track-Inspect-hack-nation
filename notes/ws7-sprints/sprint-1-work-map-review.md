@@ -1,5 +1,7 @@
 # WS7 Sprint 1 — Clickable Work Map and debrief/review view
 
+> **Status: DONE (2026-10-04)** on branch `ws7-sprint-1` and re-verified (typecheck, 168 vitest, 16 Playwright). See [handoff-sprint-1.md](handoff-sprint-1.md). Still open: the human gate and the merge into `voice`. Don't run this prompt again.
+
 > Paste this whole file as the first message to a fresh coding agent started in the repo root.
 
 ## Your role

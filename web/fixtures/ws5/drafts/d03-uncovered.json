@@ -1,0 +1,25 @@
+{
+  "source": "fixture",
+  "draft_id": "d03-uncovered",
+  "class": "not_covered_by_knowledge",
+  "label": {
+    "outcome": "uncertain",
+    "uncertain_requires": "escalation_or_missing_context",
+    "never_cite": ["ent-revoked-a", "ent-unresolved-b", "ent-offrecord-e", "ent-draft-start", "ent-invalid-quote"]
+  },
+  "case_view": {
+    "case_id": "fx-case-103",
+    "title": "FIXTURE practice trace 103",
+    "visible_context": [
+      "FIXTURE pattern Z on a third channel",
+      "Nothing resembling region A is shown"
+    ],
+    "source": "fixture"
+  },
+  "draft": {
+    "draft_rev": 1,
+    "decision": "FIXTURE decision Z",
+    "reason": "FIXTURE pattern Z on the third channel looks like decision Z to me.",
+    "visual_context": "the third channel"
+  }
+}

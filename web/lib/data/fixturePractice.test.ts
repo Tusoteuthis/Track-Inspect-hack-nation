@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import workmapJson from "@/fixtures/ui/workmap.json";
+import workmapJson from "@/fixtures/ui/workmap-rev-2-confirmed.json";
 import {
   createFixturePractice,
   fixtureCitations,
@@ -75,6 +75,11 @@ describe("fixturePractice", () => {
     const t0 = Date.now();
     expect((await fx.submitDraftForReview(draft(1))).status).toBe("failed");
     expect(Date.now() - t0).toBeGreaterThanOrEqual(25);
+  });
+
+  it("cites nothing when no knowledge is confirmed (never cites drafts)", () => {
+    const drafts = { ...workmap, steps: workmap.steps.map(s => ({ ...s, status: "draft" as const })) };
+    expect(fixtureCitations(drafts)).toEqual([]);
   });
 
   it("acknowledges screen frames with a reference", async () => {

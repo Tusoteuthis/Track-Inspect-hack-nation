@@ -1,0 +1,27 @@
+{
+  "source": "fixture",
+  "draft_id": "d02-guardrail-violation",
+  "class": "violates_confirmed_guardrail",
+  "label": {
+    "outcome": "intervene",
+    "must_cite_any": ["ent-guardrail-c"],
+    "never_cite": ["ent-revoked-a", "ent-unresolved-b", "ent-offrecord-e", "ent-draft-start", "ent-invalid-quote"]
+  },
+  "case_view": {
+    "case_id": "fx-case-102",
+    "title": "FIXTURE practice trace 102",
+    "visible_context": [
+      "FIXTURE pattern A in region A on the upper channel",
+      "FIXTURE cue B is visible",
+      "FIXTURE cue D is visible",
+      "FIXTURE condition C is present on the second channel"
+    ],
+    "source": "fixture"
+  },
+  "draft": {
+    "draft_rev": 1,
+    "decision": "FIXTURE decision A",
+    "reason": "FIXTURE pattern A with FIXTURE cue B and FIXTURE cue D, so it is decision A.",
+    "visual_context": "region A on the upper channel"
+  }
+}

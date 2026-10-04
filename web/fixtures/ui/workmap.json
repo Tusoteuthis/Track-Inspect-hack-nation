@@ -1,83 +1,216 @@
 {
   "session_id": "fixture-session-001",
   "revision_id": "fixture-rev-1",
+  "revision_label": "Revision 1",
+  "parent_revision_id": null,
+  "change_reason": null,
   "source": "fixture",
   "steps": [
     {
-      "entry_id": "fixture-entry-001",
       "revision_id": "fixture-rev-1",
-      "kind": "step",
-      "title": "Workflow step 1 (fixture)",
       "ai_summary": "Apprentice summary placeholder (fixture), not captured knowledge.",
       "expert_quotes": [
-        { "exchange_id": "fixture-exchange-001", "text": "Expert explanation (fixture): placeholder words, not spoken by an expert." }
+        {
+          "exchange_id": "fixture-exchange-001",
+          "text": "Expert explanation (fixture): placeholder words, not spoken by an expert."
+        }
       ],
       "reasoning": "Reasoning placeholder (fixture).",
       "guardrails": [],
       "evidence": [
         {
           "event_id": "fixture-event-001",
-          "asset": { "asset_id": "fixture-asset-a", "original_url": "/fixtures/ui/trace-a.svg", "highlighted_url": null, "frame_id": "fixture-frame-a", "width_px": 1600, "height_px": 900 },
-          "region": { "frame_id": "fixture-frame-a", "coordinate_space": "original_frame_normalized", "x": 0.28, "y": 0.18, "width": 0.1, "height": 0.22, "mapping_status": "resolved" }
+          "asset": {
+            "asset_id": "fixture-asset-a",
+            "original_url": "/fixtures/ui/trace-a.svg",
+            "highlighted_url": null,
+            "frame_id": "fixture-frame-a",
+            "width_px": 1600,
+            "height_px": 900
+          },
+          "region": {
+            "frame_id": "fixture-frame-a",
+            "coordinate_space": "original_frame_normalized",
+            "x": 0.28,
+            "y": 0.18,
+            "width": 0.1,
+            "height": 0.22,
+            "mapping_status": "resolved"
+          }
+        },
+        {
+          "event_id": "fixture-event-006",
+          "asset": {
+            "asset_id": "fixture-asset-b",
+            "original_url": "/fixtures/ui/trace-b.svg",
+            "highlighted_url": null,
+            "frame_id": "fixture-frame-b",
+            "width_px": 1600,
+            "height_px": 900
+          },
+          "region": {
+            "frame_id": "fixture-frame-b",
+            "coordinate_space": "original_frame_normalized",
+            "x": 0.55,
+            "y": 0.3,
+            "width": 0.12,
+            "height": 0.25,
+            "mapping_status": "resolved"
+          }
         }
       ],
-      "status": "confirmed",
-      "open_question": null
+      "open_question": null,
+      "entry_id": "fixture-entry-001",
+      "kind": "step",
+      "title": "Workflow step 1 (fixture)",
+      "status": "draft"
     },
     {
-      "entry_id": "fixture-entry-002",
       "revision_id": "fixture-rev-1",
-      "kind": "decision",
-      "title": "Decision point (fixture)",
       "ai_summary": "Apprentice summary placeholder (fixture).",
       "expert_quotes": [
-        { "exchange_id": "fixture-exchange-002", "text": "Expert explanation (fixture): placeholder words." }
+        {
+          "exchange_id": "fixture-exchange-002",
+          "text": "Expert explanation (fixture): placeholder words."
+        }
       ],
       "reasoning": null,
       "guardrails": [],
       "evidence": [
         {
           "event_id": "fixture-event-002",
-          "asset": { "asset_id": "fixture-asset-a", "original_url": "/fixtures/ui/trace-a.svg", "highlighted_url": null, "frame_id": "fixture-frame-a", "width_px": 1600, "height_px": 900 },
-          "region": { "frame_id": "fixture-frame-a", "coordinate_space": "original_frame_normalized", "x": 0.3, "y": 0.15, "width": 0.45, "height": 0.7, "mapping_status": "ambiguous" }
+          "asset": {
+            "asset_id": "fixture-asset-a",
+            "original_url": "/fixtures/ui/trace-a.svg",
+            "highlighted_url": null,
+            "frame_id": "fixture-frame-a",
+            "width_px": 1600,
+            "height_px": 900
+          },
+          "region": {
+            "frame_id": "fixture-frame-a",
+            "coordinate_space": "original_frame_normalized",
+            "x": 0.3,
+            "y": 0.15,
+            "width": 0.45,
+            "height": 0.7,
+            "mapping_status": "ambiguous"
+          }
         }
       ],
-      "status": "draft",
-      "open_question": null
+      "open_question": null,
+      "entry_id": "fixture-entry-002",
+      "kind": "decision",
+      "title": "Decision point (fixture)",
+      "status": "draft"
     },
     {
-      "entry_id": "fixture-entry-003",
       "revision_id": "fixture-rev-1",
-      "kind": "guardrail",
-      "title": "Guardrail (fixture)",
       "ai_summary": null,
       "expert_quotes": [
-        { "exchange_id": "fixture-exchange-003", "text": "Expert guardrail wording (fixture): placeholder words." }
+        {
+          "exchange_id": "fixture-exchange-003",
+          "text": "Expert guardrail wording (fixture): placeholder words."
+        }
       ],
       "reasoning": null,
-      "guardrails": ["Guardrail placeholder (fixture): when to stop or escalate."],
+      "guardrails": [
+        "Guardrail placeholder (fixture): when to stop or escalate."
+      ],
       "evidence": [
         {
           "event_id": "fixture-event-003",
-          "asset": { "asset_id": "fixture-asset-a", "original_url": "/fixtures/ui/trace-a.svg", "highlighted_url": null, "frame_id": "fixture-frame-a", "width_px": 1600, "height_px": 900 },
-          "region": { "frame_id": "fixture-frame-a", "coordinate_space": "original_frame_normalized", "x": 0.62, "y": 0.62, "width": 0.14, "height": 0.2, "mapping_status": "resolved" }
+          "asset": {
+            "asset_id": "fixture-asset-a",
+            "original_url": "/fixtures/ui/trace-a.svg",
+            "highlighted_url": null,
+            "frame_id": "fixture-frame-a",
+            "width_px": 1600,
+            "height_px": 900
+          },
+          "region": {
+            "frame_id": "fixture-frame-a",
+            "coordinate_space": "original_frame_normalized",
+            "x": 0.62,
+            "y": 0.62,
+            "width": 0.14,
+            "height": 0.2,
+            "mapping_status": "resolved"
+          }
         }
       ],
-      "status": "confirmed",
-      "open_question": null
+      "open_question": null,
+      "entry_id": "fixture-entry-003",
+      "kind": "guardrail",
+      "title": "Guardrail (fixture)",
+      "status": "draft"
     },
     {
-      "entry_id": "fixture-entry-004",
       "revision_id": "fixture-rev-1",
-      "kind": "exception",
-      "title": "Exception (fixture, unresolved)",
       "ai_summary": null,
       "expert_quotes": [],
       "reasoning": null,
       "guardrails": [],
       "evidence": [],
-      "status": "unresolved",
-      "open_question": "Open question placeholder (fixture) for the debrief."
+      "open_question": "Open question placeholder (fixture) for the debrief.",
+      "entry_id": "fixture-entry-004",
+      "kind": "exception",
+      "title": "Exception (fixture, unresolved)",
+      "status": "unresolved"
+    },
+    {
+      "revision_id": "fixture-rev-1",
+      "ai_summary": "Apprentice summary placeholder (fixture) for withdrawn material.",
+      "expert_quotes": [
+        {
+          "exchange_id": "fixture-exchange-005",
+          "text": "Withdrawn expert wording (fixture): placeholder words."
+        }
+      ],
+      "reasoning": null,
+      "guardrails": [
+        "Withdrawn guardrail placeholder (fixture)."
+      ],
+      "evidence": [
+        {
+          "event_id": "fixture-event-005",
+          "asset": {
+            "asset_id": "fixture-asset-b",
+            "original_url": "/fixtures/ui/trace-b.svg",
+            "highlighted_url": null,
+            "frame_id": "fixture-frame-b",
+            "width_px": 1600,
+            "height_px": 900
+          },
+          "region": {
+            "frame_id": "fixture-frame-b",
+            "coordinate_space": "original_frame_normalized",
+            "x": 0.2,
+            "y": 0.5,
+            "width": 0.15,
+            "height": 0.2,
+            "mapping_status": "resolved"
+          }
+        }
+      ],
+      "open_question": null,
+      "entry_id": "fixture-entry-005",
+      "kind": "guardrail",
+      "title": "Withdrawn guardrail (fixture, revoked)",
+      "status": "revoked"
+    },
+    {
+      "revision_id": "fixture-rev-1",
+      "ai_summary": null,
+      "expert_quotes": [],
+      "reasoning": null,
+      "guardrails": [],
+      "evidence": [],
+      "open_question": null,
+      "entry_id": "fixture-entry-006",
+      "kind": "step",
+      "title": "Step not yet captured (fixture, missing)",
+      "status": "missing"
     }
   ]
 }

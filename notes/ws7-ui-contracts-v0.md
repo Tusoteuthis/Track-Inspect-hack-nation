@@ -16,6 +16,9 @@ Field names are snake_case. Every top-level view carries `source: "live" | "fixt
 | `EvidenceAsset` | `asset_id`, `original_url`, `highlighted_url`, `frame_id`, `width_px`, `height_px` | WS6 storage of WS2 captures and WS4 assets |
 | `EvidenceRegion` | `frame_id`, `coordinate_space: "original_frame_normalized"`, `x, y, width, height` in [0,1], `mapping_status` (resolved/ambiguous/unresolved) | WS2 (PointingEvent region) |
 | `WorkMapView` / `WorkMapStep` | `revision_id`; per step `entry_id`, `revision_id`, `kind` (step/decision/guardrail/exception), `title`, `ai_summary`, `expert_quotes[{exchange_id, text}]`, `reasoning`, `guardrails[]`, `evidence[{event_id, asset, region}]`, `status`, `open_question` | WS5 content, WS3 exchanges, WS6 delivery |
+| `WorkMapView` additions (S1) | `revision_label` (human-readable, e.g. "Revision 2"), `parent_revision_id`, `change_reason` (typed from WS3 `DraftRevision`) | WS5/WS6 |
+| `ReviewView` (S1) | `current: WorkMapView`, `previous: WorkMapView \| null`, `open_questions: OpenQuestion[]` (WS3), `confirmations: ExpertConfirmation[]` (WS3) | WS3 records, WS5 content, WS6 delivery |
+| `ReviewMark` (S1) | `session_id`, `entry_id`, `revision_id`, `kind` (`correction_requested` / `flag_unresolved`) | WS7 → WS6 → WS3/WS5 |
 | `PracticeCaseView` | `case_id`, `asset`, `visible_context[]`, `decision_options[] \| null`, `knowledge_revision_id` | WS4 learner-visible assets, WS6 delivery |
 | `LearnerDraft` | `draft_id`, `draft_revision`, `decision`, `reason`, `region` | WS7 → WS6 |
 | `LearnerEvaluation` | `draft_revision`, `knowledge_revision_id`, `outcome` (opaque WS5 string), `message`, `guiding_question`, `citations[]` | WS5 via WS6 |
@@ -40,7 +43,9 @@ Rules WS7 relies on:
 | `requestOffRecord(sessionId, offRecord)` | `Ack<SessionView>` | S3 |
 | `submitDraftForReview(draft)` | `Ack<LearnerEvaluation>` | S2 |
 | `commitDraft(draft, evaluation)` | `Ack<{committed_at_utc}>` | S2 (WS6 enforces the review boundary server-side) |
-| `subscribe(sessionId, onUpdate)` | unsubscribe fn; pushes `SourceUpdate` | S1 revisions, S3 events/acks |
+| `getReview(sessionId)` | `ReviewView` (revision under review + parent + WS3 open questions/confirmations) | S1 review |
+| `submitReviewMark(mark)` | `Ack<{received_at_utc}>` (received, not "corrected") | S1 review |
+| `subscribe(sessionId, onUpdate)` | unsubscribe fn; pushes `SourceUpdate` (`session`, `workmap`, `review`) | S1 revisions, S3 events/acks |
 
 `Ack<T>` = `{status: "acknowledged", value}` | `{status: "failed", error}`. The UI shows an action as done **only** after an acknowledgement. Getters reject for unknown IDs, and the screen then shows an error state.
 
@@ -82,3 +87,10 @@ Please confirm how each one is represented: a field, an event or an acknowledgem
 - **WS3:** will `web/lib/expert/contracts.ts` (`PointingEvent`, `ExpertExchange`, `DraftRevision`, `ExpertConfirmation`) be the source for the Work Map, or will WS5 records be? Either way, WS7 maps from it rather than redefining it.
 - **WS4/WS5:** the learner decision format: free text, choice list (`decision_options`) or region marking.
 - **WS2:** will captures always have a stable `frame_id` and the original pixel dimensions?
+
+## 6. Sprint 1 additions (4 October 2026)
+
+- The Work Map and review screens never display ids. Revisions are named by `revision_label`; evidence by position ("Evidence 2").
+- A teach-back confirmation is shown only for the revision whose `revision_id` it names. A confirmation of the parent revision appears only as history.
+- Changes are marked by a presentation-only diff of `current` against `previous`. If WS6 prefers to send an explicit change list, it can replace the diff in the mapping layer.
+- **Question for WS3/WS5:** what should a `ReviewMark` trigger? WS7 treats it as a note for the spoken review; an acknowledgement only means "received".

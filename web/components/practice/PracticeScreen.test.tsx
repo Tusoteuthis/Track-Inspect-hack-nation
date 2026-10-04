@@ -65,6 +65,8 @@ function fakeSource() {
       return d.promise;
     }),
     submitScreenFrame: vi.fn(),
+    getReview: vi.fn(),
+    submitReviewMark: vi.fn(),
     subscribe: vi.fn((_id: string, fn: (u: SourceUpdate) => void) => {
       listener = fn;
       return () => (listener = null);
@@ -158,7 +160,7 @@ describe("PracticeScreen pre-save review loop", () => {
     const t = setup();
     await t.reachReviewComplete();
     expect(t.saveButton()).toBeEnabled();
-    t.fake.emit({ type: "workmap", workmap: { session_id: "s-1", revision_id: "k-2", steps: [], source: "fixture" } as WorkMapView });
+    t.fake.emit({ type: "workmap", workmap: { session_id: "s-1", revision_id: "k-2", steps: [], source: "fixture" } as unknown as WorkMapView });
     expect(t.status()).toHaveTextContent("Draft changed / not yet reviewed");
     expect(t.saveButton()).toBeDisabled();
   });
