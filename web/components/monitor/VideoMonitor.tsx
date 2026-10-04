@@ -13,17 +13,11 @@ import {
   type MonitorStateMessage,
   type SessionRecording,
 } from "@/lib/monitor/monitorChannel";
-import {
-  initialPlayback,
-  keyToCommand,
-  step,
-  type PlaybackAction,
-  type PlaybackEffect,
-  type PlaybackState,
-} from "@/lib/monitor/playback";
+import { keyToCommand, type PlaybackState } from "@/lib/monitor/playback";
 import type { CaseMedia, CaseSummary } from "@/lib/ui/contracts";
 import { formatMediaTime, MonitorTimeline } from "./MonitorTimeline";
 import styles from "./monitor.module.css";
+import { monitorStateMessage, usePlayback } from "./usePlayback";
 
 type Props = { caseSummary: CaseSummary & { media: CaseMedia }; onExit: () => void };
 
@@ -39,50 +33,15 @@ const SESSION_COPY: Record<SessionRecording, { icon: string; text: string }> = {
 
 export function VideoMonitor({ caseSummary, onExit }: Props) {
   const { media } = caseSummary;
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [playback, setPlayback] = useState<PlaybackState>(initialPlayback);
-  const stateRef = useRef(playback);
+  const { videoRef, playback, stateRef, dispatch, videoEvents } = usePlayback(media);
   const [session, setSession] = useState<SessionRecording>("none");
   const linkRef = useRef<MonitorLink | null>(null);
   const lastSent = useRef(0);
   const sentStatus = useRef<PlaybackState["status"] | null>(null);
 
-  const apply = useCallback((effect: PlaybackEffect | null) => {
-    const video = videoRef.current;
-    if (!effect || !video) return;
-    if (effect.kind === "play") {
-      void video.play()?.catch?.(() => undefined);
-    } else {
-      if (effect.kind === "pause_at") video.pause();
-      video.currentTime = effect.time_ms / 1000;
-    }
-  }, []);
-
-  const dispatch = useCallback(
-    (action: PlaybackAction) => {
-      const next = step(stateRef.current, action, media.holds, media.duration_ms);
-      if (next.state !== stateRef.current) {
-        stateRef.current = next.state;
-        setPlayback(next.state);
-      }
-      apply(next.effect);
-    },
-    [apply, media.duration_ms, media.holds]
-  );
-
   const message = useCallback(
-    (s: PlaybackState): MonitorStateMessage => ({
-      type: "monitor_state",
-      case_id: caseSummary.case_id,
-      status: s.status,
-      media_time_ms: Math.round(s.time_ms),
-      duration_ms: media.duration_ms,
-      hold_id: s.hold_index !== null ? media.holds[s.hold_index].hold_id : null,
-      hold_index: s.hold_index !== null ? s.hold_index + 1 : null,
-      hold_count: media.holds.length,
-      auto_holds: s.auto_holds,
-    }),
-    [caseSummary.case_id, media.duration_ms, media.holds]
+    (s: PlaybackState): MonitorStateMessage => monitorStateMessage(caseSummary.case_id, media, s),
+    [caseSummary.case_id, media]
   );
 
   // Link to the companion: answer its hello, mirror its session state, say bye on close.
@@ -101,7 +60,7 @@ export function VideoMonitor({ caseSummary, onExit }: Props) {
       link.close();
       linkRef.current = null;
     };
-  }, [message]);
+  }, [message, stateRef]);
 
   // Report every status change at once; time updates while playing are throttled.
   useEffect(() => {
@@ -113,19 +72,6 @@ export function VideoMonitor({ caseSummary, onExit }: Props) {
     sentStatus.current = playback.status;
     linkRef.current?.post(message(playback));
   }, [message, playback]);
-
-  // Frame-accurate hold detection while playing (timeupdate fires only ~4 times a second).
-  useEffect(() => {
-    if (playback.status !== "playing") return;
-    let frame = 0;
-    const tick = () => {
-      const video = videoRef.current;
-      if (video) dispatch({ type: "tick", time_ms: video.currentTime * 1000 });
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [dispatch, playback.status]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -178,9 +124,7 @@ export function VideoMonitor({ caseSummary, onExit }: Props) {
           playsInline
           preload="auto"
           aria-label={`Case video: ${caseSummary.title}`}
-          onEnded={() => dispatch({ type: "ended" })}
-          onError={() => dispatch({ type: "error", message: "The video could not be loaded." })}
-          onSeeked={e => dispatch({ type: "tick", time_ms: e.currentTarget.currentTime * 1000 })}
+          {...videoEvents}
           hidden={status === "error"}
         />
       </div>

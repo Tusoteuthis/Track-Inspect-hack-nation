@@ -8,6 +8,7 @@ import { ExpertCompanion } from "@/components/companion/ExpertCompanion";
 import { ExpertScreenShare } from "@/components/companion/ExpertScreenShare";
 import { displayHref, ExpertSetup } from "@/components/companion/ExpertSetup";
 import { MonitorStrip } from "@/components/companion/MonitorStrip";
+import { InlineVideoPlayer } from "@/components/monitor/InlineVideoPlayer";
 import { useMonitorLink } from "@/components/monitor/useMonitorLink";
 import styles from "@/components/companion/companion.module.css";
 import { useExpertSession } from "@/components/expert/useExpertSession";
@@ -19,7 +20,7 @@ import { createFixtureSource, type FixtureDataSource } from "@/lib/data/fixtureS
 import type { DataSource } from "@/lib/data/source";
 import { parseFixtureSettings } from "@/lib/practice/fixtureSettings";
 import type { AgentState } from "@/lib/ui/agentState";
-import type { SessionRecording } from "@/lib/monitor/monitorChannel";
+import type { MonitorStateMessage, SessionRecording } from "@/lib/monitor/monitorChannel";
 import type { CaseSummary } from "@/lib/ui/contracts";
 import { PageEyebrow } from "@/components/shell/PageEyebrow";
 
@@ -53,6 +54,10 @@ function Expert() {
   // Demo monitor link (video cases): mirror its playback here, send it the recording state.
   const [recording, setRecording] = useState<SessionRecording>("none");
   const monitor = useMonitorLink(phase.kind === "session" ? recording : "none");
+  // Video cases play inline on this page once the session starts (single screen). A monitor window, once
+  // open, takes over: the page goes back to mirroring it, so there is only ever one player.
+  const [inline, setInline] = useState<MonitorStateMessage | null>(null);
+  const playing = monitor ?? inline;
   const renderMonitor = (chosen: CaseSummary, showOpenLink: boolean) =>
     chosen.media ? (
       <MonitorStrip
@@ -67,11 +72,11 @@ function Expert() {
   // Fixture mode: a monitor hold stands in for the glasses' pointing detection.
   const sessionCase = phase.kind === "session" ? phase.chosen : null;
   useEffect(() => {
-    if (!fixtureControls || !sessionCase?.media || monitor?.status !== "held") return;
-    if (monitor.case_id !== sessionCase.case_id) return;
-    const hold = sessionCase.media.holds.find(h => h.hold_id === monitor.hold_id);
+    if (!fixtureControls || !sessionCase?.media || playing?.status !== "held") return;
+    if (playing.case_id !== sessionCase.case_id) return;
+    const hold = sessionCase.media.holds.find(h => h.hold_id === playing.hold_id);
     if (hold) fixtureControls.pointAtHold(hold);
-  }, [fixtureControls, monitor, sessionCase]);
+  }, [fixtureControls, playing, sessionCase]);
 
   return (
     <DataSourceProvider source={source}>
@@ -101,7 +106,7 @@ function Expert() {
           <ExpertCompanion
             source={source}
             sessionId={phase.sessionId}
-            caseAsset={phase.chosen.asset}
+            caseAsset={phase.chosen.media ? null : phase.chosen.asset}
             agent={agent}
             voice={
               <VoiceSession flow="expert" {...expert.voiceProps}>
@@ -109,7 +114,19 @@ function Expert() {
               </VoiceSession>
             }
             fixtureControls={fixtureControls ? <CompanionFixtureControls controls={fixtureControls} /> : undefined}
-            monitorStrip={renderMonitor(phase.chosen, true)}
+            monitorStrip={
+              phase.chosen.media && !monitor ? (
+                <InlineVideoPlayer
+                  caseId={phase.chosen.case_id}
+                  title={phase.chosen.title}
+                  media={phase.chosen.media}
+                  autoStart
+                  onState={setInline}
+                />
+              ) : (
+                renderMonitor(phase.chosen, true)
+              )
+            }
             onRecordingChange={setRecording}
           />
         )}
