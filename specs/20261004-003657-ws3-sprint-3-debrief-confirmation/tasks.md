@@ -9,7 +9,7 @@ TDD: each logic task writes its vitest file first.
 - [X] T002 Contract types, validators and snapshot cross-checks in web/lib/expert/contracts.ts (+ contracts.snapshot.test.ts)
 
 ## Phase 3: US1 Debrief
-- [ ] T003 [US1] Test-first: coverage grid, monotonic applyCoverage, selectGaps (excludes covered/asked, deferred → open question, priority) in web/lib/expert/coverage.ts + coverage.test.ts
+- [X] T003 [US1] Test-first: coverage grid, monotonic applyCoverage, selectGaps (excludes covered/asked, deferred → open question, priority) in web/lib/expert/coverage.ts + coverage.test.ts
 - [ ] T004 [US1] Reducer: phase, signal_task_complete/debrief_started, begin_question phase/gap_id, record_coverage, unknown_escalate in web/lib/expert/debrief.ts + session.ts (+ debrief.test.ts)
 - [ ] T005 [US1] [PHASE debrief] block and control nudges in web/lib/expert/context-update.ts
 - [ ] T006 [US1] Debrief counters in web/lib/expert/timing.ts
