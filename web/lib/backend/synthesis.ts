@@ -78,10 +78,15 @@ export async function getGaps(sid: string): Promise<GapsView> {
   );
 }
 
+/** The stored synthesis draft view of an expert session, or null. */
+export function readExpertDraftView(sid: string): Promise<SessionDraftView | null> {
+  return readJson(draftFile(sid), SessionDraftViewSchema);
+}
+
 export async function getSessionDraft(sid: string): Promise<SessionDraftView> {
   const session = await getSession(sid);
   if (session.role !== "expert") {
-    throw new ApiError("not_found", "Newcomer drafts are served from Sprint 3.", { session_id: sid });
+    throw new ApiError("not_found", "Newcomer drafts are served by the learner draft route.", { session_id: sid });
   }
   return (
     (await readJson(draftFile(sid), SessionDraftViewSchema)) ?? {

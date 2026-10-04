@@ -45,17 +45,23 @@ function idempotencyFile(key: string): string {
   return path.join(getConfig().runtimeDir, "idempotency", "sessions", `${hash}.json`);
 }
 
-async function writeNewSession(req: CreateSessionRequest, now: Date): Promise<Session> {
+/** Newcomer-only fields computed at creation (case + pinned knowledge); see `newcomer.ts`. */
+export type SessionInit = Pick<Session, "case_id" | "trace_ref" | "pinned_knowledge"> & { knowledge_fixture_allowed?: boolean };
+export type PrepareSession = () => Promise<SessionInit>;
+
+async function writeNewSession(req: CreateSessionRequest, now: Date, prepare?: PrepareSession): Promise<Session> {
   const at = now.toISOString();
+  let init: SessionInit;
+  if (req.role === "expert") init = { case_id: null, trace_ref: req.trace_ref, pinned_knowledge: null };
+  else if (prepare) init = await prepare();
+  else throw new Error("newcomer sessions are created through createNewcomerSession");
   const session: Session = {
     session_id: newId("ses", now),
     role: req.role,
     lifecycle: "created",
     record_state: "on_record",
     recording_segments: [{ segment_id: newId("seg", now), state: "on_record", started_at_utc: at, ended_at_utc: null }],
-    case_id: null,
-    trace_ref: req.trace_ref,
-    pinned_knowledge: null,
+    ...init,
     source: req.source,
     created_at_utc: at,
     rev: 1,
@@ -69,9 +75,10 @@ export async function createSession(
   req: CreateSessionRequest,
   idempotencyKey?: string | null,
   now: Date = new Date(),
+  prepare?: PrepareSession,
 ): Promise<{ status: 200 | 201; session: Session }> {
   if (idempotencyKey === undefined || idempotencyKey === null) {
-    return { status: 201, session: await writeNewSession(req, now) };
+    return { status: 201, session: await writeNewSession(req, now, prepare) };
   }
   if (!IDEMPOTENCY_KEY_RE.test(idempotencyKey)) {
     throw new ApiError("validation_failed", "Idempotency-Key must be 1–200 printable ASCII characters.");
@@ -80,7 +87,8 @@ export async function createSession(
   return withLock(`idem:${file}`, async () => {
     const existing = await readJson(file, IdempotencyRecord);
     if (existing) return { status: 200 as const, session: await getSession(existing.session_id) };
-    const session = await writeNewSession(req, now);
+    // A replayed key never re-runs `prepare`, so a knowledge change cannot fail a retry.
+    const session = await writeNewSession(req, now, prepare);
     await writeJsonAtomic(file, { session_id: session.session_id });
     return { status: 201 as const, session };
   });

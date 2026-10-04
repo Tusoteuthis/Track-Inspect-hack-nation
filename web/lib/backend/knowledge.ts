@@ -311,7 +311,7 @@ export async function commitRevision(plan: Extract<RevisionPlan, { kind: "new" }
 
 /** Appends a status change; if it is the entry's current revision, current.json follows. */
 export async function appendStatusTransition(
-  t: { revision: KnowledgeRevision; to: EntryStatus; confirmation_id: string | null },
+  t: { revision: KnowledgeRevision; to: EntryStatus; confirmation_id: string | null; reason?: string },
   now: Date,
 ): Promise<StatusTransition> {
   const record: StatusTransition = StatusTransitionSchema.parse({
@@ -321,6 +321,7 @@ export async function appendStatusTransition(
     to: t.to,
     at_utc: now.toISOString(),
     confirmation_id: t.confirmation_id,
+    ...(t.reason !== undefined ? { reason: t.reason } : {}),
   });
   const file = statusLogFile(record.entry_id);
   await fs.mkdir(path.dirname(file), { recursive: true });

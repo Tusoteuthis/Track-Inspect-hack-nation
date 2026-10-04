@@ -19,14 +19,7 @@ import type {
   WorkMapView,
   WorkMapViewStep,
 } from "@/lib/contracts";
-import {
-  buildWorkMap,
-  isTeachable,
-  parseEntryMarkdown,
-  SYNTHESIS_MODULE,
-  type KnowledgeEntryContent,
-  type WorkMapAsset,
-} from "@/lib/knowledge";
+import { buildWorkMap, isTeachable, type WorkMapAsset } from "@/lib/knowledge";
 import { loadAssetMeta } from "./assets";
 import { listConfirmations } from "./confirmations";
 import { listEvents } from "./events";
@@ -40,6 +33,7 @@ import {
   type WorkflowLink,
 } from "./knowledge";
 import { assetDir } from "./paths";
+import { latestConfirmation, ws5Content } from "./ws5-content";
 
 const assetUrl = (aid: string, which: "original" | "highlighted") => `/api/assets/${aid}/${which}`;
 
@@ -120,27 +114,6 @@ function resolveExchanges(rev: KnowledgeRevision, records: SessionRecords | null
   return out;
 }
 
-/** WS5 content with WS6 status and confirmation evidence injected (revision files never carry them). */
-function ws5Content(markdown: string, rev: KnowledgeRevision, status: KnowledgeEntryContent["status"], confirmation: Confirmation | null) {
-  if (rev.produced_by.module !== SYNTHESIS_MODULE.module) return null;
-  try {
-    const parsed = parseEntryMarkdown(markdown);
-    return {
-      ...parsed,
-      revision_id: `rev-${rev.revision_no}`,
-      status,
-      confirmation: confirmation && {
-        confirmation_id: confirmation.confirmation_id,
-        revision_id_reviewed: `rev-${rev.revision_no}`,
-        result: confirmation.result,
-        expert_response_exchange_id: confirmation.expert_response_exchange_id,
-      },
-    } satisfies KnowledgeEntryContent;
-  } catch {
-    return null;
-  }
-}
-
 type Built = { step: WorkMapViewStep } | { excluded: WorkMapView["excluded"][number] };
 
 async function buildStep(link: WorkflowLink, include: WorkMapView["include"], l: Lookups): Promise<Built> {
@@ -175,9 +148,7 @@ async function buildStep(link: WorkflowLink, include: WorkMapView["include"], l:
   const sid = rev.session_id ?? null;
   if (!sid) broken.push("revision has no originating session; its evidence cannot be resolved");
   const records = sid ? await l.session(sid).catch(() => null) : null;
-  const confirmation =
-    (await l.confirmations).filter(c => c.reviewed_revision_id === rev.revision_id).sort((a, b) => a.at_utc.localeCompare(b.at_utc)).pop() ??
-    null;
+  const confirmation = latestConfirmation(await l.confirmations, rev.revision_id);
   const content = ws5Content(stored.markdown, rev, status, confirmation);
 
   if (content && include === "confirmed") {
