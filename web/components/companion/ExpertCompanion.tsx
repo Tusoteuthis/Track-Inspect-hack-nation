@@ -19,6 +19,7 @@ import { shortcutFor, SHORTCUT_KEYS } from "@/lib/companion/shortcuts";
 import type { DataSource } from "@/lib/data/source";
 import type { AgentState } from "@/lib/ui/agentState";
 import type { EvidenceAsset } from "@/lib/ui/contracts";
+import { ConnectionPanel } from "./ConnectionPanel";
 import { ControlRail } from "./ControlRail";
 import { RecentEvents } from "./RecentEvents";
 import { useCompanion } from "./useCompanion";
@@ -226,12 +227,15 @@ export function ExpertCompanion({ source, sessionId, caseAsset, agent, voice, fi
               onOffRecord={pressOffRecord}
               onStop={pressStop}
             />
+            <ConnectionPanel
+              capture={session.connection.capture}
+              agent={agent}
+              backend={source.kind === "fixture" ? "fixture" : state.connection}
+            />
             {voice ? (
               <section className={styles.section} aria-labelledby="voice-heading">
                 <h2 id="voice-heading">Voice apprentice</h2>
-                <p className={styles.hint}>
-                  The apprentice decides when to ask. Pointing shown here is never sent to it from this page.
-                </p>
+                <p className={styles.hint}>The apprentice decides when to ask. Nothing on this page prompts it to speak.</p>
                 {voice}
               </section>
             ) : null}
