@@ -3,7 +3,6 @@
  * is stored for the same session. The ack `seq` is the seq of the event's `event.stored` bus
  * entry, looked up on retries, so a client that lost the first response gets the same ack.
  */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import {
   PointingEventIngestSchema,
@@ -21,6 +20,7 @@ import { isOffRecordWrite } from "./off-record";
 import { getSession, requireLiveSession, withSessionLock } from "./sessions";
 import { droppedAnswer, droppedTombstone, tombstoneAnswer, writeTombstone } from "./tombstones";
 import { canonicalJson, putImmutable, readJson } from "./store";
+import { getBlobStore } from "./blobstore";
 
 export type StoredEvent = PointingEventIngest & { asset_id: string };
 
@@ -106,12 +106,7 @@ export async function eventExists(sid: string, eid: string): Promise<boolean> {
 }
 
 async function listIds(dir: string): Promise<string[]> {
-  try {
-    return (await fs.readdir(dir)).filter((f) => f.endsWith(".json") && !f.startsWith(".")).map((f) => f.slice(0, -5));
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw err;
-  }
+  return (await getBlobStore().list(dir)).map((e) => e.name).filter((f) => f.endsWith(".json") && !f.startsWith(".")).map((f) => f.slice(0, -5));
 }
 
 /** Ordered by `captured_at_utc`, then arrival (the seq of `event.stored`). */
