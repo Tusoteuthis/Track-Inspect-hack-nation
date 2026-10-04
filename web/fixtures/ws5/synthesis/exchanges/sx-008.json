@@ -5,6 +5,7 @@
   "phase": "debrief",
   "kind": "gap",
   "question": "FIXTURE question: you said usually; when does decision A not apply?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "Unless FIXTURE condition E is present.",

@@ -5,6 +5,7 @@
   "phase": "debrief",
   "kind": "gap",
   "question": "FIXTURE question: how do you approach a new trace in general?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: in general I take my time with a new trace.",

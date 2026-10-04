@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "explain",
   "question": "FIXTURE question: what do you see in this region?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: on this region I read FIXTURE pattern A.",

@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "reasoning",
   "question": "FIXTURE question: why decision A?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "Because FIXTURE cue A1 is present.",

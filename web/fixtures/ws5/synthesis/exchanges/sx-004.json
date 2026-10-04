@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "guardrail",
   "question": "FIXTURE question: when would you stop here?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "Stop and escalate if FIXTURE pattern B looks unclear.",

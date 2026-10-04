@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "explain",
   "question": "FIXTURE question: what about this one?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: off-record remark about region E.",

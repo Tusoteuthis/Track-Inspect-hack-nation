@@ -5,6 +5,7 @@
   "phase": "teach_back",
   "kind": "context",
   "question": "FIXTURE teach-back: is this summary of the process correct?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: yes, that is correct.",

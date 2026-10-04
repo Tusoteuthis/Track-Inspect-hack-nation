@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "explain",
   "question": "FIXTURE question: what is this one?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: this one is FIXTURE pattern D.",

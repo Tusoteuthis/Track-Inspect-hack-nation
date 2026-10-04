@@ -5,6 +5,7 @@
   "phase": "teach_back",
   "kind": "explain",
   "question": "FIXTURE question: is that right?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "No, FIXTURE decision A also needs FIXTURE cue A2.",

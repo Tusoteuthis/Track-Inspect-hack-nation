@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "reasoning",
   "question": "FIXTURE question: why does that matter?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: I choose FIXTURE decision A only if FIXTURE cue B is also visible.",
