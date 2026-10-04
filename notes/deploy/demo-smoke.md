@@ -61,3 +61,20 @@ None. No production blocker was found, so there are no code commits from Termina
 5. **Runtime env the container needs:** `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID_EXPERT`, `ELEVENLABS_AGENT_ID_TUTOR`, `BACKEND_ACCESS_TOKEN`. `ANTHROPIC_API_KEY` is **not** needed: the tutor is a stub unless `WS5_MODULES=real`.
 6. **What I could not verify locally:** SSE through the Worker/Container proxy (buffering) and microphone permission on the workers.dev origin. Check both on the deployed URL.
 7. `/dev` and `/dev/evidence` ship in the build without a guard. They are harmless; just don't navigate there during the demo.
+
+## Live re-check on the deployed URL (after Terminal A, `voice` @ 2b22ef3)
+URL: https://track-inspect.matthiass1.workers.dev
+
+**The merged `voice` still passes:** typecheck OK and vitest 1990/1990.
+
+**Terminal A's image and Worker cover findings 1–5 above:**
+- the server runs from `/app` with `fixtures/` copied in and `CASES_DIR` set explicitly
+- `.env*` is excluded from the image, so no `NEXT_PUBLIC_*` value is inlined
+- all four secrets are forwarded, and the Response is passed through unbuffered
+
+| Step | Result | Notes |
+|---|---|---|
+| API smoke (health, access gate, cases, conversation-token ×2, sessions, lifecycle, record-state) | OK | same results as local |
+| SSE through the Worker | OK | `record_state.changed` events posted after subscribing arrived within the same 4 s window, so the stream is not buffered |
+| Playwright suite against the live URL, authenticated with the cookie | OK | 34/34, including the full demo journey |
+| Microphone and real voice in a browser | not run | needs a human with a mic: do it in the rehearsal |
