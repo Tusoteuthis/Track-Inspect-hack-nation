@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { appendBus } from "@/lib/backend/bus";
 import { resetConfig, setConfigForTests } from "@/lib/backend/config";
 import { createSession } from "@/lib/backend/sessions";
+import { flushStreamLogs } from "@/lib/backend/sse";
 import { GET } from "./route";
 
 let dir: string;
@@ -15,6 +16,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  await flushStreamLogs();
   resetConfig();
   await fsp.rm(dir, { recursive: true, force: true });
 });

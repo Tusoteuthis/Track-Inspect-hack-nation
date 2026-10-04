@@ -19,6 +19,12 @@ export type SessionStreamOptions = {
 };
 
 const encoder = new TextEncoder();
+const pendingCloseLogs = new Set<Promise<unknown>>();
+
+/** Resolves when every stream-close diag line has been written (tests await it before cleanup). */
+export async function flushStreamLogs(): Promise<void> {
+  await Promise.all([...pendingCloseLogs]);
+}
 const DEFAULT_HEARTBEAT_MS = 15_000;
 
 export function formatSseMessage(event: BusEvent): string {
@@ -85,7 +91,9 @@ export function sessionStream(sid: string, opts: SessionStreamOptions): Readable
         if (closed) return;
         closed = true;
         // Lets diagnostics show when a client went away (a killed tab, a dropped LAN connection).
-        void diag({ component: "stream", op: "close", ids: { session_id: sid }, outcome: "ok", duration_ms: performance.now() - openedAt });
+        const log = diag({ component: "stream", op: "close", ids: { session_id: sid }, outcome: "ok", duration_ms: performance.now() - openedAt });
+        pendingCloseLogs.add(log);
+        void log.finally(() => pendingCloseLogs.delete(log));
         unsubscribe();
         clearInterval(heartbeat);
         opts.signal?.removeEventListener("abort", onAbort);

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { BusEvent } from "@/lib/contracts";
 import { appendBus, busFile } from "./bus";
 import { resetConfig, setConfigForTests } from "./config";
-import { parseAfter, sessionStream } from "./sse";
+import { flushStreamLogs, parseAfter, sessionStream } from "./sse";
 
 let dir: string;
 const SID = "ses-sse-1";
@@ -16,6 +16,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  await flushStreamLogs(); // a stream-close diag line must land before the temp dir is removed
   resetConfig();
   await fsp.rm(dir, { recursive: true, force: true });
 });
