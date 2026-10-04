@@ -61,6 +61,7 @@ type AgentSettings = {
   llm?: Llm;
   turnEagerness?: TurnEagerness;
   turnTimeout?: number; // seconds of user silence before the agent re-engages (-1 or 1–300)
+  softTimeoutSeconds?: number; // filler speech while the LLM is slow: -1 = disabled (0.5–8 s otherwise)
   speculativeTurn?: boolean;
   maxDurationSeconds?: number;
   expressiveMode?: boolean; // TTS audio-tag prompt ("[curious] …"); tags would end up in transcripts
@@ -246,6 +247,9 @@ for (const agent of agentNames) {
     ...(settings.turnEagerness ? { turnEagerness: settings.turnEagerness } : {}),
     ...(settings.turnTimeout !== undefined ? { turnTimeout: settings.turnTimeout } : {}),
     ...(settings.speculativeTurn !== undefined ? { speculativeTurn: settings.speculativeTurn } : {}),
+    ...(settings.softTimeoutSeconds !== undefined
+      ? { softTimeoutConfig: { ...(turn.softTimeoutConfig ?? {}), timeoutSeconds: settings.softTimeoutSeconds } }
+      : {}),
   };
   const conversationPatch = {
     ...(settings.maxDurationSeconds !== undefined ? { maxDurationSeconds: settings.maxDurationSeconds } : {}),
@@ -405,7 +409,7 @@ async function printReadBack(agentId: string) {
   for (const t of tools) console.log(`      ${t.id}  ${t.name}  [${t.type}]`);
   console.log(`    builtInTools: ${builtIn.length ? builtIn.join(", ") : "(none)"}`);
   console.log(
-    `    turnEagerness: ${turn.turnEagerness ?? "(unset)"}  turnTimeout: ${turn.turnTimeout ?? "(unset)"}  speculativeTurn: ${turn.speculativeTurn ?? "(unset)"}`,
+    `    turnEagerness: ${turn.turnEagerness ?? "(unset)"}  turnTimeout: ${turn.turnTimeout ?? "(unset)"}  speculativeTurn: ${turn.speculativeTurn ?? "(unset)"}  softTimeout: ${turn.softTimeoutConfig?.timeoutSeconds ?? "(unset)"}`,
   );
   const skip = p.builtInTools?.skipTurn;
   if (skip) console.log(`    skip_turn description: ${JSON.stringify(skip.description ?? "")}`);

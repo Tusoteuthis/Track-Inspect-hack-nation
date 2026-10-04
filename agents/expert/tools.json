@@ -2,7 +2,7 @@
   {
     "type": "client",
     "name": "begin_question",
-    "description": "Call this immediately before asking the expert any question, every time, then speak the question. Links the question to the pointing event it is about.",
+    "description": "Call this immediately before asking the expert any question, every time, then speak the question. Links the question to the pointing event it is about. If the result starts with \"declined\", do not ask: call skip_turn and say nothing.",
     "parameters": {
       "type": "object",
       "properties": {
@@ -32,11 +32,12 @@
         "phase": {
           "type": "string",
           "enum": [
+            "orient",
             "live",
             "debrief",
             "teach_back"
           ],
-          "description": "The phase you are in: live (during the task, default), debrief (after [PHASE debrief]) or teach_back (after [TEACH_BACK ...])."
+          "description": "The phase you are in: orient (setup questions before anything was pointed at), live (during the task, default), debrief (after [PHASE debrief]) or teach_back (after [TEACH_BACK ...])."
         },
         "gap_id": {
           "type": "string",
@@ -284,6 +285,58 @@
         "reason": {
           "type": "string",
           "description": "The expert's words asking to strike, briefly."
+        }
+      },
+      "required": [
+        "reason"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "set_interaction_mode",
+    "description": "Call silently, before you say anything, when the expert asks you to just listen (mode listen_only) or invites questions again (mode questions).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "listen_only",
+            "questions"
+          ],
+          "description": "listen_only: ask nothing until the expert invites questions again. questions: questions are welcome again."
+        }
+      },
+      "required": [
+        "mode"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "close_topic",
+    "description": "Call silently, before you say anything, when the expert says \"skip that\" (reason skip: the last question is dropped for good) or \"next\" / \"let's move on\" (reason next: the region being discussed is closed).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "enum": [
+            "skip",
+            "next"
+          ],
+          "description": "skip: drop the last question; next: close the current region."
         }
       },
       "required": [

@@ -23,12 +23,14 @@ import {
   validateDeletionReport,
   validateSetRecordStateParams,
 } from "./contracts";
+import { CONTROL_RESULT, type ExpertControl, detectControlPhrase } from "./controls";
 import { beginPhaseQuestion, confirmRevision, endPhase, proposeDraft, recordCoverage, startDebrief } from "./debrief";
+import { checkQuestionAllowed, declinedResult, orientOpen, referenceResolvedByWords } from "./question-policy";
 import { DEFAULT_INTERVIEW_CONFIG, withConfig } from "./interview-config";
 import { type Stamp, closeActive, mark, updateExchange, updateTopic } from "./session-util";
 import { resumeSession } from "./resume";
 import { strikeLastAnswer } from "./strike";
-import { ingestEvent, releaseText } from "./topics";
+import { ingestEvent, openTopic, releaseText } from "./topics";
 import {
   OFF_RECORD_REFUSAL,
   RECORD_STATE_RESULT,
@@ -73,6 +75,7 @@ export type SessionAction =
   | ({ type: "record_state_changed"; to: RecordState; trigger: RecordStateTrigger } & Stamp)
   | ({ type: "session_ended"; cause?: EndCause } & Stamp)
   | ({ type: "resumed" } & Stamp)
+  | ({ type: "control_requested"; control: ExpertControl; trigger: "expert_phrase" | "agent_tool" | "console" } & Stamp)
   | { type: "deletion_recorded"; report: ElevenLabsDeletionReport };
 
 /** Actions that record content: refused while off the record (agent tools get OFF_RECORD_REFUSAL). */
@@ -108,6 +111,7 @@ export function initialSession(
     unlinked_agent_questions: [],
     topics: [],
     interview_config: { ...config },
+    interaction_mode: "questions",
     phase: "live",
     phase_log: [],
     coverage: [],
@@ -257,7 +261,7 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
           exchanges: updateExchange(state.exchanges, awaiting, x => ({ ...x, question: text })),
         };
       }
-      if (!text.endsWith("?")) return next;
+      if (!text.includes("?")) return next;
       return {
         ...next,
         unlinked_agent_questions: [
@@ -276,6 +280,12 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
       }
       if (excludedAt(state, action.at_utc)) return countExcluded(state, "transcript_lines");
       const text = action.text.trim();
+      const control = state.phase === "live" || state.phase === "debrief" ? detectControlPhrase(text) : null;
+      if (control) {
+        // A control is an instruction to the apprentice, not an answer: kept in the transcript only.
+        const entry = { line_id: action.line_id, role: "user" as const, text, at_utc: action.at_utc, exchange_id: null };
+        return applyControl({ ...state, transcript: [...state.transcript, entry] }, control);
+      }
       const active = state.active_exchange_id;
       const entry = { line_id: action.line_id, role: "user" as const, text, at_utc: action.at_utc, exchange_id: active };
       const line: AnswerLine = { text, at_utc: action.at_utc, transcript_line_id: action.line_id };
@@ -325,6 +335,9 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
       return resumeSession(state, action);
     }
 
+    case "control_requested":
+      return applyControl(state, action.control);
+
     case "deletion_recorded":
       if (action.report.session_id !== state.session_id || !validateDeletionReport(action.report).ok) return state;
       return { ...state, elevenlabs_deletions: [...state.elevenlabs_deletions, action.report] };
@@ -340,6 +353,8 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
 
   const { kind, question } = parsed.value;
   const asked = parsed.value.event_id;
+  // A question about no event before anything was pointed at is an orientation question.
+  const orient = parsed.value.phase === "orient" || (asked === null && orientOpen(state));
   if (asked !== null && !state.events.some(e => e.event_id === asked)) {
     const known = state.events.map(e => e.event_id).join(", ") || "none";
     return { ...state, last_tool_result: `error unknown event_id ${asked}, known: ${known}` };
@@ -352,8 +367,19 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
   const event_id = topic?.primary_event_id ?? asked;
   const event = event_id === null ? null : state.events.find(e => e.event_id === event_id)!;
 
+  const check = checkQuestionAllowed(state, { ...parsed.value, phase: orient ? "orient" : parsed.value.phase }, topic);
+  if (!check.ok) {
+    return {
+      ...state,
+      last_tool_result: declinedResult(check),
+      timing: [...state.timing, mark(state, "question_declined_by_app", event_id, null, action)],
+    };
+  }
+
   if (topic?.requires_clarification && kind !== "clarify_reference") {
-    const clarified = state.exchanges.some(x => x.topic_id === topic.topic_id && x.kind === "clarify_reference");
+    const clarified =
+      state.exchanges.some(x => x.topic_id === topic.topic_id && x.kind === "clarify_reference") ||
+      referenceResolvedByWords(topic, state.transcript.filter(t => t.role === "user"));
     if (!clarified) {
       return {
         ...state,
@@ -369,7 +395,7 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
     event_id,
     topic_id: topic?.topic_id ?? null,
     related_event_ids: topic ? [...topic.alias_event_ids] : [],
-    phase: "live",
+    phase: orient ? "orient" : "live",
     kind,
     question: "",
     question_planned: question,
@@ -382,6 +408,7 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
     audio_offset_secs: null,
     record_state: event?.record_state ?? "on_record",
     source: event?.source ?? "live",
+    outcome: null,
   };
   const closed = closeActive(state);
   const topics = topic
@@ -401,6 +428,54 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
     awaiting_question_exchange_id: exchange_id,
     last_tool_result: `ok exchange_id=${exchange_id}. ${SAY_IT}`,
     timing: [...closed.timing, mark(state, "question_tool_called", event_id, exchange_id, action)],
+  };
+}
+
+/**
+ * An expert control, from their own words, the agent's tool or the console. Idempotent: the phrase
+ * detector and the agent's tool call for the same utterance apply once.
+ */
+export function applyControl(state: SessionState, control: ExpertControl): SessionState {
+  const done = (s: SessionState): SessionState => ({ ...s, last_tool_result: CONTROL_RESULT[control] });
+  switch (control) {
+    case "listen_only":
+    case "questions":
+      if (state.phase !== "live") return { ...state, last_tool_result: `error mode changes apply to the live part only (phase is ${state.phase})` };
+      return done(state.interaction_mode === control ? state : { ...state, interaction_mode: control });
+    case "skip":
+      return done(skipLastQuestion(state));
+    case "next":
+      return done(state.phase === "debrief" ? skipLastQuestion(state) : closeCurrentTopic(state));
+  }
+}
+
+/** "Skip that": the latest question is declined (never re-asked); a debrief gap is dropped. */
+function skipLastQuestion(state: SessionState): SessionState {
+  const last = [...state.exchanges].reverse().find(x => x.phase === "orient" || x.phase === "live" || x.phase === "debrief");
+  if (!last || last.outcome === "declined") return state;
+  const closed = closeActive(state);
+  return {
+    ...closed,
+    exchanges: updateExchange(closed.exchanges, last.exchange_id, x => ({ ...x, outcome: "declined" })),
+    debrief_agenda: closed.debrief_agenda.map(i =>
+      i.gap_id === last.gap_id && i.state !== "resolved" && i.state !== "unknown" ? { ...i, state: "dropped" } : i
+    ),
+  };
+}
+
+/** "Next": the region being discussed (or waiting to be asked about) is closed for live questions. */
+function closeCurrentTopic(state: SessionState): SessionState {
+  const recent = (t: Topic) => t.asked_at_perf_ms ?? t.released_at_perf_ms ?? t.queued_at_perf_ms;
+  const candidates = state.topics.filter(t => t.state === "released" || t.state === "asked" || t.state === "answered");
+  const topic = openTopic(state.topics) ?? candidates.sort((a, b) => recent(b) - recent(a))[0];
+  if (!topic) return state;
+  const closed = closeActive(state);
+  return {
+    ...closed,
+    topics: updateTopic(closed.topics, topic.topic_id, t => ({ ...t, state: "closed" })),
+    exchanges: closed.exchanges.map(x =>
+      x.topic_id === topic.topic_id && x.answer_lines.length === 0 && x.outcome === null ? { ...x, outcome: "dropped" } : x
+    ),
   };
 }
 

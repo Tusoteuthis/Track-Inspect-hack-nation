@@ -15,10 +15,11 @@
         "turnEagerness": "patient",
         "turnTimeout": 15,
         "speculativeTurn": false,
+        "softTimeoutSeconds": -1,
         "maxDurationSeconds": 1800,
         "expressiveMode": false,
         "skipTurn": true,
-        "skipTurnDescription": "Call this instead of speaking whenever you should stay silent: the expert is mid-sentence, mid-explanation or thinking aloud, they paused only briefly, nothing new invites a question, or the live question budget is used up. Calling it means you say nothing this turn.",
+        "skipTurnDescription": "Call this instead of speaking whenever you should stay silent: the expert is mid-sentence, mid-explanation or thinking aloud, they paused only briefly, nothing new invites a question, the app declined your question, the live question budget is used up, or the expert asked you to just listen. Calling it means you say nothing this turn.",
         "clientEventsAdd": [
           "client_tool_call",
           "agent_chat_response_part",

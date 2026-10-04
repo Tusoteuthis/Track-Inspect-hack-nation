@@ -111,6 +111,7 @@ export function makeExchange(sid: string, xid: string, eventId: string | null, r
     audio_offset_secs: null,
     record_state: "on_record",
     source: "fixture",
+    outcome: null,
     rev,
   };
 }

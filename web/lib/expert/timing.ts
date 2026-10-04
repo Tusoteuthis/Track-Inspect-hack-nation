@@ -128,7 +128,7 @@ export function renderTimingReportMd(snap: SessionSnapshot): string {
     `# Timing report — ${snap.session_id}`,
     "",
     `Config: pause_ms ${c.pause_ms} · nudge_after_ms ${c.nudge_after_ms} · stale_after_ms ${c.stale_after_ms} · ` +
-      `dedup ${c.dedup_window_ms} ms / IoU ${c.dedup_min_iou} · budget ${c.budget_max_questions} per ${Math.round(c.budget_window_ms / 60_000)} min`,
+      `dedup IoU ${c.dedup_min_iou} (no time window) · budget ${c.budget_max_questions} live questions per session, ${c.topic_max_followups} follow-up per topic`,
     "",
     "- **processing ms**: event received → topic ready (our own processing).",
     "- **intentional wait ms**: topic ready → released to the agent (deliberately waiting for a pause or for the previous topic).",

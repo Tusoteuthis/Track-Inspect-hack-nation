@@ -77,9 +77,11 @@ describe("release wording (Sprint 2)", () => {
     );
   });
 
-  it("adds the guardrail reminder when none was asked yet, never with an interpretation", () => {
+  it("adds the guardrail preference when none was asked yet: a soft priority, never mandatory (D10)", () => {
     const text = formatPointingEventUpdate(byId("evt-001"), { guardrailPending: true });
-    expect(text).toContain("No guardrail question yet: once the expert has explained what they see here, ask when they would stop, escalate or not trust it.");
+    expect(text).toContain(
+      "No guardrail question yet: if a follow-up is worth asking once the expert has explained what they see here, prefer asking when they would stop, escalate or not trust it."
+    );
   });
 
   it("builds the control nudge and recognizes control text", () => {

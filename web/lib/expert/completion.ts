@@ -8,7 +8,7 @@ import { activeConfirmations, isSuperseded } from "./draft";
 import { offRecordMarker } from "./render";
 import { liveCounters } from "./timing";
 
-const UNRESOLVED_GAP_STATES = new Set(["open", "asked", "partial"]);
+const UNRESOLVED_GAP_STATES = new Set(["open", "asked", "partial", "dropped"]);
 
 export function deriveCompletion(snap: SessionSnapshot): SessionCompletion {
   if (snap.ended_at_utc === null) throw new Error(`session ${snap.session_id} has not ended`);
@@ -28,13 +28,22 @@ export function deriveCompletion(snap: SessionSnapshot): SessionCompletion {
   if (open_gap_ids.length) unfinished.push(`${open_gap_ids.length} debrief gap(s) unresolved: ${open_gap_ids.join(", ")}`);
   if (reachedDebrief && !latest) unfinished.push("no draft workflow was proposed, so there was no teach-back");
   if (latest && isSuperseded(snap, latest.revision_id)) unfinished.push(`${latest.revision_id} was superseded by a strike and not replaced and re-confirmed`);
-  else if (latest && !confirmed_revision_id) unfinished.push(`teach-back not confirmed (${latest.revision_id}): no explicit confirmation by the expert`);
+  else if (latest && !confirmed_revision_id) {
+    unfinished.push(`teach-back not confirmed (${latest.revision_id}): no explicit confirmation by the expert`);
+    unfinished.push(`unconfirmed steps in ${latest.revision_id}: ${latest.steps.map(st => st.step_id).join(", ") || "none"}`);
+  }
   if (unresolved.length) unfinished.push(`${unresolved.length} open question(s) unanswered: ${unresolved.join(", ")}`);
   const last = snap.recording_segments.at(-1);
   if (last?.state === "off_record") unfinished.push("the session ended while off the record");
   if (end_reason === "aborted") unfinished.push("the session ended with an error");
 
   const live = liveCounters(snap);
+  // Challenge shortfalls are reported as they are, never padded (strategy §12, D10).
+  if (live.live_questions < 3) unfinished.push(`only ${live.live_questions} live question(s) were asked (the challenge asks for at least 3)`);
+  if (live.guardrail_questions === 0) unfinished.push("no live guardrail question was asked");
+  if (snap.unlinked_agent_questions.length) {
+    unfinished.push(`${snap.unlinked_agent_questions.length} agent question(s) were not routed through the app's question limits`);
+  }
   const off = snap.recording_segments.filter(s => s.state === "off_record");
   return {
     schema_version: SCHEMA_VERSION,

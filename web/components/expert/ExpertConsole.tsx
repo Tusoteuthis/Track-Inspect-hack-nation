@@ -91,7 +91,10 @@ export function ExpertConsole({ session, raw }: Props) {
         />
       ) : null}
       {state ? (
-        <TrustPanel session={session} state={state} io={io} connected={connected} muteWhileOff={muteWhileOff} setMuteWhileOff={setMuteWhileOff} />
+        <>
+          <TrustPanel session={session} state={state} io={io} connected={connected} muteWhileOff={muteWhileOff} setMuteWhileOff={setMuteWhileOff} />
+          <ControlsPanel session={session} state={state} />
+        </>
       ) : null}
       {state?.ended_at_utc ? <CompletionPanel session={session} state={state} connected={connected} /> : null}
       <GateLine gate={connected ? session.gate : null} />
@@ -575,6 +578,48 @@ function DebriefPanels({ state }: { state: SessionState }) {
         </div>
       ) : null}
     </>
+  );
+}
+
+/**
+ * Console mirror of the expert's spoken controls, with the acknowledged mode and the app-side
+ * question limits (live budget, declined questions) as they stand.
+ */
+function ControlsPanel({ session, state }: { session: ExpertSession; state: SessionState }) {
+  const [result, setResult] = useState<string | null>(null);
+  const running = !state.ended_at_utc;
+  const cfg = state.interview_config;
+  const live = state.exchanges.filter(x => x.phase === "live").length;
+  const orient = state.exchanges.filter(x => x.phase === "orient").length;
+  const declinedByApp = state.timing.filter(m => m.mark === "question_declined_by_app").length;
+  const skipped = state.exchanges.filter(x => x.outcome === "declined").length;
+  const closed = state.topics.filter(t => t.state === "closed").length;
+  const listen = state.interaction_mode === "listen_only";
+  const act = (c: Parameters<ExpertSession["applyControl"]>[0]) => setResult(session.applyControl(c));
+  return (
+    <div className="ec-card" aria-label="Expert controls">
+      <div className="ec-controls">
+        <span className="ec-small">
+          Mode: <strong className={listen ? "ec-err" : "ec-ok"}>{listen ? "JUST LISTENING" : "questions"}</strong>{" "}
+          <span className="ec-muted">(acknowledged)</span>
+        </span>
+        <button type="button" disabled={!running || state.phase !== "live"} onClick={() => act(listen ? "questions" : "listen_only")}>
+          {listen ? "Questions again" : "Just listen"}
+        </button>
+        <button type="button" disabled={!running} onClick={() => act("skip")}>
+          Skip that
+        </button>
+        <button type="button" disabled={!running} onClick={() => act("next")}>
+          Next
+        </button>
+      </div>
+      {result ? <p className="ec-small ec-muted">Control: {result}</p> : null}
+      <p className="ec-small ec-muted">
+        Live questions {live}/{cfg.budget_max_questions} · orientation {orient}/{cfg.orient_max_questions} · ≤{cfg.topic_max_followups} follow-up per topic ·
+        declined by the app {declinedByApp} · skipped by the expert {skipped} · topics closed {closed} · questions not routed through the app{" "}
+        <strong className={state.unlinked_agent_questions.length ? "ec-err" : undefined}>{state.unlinked_agent_questions.length}</strong>
+      </p>
+    </div>
   );
 }
 

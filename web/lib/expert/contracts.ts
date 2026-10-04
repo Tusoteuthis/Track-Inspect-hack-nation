@@ -11,8 +11,8 @@ export const EVENT_SCHEMA_VERSION = "ws3.v0";
 export type Source = "live" | "fixture";
 export type RecordState = "on_record" | "off_record";
 export type MappingStatus = "resolved" | "ambiguous" | "unresolved";
-/** Phase an exchange was asked in. */
-export type Phase = "live" | "debrief" | "teach_back";
+/** Phase an exchange was asked in. `orient` = optional setup questions before the first pointing event (never screen-grounded). */
+export type Phase = "orient" | "live" | "debrief" | "teach_back";
 /** Phase of the whole session; `confirmed` / `incomplete` are terminal. */
 export type SessionPhase = Phase | "confirmed" | "incomplete";
 export type PhaseTrigger = "agent_tool" | "console" | "confirmation" | "session_end" | "strike" | "resume";
@@ -42,18 +42,25 @@ export type TimingMarkName =
   | "answer_ended"
   | "user_speech_started"
   | "user_speech_ended"
-  | "topic_nudged";
+  | "topic_nudged"
+  | "question_declined_by_app";
 export type TopicState =
   | "queued"
   | "released"
   | "asked"
   | "answered"
   | "deferred_to_debrief"
-  | "dropped_off_record";
-export type DeferredReason = "budget" | "moved_on" | "release_timeout" | "task_complete";
+  | "dropped_off_record"
+  | "closed";
+export type DeferredReason = "budget" | "moved_on" | "release_timeout" | "task_complete" | "listen_only";
+/** Expert-controlled interaction mode: "listen_only" = no live questions until the expert resumes them. */
+export type InteractionMode = "questions" | "listen_only";
+/** What happened to a question besides being answered: declined by the expert ("skip that") or dropped when its topic closed. */
+export type QuestionOutcome = "declined" | "dropped";
 /** How a coverage item was closed: answered, or the expert said it is unknown / would escalate. */
 export type CoverageResolution = "answered" | "unknown_escalate";
-export type DebriefItemState = "open" | "asked" | "partial" | "resolved" | "unknown";
+/** `dropped` = selected as a gap but cut by the debrief cap or skipped by the expert: kept as unresolved, never asked. */
+export type DebriefItemState = "open" | "asked" | "partial" | "resolved" | "unknown" | "dropped";
 
 /** Normalized box in the original saved frame, origin top-left, values in [0, 1]. */
 export type Region = {
@@ -124,6 +131,8 @@ export type ExpertExchange = {
   audio_offset_secs: number | null;
   record_state: RecordState;
   source: Source;
+  /** null = normal; "declined" = the expert skipped it; "dropped" = its topic was closed before an answer. */
+  outcome: QuestionOutcome | null;
 };
 
 /** One cell of the coverage grid. Row key: (`event_id` = topic primary event, or null for the session row, `dimension`). */
@@ -219,7 +228,7 @@ export type SessionCompletion = {
   unresolved_open_question_ids: string[];
   /** Debrief agenda items not resolved (open, asked, partial). */
   open_gap_ids: string[];
-  /** Plain statements of what was not finished; empty only for a completed session. */
+  /** Plain statements of what was not finished or fell short (challenge counts, unrouted questions); never padded. */
   unfinished: string[];
   excluded: {
     off_record_segments: number;
@@ -320,11 +329,17 @@ export type Topic = {
 
 /** Tunables of the live interview, stored with each session so reports state what was used. */
 export type InterviewConfig = {
-  dedup_window_ms: number;
+  /** Repeat gestures merge into a topic at this region overlap (same trace and channel, no time window). */
   dedup_min_iou: number;
   stale_after_ms: number;
+  /** Live questions per session (fixed cap, not a rolling window). Orientation questions do not count. */
   budget_max_questions: number;
-  budget_window_ms: number;
+  /** Follow-ups per topic after its opening question (clarify_reference not counted). */
+  topic_max_followups: number;
+  orient_max_questions: number;
+  debrief_max_gaps: number;
+  /** Corrected teach-back revisions allowed before the session ends incomplete. */
+  teach_back_max_corrections: number;
   /** Minimum expert quiet time before a topic is released. */
   pause_ms: number;
   /** A released topic the agent does not ask about within this time goes to the debrief. */
@@ -396,6 +411,7 @@ export type SessionSnapshot = {
   unlinked_agent_questions: UnlinkedQuestion[];
   topics: Topic[];
   interview_config: InterviewConfig;
+  interaction_mode: InteractionMode;
   phase: SessionPhase;
   phase_log: PhaseChange[];
   coverage: CoverageItem[];
@@ -517,7 +533,7 @@ const EXCHANGE_KINDS: readonly ExchangeKind[] = [
   "teach_back",
   "correction",
 ];
-const PHASES: readonly Phase[] = ["live", "debrief", "teach_back"];
+const PHASES: readonly Phase[] = ["orient", "live", "debrief", "teach_back"];
 const TIMING_MARKS: readonly TimingMarkName[] = [
   "event_received",
   "topic_queued",
@@ -529,6 +545,7 @@ const TIMING_MARKS: readonly TimingMarkName[] = [
   "user_speech_started",
   "user_speech_ended",
   "topic_nudged",
+  "question_declined_by_app",
 ];
 const TOPIC_STATES: readonly TopicState[] = [
   "queued",
@@ -537,8 +554,11 @@ const TOPIC_STATES: readonly TopicState[] = [
   "answered",
   "deferred_to_debrief",
   "dropped_off_record",
+  "closed",
 ];
-const DEFERRED_REASONS: readonly DeferredReason[] = ["budget", "moved_on", "release_timeout", "task_complete"];
+const DEFERRED_REASONS: readonly DeferredReason[] = ["budget", "moved_on", "release_timeout", "task_complete", "listen_only"];
+const INTERACTION_MODES: readonly InteractionMode[] = ["questions", "listen_only"];
+const QUESTION_OUTCOMES: readonly QuestionOutcome[] = ["declined", "dropped"];
 export const COVERAGE_DIMENSIONS: readonly CoverageDimension[] = [
   "decision",
   "reason",
@@ -558,13 +578,15 @@ const DELETION_STATUSES: readonly ElevenLabsDeletionStatus[] = ["deleted", "not_
 const EXCLUDED_KEYS: readonly (keyof OffRecordExcluded)[] = ["transcript_lines", "events", "timing_marks", "refused_tool_calls"];
 const STEP_KINDS: readonly StepKind[] = ["step", "decision", "guardrail", "exception"];
 const CONFIRMATION_STATUSES: readonly ConfirmationStatus[] = ["confirmed", "corrected", "unresolved"];
-const DEBRIEF_STATES: readonly DebriefItemState[] = ["open", "asked", "partial", "resolved", "unknown"];
+const DEBRIEF_STATES: readonly DebriefItemState[] = ["open", "asked", "partial", "resolved", "unknown", "dropped"];
 const CONFIG_KEYS: readonly (keyof InterviewConfig)[] = [
-  "dedup_window_ms",
   "dedup_min_iou",
   "stale_after_ms",
   "budget_max_questions",
-  "budget_window_ms",
+  "topic_max_followups",
+  "orient_max_questions",
+  "debrief_max_gaps",
+  "teach_back_max_corrections",
   "pause_ms",
   "release_timeout_ms",
   "nudge_after_ms",
@@ -763,6 +785,9 @@ export function validateExpertExchange(input: unknown): ValidationResult<ExpertE
   }
   if (!oneOf(RECORD_STATES, input.record_state)) errors.push(`record_state must be one of ${RECORD_STATES.join(", ")}`);
   if (!oneOf(SOURCES, input.source)) errors.push(`source must be one of ${SOURCES.join(", ")}`);
+  if (input.outcome !== undefined && input.outcome !== null && !oneOf(QUESTION_OUTCOMES, input.outcome)) {
+    errors.push(`outcome must be one of ${QUESTION_OUTCOMES.join(", ")} or null`);
+  }
   return errors.length ? { ok: false, errors } : { ok: true, value: input as ExpertExchange };
 }
 
@@ -1032,6 +1057,9 @@ export function validateSessionSnapshot(input: unknown): ValidationResult<Sessio
     if (v !== null && !(typeof v === "string" && exchangeIds.has(v))) errors.push(`${key} must be a known exchange id or null`);
   }
 
+  if (input.interaction_mode !== undefined && !oneOf(INTERACTION_MODES, input.interaction_mode)) {
+    errors.push(`interaction_mode must be one of ${INTERACTION_MODES.join(", ")}`);
+  }
   checkPhaseRecords(input, eventIds, exchangeIds, exchanges, errors);
   checkTrustRecords(input, events, exchanges, timing, errors);
 
