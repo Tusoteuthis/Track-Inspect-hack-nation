@@ -13,7 +13,8 @@
     "tts-roundtrip": "tsx scripts/tts-roundtrip.mts",
     "test": "vitest run",
     "spike:ws3": "tsx scripts/ws3-capability-spike.mts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "eval:ws5": "tsx fixtures/ws5/drafts/run-eval.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
