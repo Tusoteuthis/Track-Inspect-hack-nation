@@ -21,6 +21,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { CONTROL_RESULT } from "../lib/expert/controls";
 import type {
   ConversationHistoryTranscriptCommonModelInput as Turn,
   ConversationHistoryTranscriptResponseModel as OutTurn,
@@ -70,6 +71,8 @@ const TOOL_MOCKS = {
   confirm_revision: { defaultReturnValue: "ok confirmation recorded." },
   set_record_state: { defaultReturnValue: "ok record_state recorded." },
   strike_last_answer: { defaultReturnValue: "ok struck." },
+  set_interaction_mode: { defaultReturnValue: CONTROL_RESULT.listen_only },
+  close_topic: { defaultReturnValue: CONTROL_RESULT.skip },
 };
 
 const webDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");

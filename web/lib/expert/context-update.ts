@@ -28,8 +28,8 @@ export function formatPointingEventUpdate(
   }
   if (options.guardrailPending) {
     parts.push(
-      "No guardrail question yet: once the expert has explained what they see here, " +
-        "ask when they would stop, escalate or not trust it."
+      "No guardrail question yet: if a follow-up is worth asking once the expert has explained what they see here, " +
+        "prefer asking when they would stop, escalate or not trust it."
     );
   }
   return parts.join(" ");
