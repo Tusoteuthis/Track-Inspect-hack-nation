@@ -6,7 +6,9 @@ import SwiftUI
         phoneVideo: PhoneVideoService(),
         analyzer: LocalAnalysisService(),
         voice: ElevenLabsVoiceService(),
-        describer: PassivVisionService()
+        describer: PassivVisionService(),
+        recorder: BackendPointingRecorder(),
+        voiceTokens: BackendConversationTokens()
     )
     @State private var mentra = MentraGlassesService()
     @Environment(\.scenePhase) private var scenePhase

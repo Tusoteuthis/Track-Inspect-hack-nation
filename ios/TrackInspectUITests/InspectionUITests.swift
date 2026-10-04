@@ -50,7 +50,7 @@ import XCTest
         let identity = app.staticTexts["applicationIdentity"]
         scrollTo(identity, in: app)
         XCTAssertEqual(identity.label, "Application identifier")
-        XCTAssertEqual(identity.value as? String, "ai.track-inspect.app")
+        XCTAssertEqual(identity.value as? String, "ai.trackinspect.app")
         screenshot("Settings accessibility text", app: app)
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["settingsButton"].exists)

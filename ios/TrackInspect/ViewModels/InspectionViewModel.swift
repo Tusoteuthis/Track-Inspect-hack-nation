@@ -10,6 +10,8 @@ struct PointingCapture {
     let capturedAt: Date
     /// Cloud description of this exact frame, once it has arrived.
     var description: String? = nil
+    /// Outcome of storing this event in the project backend, when one is configured.
+    var backendStatus: String? = nil
 }
 
 @MainActor @Observable final class InspectionViewModel {
@@ -27,6 +29,8 @@ struct PointingCapture {
     private(set) var glassesRegistration: GlassesRegistrationStatus?
     private var glassesLink: GlassesConnectionStatus = .checking
     private var keepsPhoneAudio = false
+    /// Set only by the user's "Glasses Bluetooth" choice during a call.
+    private var prefersGlassesAudio = false
     private var lastVideoFrame: TimeInterval?
     private var connectionCheckedAt: TimeInterval = 0
 
@@ -116,6 +120,12 @@ struct PointingCapture {
     private let analyzer: any AnalysisService
     private let voice: any VoiceService
     private let describer: (any TargetDescriptionService)?
+    private let recorder: (any PointingRecorder)?
+    private let voiceTokens: (any ConversationTokenSource)?
+    /// What the voice SDK reports, and the app's own notes about context it sent, each placed after an SDK line.
+    private var spokenLines: [TranscriptLine] = []
+    private var sentNotes: [(after: String?, line: TranscriptLine)] = []
+    var canUseBackendVoice: Bool { voiceTokens != nil }
     @ObservationIgnored private var describeTask: Task<Void, Never>?
     private var describeGeneration = UUID()
     private var lastDescription = -TimeInterval.infinity
@@ -141,7 +151,8 @@ struct PointingCapture {
 
     init(video: any VideoService, phoneVideo: (any FrameSource)? = nil,
          analyzer: any AnalysisService, voice: any VoiceService,
-         describer: (any TargetDescriptionService)? = nil,
+         describer: (any TargetDescriptionService)? = nil, recorder: (any PointingRecorder)? = nil,
+         voiceTokens: (any ConversationTokenSource)? = nil,
          timing: SessionTiming = SessionTiming(),
          now: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
         self.video = video
@@ -149,6 +160,8 @@ struct PointingCapture {
         self.analyzer = analyzer
         self.voice = voice
         self.describer = describer
+        self.recorder = recorder
+        self.voiceTokens = voiceTokens
         self.timing = timing
         self.now = now
         routeTask = Task { [weak self] in
@@ -200,6 +213,7 @@ struct PointingCapture {
             shareFindings = false
             cancelDescription()
             pointingCapture = nil
+            endBackendSession()
             _ = beginStopVideo()
             _ = beginStopVoice()
         } else {
@@ -331,13 +345,19 @@ struct PointingCapture {
 
     // MARK: - Voice
 
-    func startVoice(agentID: String) {
+    func startVoice(agentID: String, connection: VoiceConnection = .direct) {
+        guard connection == .direct || voiceTokens != nil else {
+            error = "Backend voice needs BACKEND_ACCESS_TOKEN in this build. Choose Direct in Settings."
+            return
+        }
         guard isForeground, !isUnpairing, !isUnpairPending,
               !isVoiceRunning, !isVoiceBusy, !isVoiceStopping else { return }
         error = nil
         isVoiceRunning = true
         isVoiceBusy = true
         voiceStatus = "Connecting"
+        spokenLines = []
+        sentNotes = []
         transcript = []
         lastContext = -.infinity
         let generation = UUID()
@@ -353,7 +373,15 @@ struct PointingCapture {
             do {
                 await videoStop?.value
                 try Task.checkCancellation()
-                try await self.voice.start(agentID: agentID)
+                if connection == .backend, let voiceTokens = self.voiceTokens {
+                    // The backend owns the agent; the preset only picks its flow.
+                    let flow = agentID == AgentPreset.tutor.agentID ? "tutor" : "expert"
+                    let token = try await voiceTokens.token(flow: flow)
+                    try Task.checkCancellation()
+                    try await self.voice.start(conversationToken: token)
+                } else {
+                    try await self.voice.start(agentID: agentID)
+                }
                 try Task.checkCancellation()
                 guard self.voiceGeneration == generation else { return }
                 self.refreshRoute()
@@ -382,6 +410,7 @@ struct PointingCapture {
         voiceGeneration = UUID()
         isVoiceRunning = false
         keepsPhoneAudio = false
+        prefersGlassesAudio = false
         isVoiceStopping = true
         isMuted = true
         voiceStatus = "Ending voice…"
@@ -390,6 +419,7 @@ struct PointingCapture {
         voice.onMuted = nil
         voiceTask?.cancel()
         contextTask?.cancel()
+        endBackendSession()
         let start = voiceTask
         let context = contextTask
         let task = Task { [self] in
@@ -420,7 +450,8 @@ struct PointingCapture {
         }
         voice.onTranscript = { [weak self] lines in
             guard let self, self.voiceGeneration == generation else { return }
-            self.transcript = Array(lines.suffix(100))
+            self.spokenLines = Array(lines.suffix(100))
+            self.rebuildTranscript()
         }
         voice.onMuted = { [weak self] muted in
             guard let self, self.voiceGeneration == generation else { return }
@@ -453,6 +484,13 @@ struct PointingCapture {
     /// hands-free route, let it settle, then start the stream. Falls back to iPhone audio.
     private func routeVoiceToGlasses() async {
         guard isVoiceRunning else { return }
+        // The glasses microphone goes silent while their camera streams, so it is opt-in, not the default.
+        guard prefersGlassesAudio else {
+            MetaVideoService.trace("audio: staying on iPhone microphone for the stream")
+            keepsPhoneAudio = true
+            holdPhoneAudioIfNeeded()
+            return
+        }
         let session = AVAudioSession.sharedInstance()
         guard let glasses = session.availableInputs?.first(where: { $0.portType == .bluetoothHFP }) else {
             MetaVideoService.trace("audio: no hands-free input, staying on iPhone")
@@ -474,6 +512,7 @@ struct PointingCapture {
     func preferPhoneAudio(_ phone: Bool) {
         guard isVoiceRunning, !isVoiceBusy else { return }
         keepsPhoneAudio = phone
+        prefersGlassesAudio = !phone
         do {
             let session = AVAudioSession.sharedInstance()
             let input = session.availableInputs?.first {
@@ -535,7 +574,7 @@ struct PointingCapture {
                                                   capturedAt: result.capturedAt)
                     if self.describeTargets, self.describer != nil {
                         if self.pointingStreak >= dwell {
-                            self.describeIfDue(capture, snapshot: snapshot, newGesture: self.pointingStreak == dwell)
+                            self.describeIfDue(capture, frame: data, snapshot: snapshot, newGesture: self.pointingStreak == dwell)
                         }
                         // The panel keeps a described frame; otherwise it follows the latest pointing frame.
                         if self.describeTask == nil, self.pointingCapture?.description == nil {
@@ -579,7 +618,21 @@ struct PointingCapture {
         }
     }
 
-    private func describeIfDue(_ capture: PointingCapture, snapshot: Data, newGesture: Bool) {
+    private func endBackendSession() {
+        guard let recorder else { return }
+        Task { await recorder.endSession() }
+    }
+
+    private func rebuildTranscript() {
+        var lines = sentNotes.filter { $0.after == nil }.map(\.line)
+        for spoken in spokenLines {
+            lines.append(spoken)
+            lines += sentNotes.filter { $0.after == spoken.id }.map(\.line)
+        }
+        transcript = lines
+    }
+
+    private func describeIfDue(_ capture: PointingCapture, frame: Data, snapshot: Data, newGesture: Bool) {
         guard let describer, isForeground, describeTask == nil,
               now() - lastDescription >= (newGesture ? timing.describeMinimum : timing.describeInterval) else { return }
         lastDescription = now()
@@ -601,8 +654,24 @@ struct PointingCapture {
                     return
                 }
                 self.pointingCapture?.description = text
-                guard self.isVoiceRunning, !self.isVoiceBusy else { return }
-                try await self.voice.sendText("I am pointing at this (described by the camera's vision model, unverified): \(text) Briefly acknowledge what I am pointing at.")
+                let eventID = UUID().uuidString.lowercased()
+                if self.isVoiceRunning, !self.isVoiceBusy {
+                    try await self.voice.updateContext(PointingEventLine.text(eventID: eventID, description: text))
+                    // Context updates are silent in the SDK's transcript; show what the agent was given.
+                    self.sentNotes.append((self.spokenLines.last?.id, TranscriptLine(
+                        id: "camera-\(eventID)", speaker: "camera", text: "Pointing event sent to the agent: \(text)")))
+                    self.rebuildTranscript()
+                }
+                guard let recorder = self.recorder else { return }
+                var status = "Saved to the inspection backend."
+                do {
+                    try await recorder.record(PointingRecord(eventID: eventID, capturedAt: capture.capturedAt, frame: frame,
+                                                             annotated: snapshot, region: capture.target.box, description: text))
+                } catch {
+                    status = "Not saved to the backend: \(error.localizedDescription)"
+                }
+                guard !Task.isCancelled, self.describeGeneration == generation else { return }
+                self.pointingCapture?.backendStatus = status
             } catch {
                 guard let self, !Task.isCancelled, self.describeGeneration == generation else { return }
                 self.error = "Could not describe the pointing target: \(error.localizedDescription)"

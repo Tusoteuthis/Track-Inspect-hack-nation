@@ -4,6 +4,8 @@ struct InspectionSettingsView: View {
     @Binding var agentID: String
     @Bindable var mentra: MentraGlassesService
     var videoSource: Binding<VideoSource> = .constant(.glasses)
+    var voiceConnection: Binding<VoiceConnection> = .constant(.direct)
+    var canUseBackendVoice = false
     var registrationStatus: GlassesRegistrationStatus? = nil
     var isPairing = false
     var connectionStatus: GlassesConnectionStatus = .checking
@@ -156,6 +158,25 @@ struct InspectionSettingsView: View {
                     }
 
                     section("Voice agent", symbol: "waveform") {
+                        Text("Connection").font(.subheadline.weight(.medium))
+                        HStack(spacing: 10) {
+                            ForEach(VoiceConnection.allCases) { connection in
+                                Button {
+                                    voiceConnection.wrappedValue = connection
+                                } label: {
+                                    Label(connection.title, systemImage: voiceConnection.wrappedValue == connection ? "checkmark.circle.fill" : "circle")
+                                }
+                                .buttonStyle(InspectionButtonStyle(fullWidth: true))
+                                .disabled(connection == .backend && !canUseBackendVoice)
+                                .accessibilityIdentifier("voiceConnection_\(connection.rawValue)")
+                                .accessibilityAddTraits(voiceConnection.wrappedValue == connection ? [.isSelected] : [])
+                            }
+                        }
+                        Text(canUseBackendVoice
+                             ? "Direct connects to the agent ID below. Backend asks the TrackInspect backend for a conversation token; the Expert or Tutor choice selects its flow and the agent ID is not used."
+                             : "Direct connects to the agent ID below. Backend is unavailable: this build has no BACKEND_ACCESS_TOKEN.")
+                            .font(.caption).foregroundStyle(InspectionTheme.secondary)
+                        InspectionRule()
                         Text("ElevenLabs").font(.subheadline.weight(.medium))
                         HStack(spacing: 10) {
                             ForEach(AgentPreset.allCases) { preset in
