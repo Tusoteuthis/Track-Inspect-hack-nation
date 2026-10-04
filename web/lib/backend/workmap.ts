@@ -25,6 +25,7 @@ import { listConfirmations } from "./confirmations";
 import { listEvents } from "./events";
 import { listExchanges } from "./exchanges";
 import {
+  findRevision,
   loadEntry,
   readRevisionByNo,
   readWorkflow,
@@ -239,4 +240,32 @@ export async function getWorkMap(include: WorkMapView["include"] = "confirmed"):
     else view.excluded.push(built.excluded);
   }
   return view;
+}
+
+/**
+ * Steps for an explicit set of revisions (the session review, integration G9), built exactly like
+ * `include=draft` Work Map steps. Position and title come from the current workflow when the
+ * entry is linked there, otherwise from the order given.
+ */
+export async function getRevisionSteps(revisionIds: string[]): Promise<Pick<WorkMapView, "steps" | "excluded">> {
+  const links = new Map((await readWorkflow())?.links.map(link => [link.entry_id, link]) ?? []);
+  const l = new Lookups();
+  const out: Pick<WorkMapView, "steps" | "excluded"> = { steps: [], excluded: [] };
+  for (const [i, revisionId] of revisionIds.entries()) {
+    const found = await findRevision(revisionId);
+    if (!found) {
+      out.excluded.push({ entry_id: "unknown", revision_id: revisionId, reason: "revision not stored" });
+      continue;
+    }
+    const rev = found.revision;
+    const linked = links.get(rev.entry_id);
+    const built = await buildStep(
+      { position: linked?.position ?? i + 1, entry_id: rev.entry_id, revision_id: rev.revision_id, revision_no: rev.revision_no, title: linked?.title ?? null },
+      "draft",
+      l,
+    );
+    if ("step" in built) out.steps.push(built.step);
+    else out.excluded.push(built.excluded);
+  }
+  return out;
 }
