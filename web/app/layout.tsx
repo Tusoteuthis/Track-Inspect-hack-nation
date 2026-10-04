@@ -14,8 +14,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <DataSourceProvider>
           <div className="app-shell">
+            <a href="#main" className="skip-link">
+              Skip to main content
+            </a>
             <AppNav />
-            <main className="app-main">{children}</main>
+            <main id="main" tabIndex={-1} className="app-main">
+              {children}
+            </main>
           </div>
         </DataSourceProvider>
       </body>

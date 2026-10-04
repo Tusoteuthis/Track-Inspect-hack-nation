@@ -44,6 +44,8 @@ export function createStubSource(init: {
   practiceCase?: PracticeCaseView;
   /** Every read rejects with this message (route error-state tests). */
   rejectAll?: string;
+  /** "api" keeps pages from swapping in their own fixture source. */
+  kind?: DataSource["kind"];
 }) {
   const listeners = new Set<(u: SourceUpdate) => void>();
   const marks: { mark: ReviewMark; result: Deferred<Ack<{ received_at_utc: string }>> }[] = [];
@@ -66,7 +68,7 @@ export function createStubSource(init: {
   };
 
   const source: DataSource = {
-    kind: "fixture",
+    kind: init.kind ?? "fixture",
     getSession: () => read(state.session),
     getWorkMap: () => read(init.workmap),
     getPracticeCase: () => read(init.practiceCase),

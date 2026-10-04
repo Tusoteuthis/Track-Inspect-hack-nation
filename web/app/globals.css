@@ -94,6 +94,17 @@ button, input, select, textarea { font: inherit; color: inherit; }
 a { color: inherit; }
 
 /* app shell */
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: -10rem;
+  z-index: 100;
+  padding: var(--space-2) var(--space-4);
+  background: var(--panel);
+  border: 2px solid var(--focus);
+  border-radius: var(--radius);
+}
+.skip-link:focus { top: var(--space-2); }
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
 .app-main { flex: 1; width: 100%; max-width: 90rem; margin: 0 auto; padding: var(--space-6) var(--space-4); }
 

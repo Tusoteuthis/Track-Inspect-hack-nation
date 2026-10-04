@@ -159,3 +159,7 @@ export function createFixtureSource(options: FixtureSourceOptions = {}): Fixture
 }
 
 export const fixtureSource: FixtureDataSource = createFixtureSource();
+
+/** True for sources made by createFixtureSource (they all share the scripted review). */
+export const isFixtureDataSource = (source: DataSource): source is FixtureDataSource =>
+  source.kind === "fixture" && "expertControls" in source && "knowledge" in source;

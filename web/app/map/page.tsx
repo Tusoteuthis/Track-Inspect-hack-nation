@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { useScreenSource, useSessionParam } from "@/components/shell/useScreenSource";
+import { useFixtureOverrides, useScreenSource, useSessionParam } from "@/components/shell/useScreenSource";
 import { WorkMapScreen } from "@/components/workmap/WorkMapScreen";
 import { DataSourceProvider } from "@/lib/data/DataSourceProvider";
 import { FIXTURE_IDS } from "@/lib/data/fixtureSource";
@@ -12,7 +12,7 @@ import { mapHref } from "@/lib/workmap/deepLink";
 function BoundWorkMap() {
   const params = useSearchParams();
   const router = useRouter();
-  const source = useScreenSource("map");
+  const source = useFixtureOverrides(useScreenSource("map"));
   const sessionId = useSessionParam(source, FIXTURE_IDS.expertSession);
   return (
     <DataSourceProvider source={source}>
@@ -21,9 +21,12 @@ function BoundWorkMap() {
         entryId={params.get("entry")}
         revisionId={params.get("rev")}
         onSelect={(entry, rev) => {
-          const href = mapHref(entry, rev);
-          const session = params.get("session");
-          router.replace(session ? `${href}&${new URLSearchParams({ session })}` : href, { scroll: false });
+          // Keep ?session= and fixture settings; only the selection changes.
+          const rest = new URLSearchParams(params.toString());
+          rest.delete("entry");
+          rest.delete("rev");
+          const extra = rest.toString();
+          router.replace(extra ? `${mapHref(entry, rev)}&${extra}` : mapHref(entry, rev), { scroll: false });
         }}
       />
     </DataSourceProvider>

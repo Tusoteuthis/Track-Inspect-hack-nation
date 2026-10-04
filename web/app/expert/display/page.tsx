@@ -4,15 +4,22 @@
 // at the largest size that fits, minimal chrome, Esc returns to setup.
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
-import { useSourceQuery } from "@/lib/data/DataSourceProvider";
+import { useScreenSource } from "@/components/shell/useScreenSource";
+import { DataSourceProvider, useSourceQuery } from "@/lib/data/DataSourceProvider";
 import styles from "./display.module.css";
 
 export default function TraceDisplayPage() {
   return (
     <Suspense fallback={null}>
-      <TraceDisplay />
+      <ExpertSource>
+        <TraceDisplay />
+      </ExpertSource>
     </Suspense>
   );
+}
+
+function ExpertSource({ children }: { children: React.ReactNode }) {
+  return <DataSourceProvider source={useScreenSource("expert")}>{children}</DataSourceProvider>;
 }
 
 function TraceDisplay() {

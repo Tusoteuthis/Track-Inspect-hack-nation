@@ -2,12 +2,12 @@
 
 import { Suspense } from "react";
 import { ReviewScreen } from "@/components/review/ReviewScreen";
-import { useScreenSource, useSessionParam } from "@/components/shell/useScreenSource";
+import { useFixtureOverrides, useScreenSource, useSessionParam } from "@/components/shell/useScreenSource";
 import { DataSourceProvider } from "@/lib/data/DataSourceProvider";
 import { FIXTURE_IDS } from "@/lib/data/fixtureSource";
 
 function Review() {
-  const source = useScreenSource("review");
+  const source = useFixtureOverrides(useScreenSource("review"));
   const sessionId = useSessionParam(source, FIXTURE_IDS.expertSession);
   return (
     <DataSourceProvider source={source}>

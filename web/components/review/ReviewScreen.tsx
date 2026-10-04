@@ -12,7 +12,7 @@ import { TrustControls, useTrustActions, type TrustActions } from "@/components/
 import { WorkMapDetail } from "@/components/workmap/WorkMapDetail";
 import { WorkMapList } from "@/components/workmap/WorkMapList";
 import { useDataSource } from "@/lib/data/DataSourceProvider";
-import { fixtureReviewControls, fixtureSource } from "@/lib/data/fixtureSource";
+import { fixtureReviewControls, isFixtureDataSource } from "@/lib/data/fixtureSource";
 import { diffRevisions } from "@/lib/review/revisionDiff";
 import { initialReviewState, reviewReducer, type ReviewNotice } from "@/lib/review/reviewState";
 import type { MarkMap } from "@/lib/review/markState";
@@ -88,7 +88,7 @@ export function ReviewScreen({ sessionId }: { sessionId: string }) {
           />
         )}
 
-        {source === fixtureSource ? <FixturePlayback controls={fixtureReviewControls} /> : null}
+        {isFixtureDataSource(source) ? <FixturePlayback controls={fixtureReviewControls} /> : null}
       </section>
     </>
   );

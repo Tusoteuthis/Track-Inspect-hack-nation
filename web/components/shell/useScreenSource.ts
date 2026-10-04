@@ -1,9 +1,12 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 import { useDataSource } from "@/lib/data/DataSourceProvider";
+import { createFixtureSource } from "@/lib/data/fixtureSource";
 import { getApiSource, isLiveScreen, type Screen } from "@/lib/data/screenSources";
 import type { DataSource } from "@/lib/data/source";
+import { parseFixtureSettings } from "@/lib/practice/fixtureSettings";
 
 /**
  * The source for one screen: WS6 when the screen is configured live
@@ -13,6 +16,20 @@ import type { DataSource } from "@/lib/data/source";
 export function useScreenSource(screen: Screen): DataSource {
   const base = useDataSource();
   return isLiveScreen(screen) ? getApiSource() : base;
+}
+
+/**
+ * Fixture mode only: `?fixture_latency=…&fixture_fail=…` give the screen its own
+ * fixture source so the human gate can force delays and failures. Without such
+ * parameters (or with a live source) the screen keeps its shared source.
+ */
+export function useFixtureOverrides(source: DataSource): DataSource {
+  const query = useSearchParams().toString();
+  return useMemo(() => {
+    const params = new URLSearchParams(query);
+    const wanted = [...params.keys()].some(k => k.startsWith("fixture_"));
+    return source.kind === "fixture" && wanted ? createFixtureSource(parseFixtureSettings(params)) : source;
+  }, [query, source]);
 }
 
 /**
