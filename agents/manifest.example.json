@@ -15,6 +15,7 @@
         "turnEagerness": "patient",
         "turnTimeout": 15,
         "speculativeTurn": false,
+        "softTimeoutSeconds": -1,
         "maxDurationSeconds": 1800,
         "expressiveMode": false,
         "skipTurn": true,
