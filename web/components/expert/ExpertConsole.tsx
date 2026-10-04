@@ -2,7 +2,7 @@
 
 import { useConversationControls, useConversationStatus } from "@elevenlabs/react";
 import { type ReactNode, useEffect, useState } from "react";
-import type { ExpertExchange, TimingMark, Topic } from "@/lib/expert/contracts";
+import type { ExpertExchange, InterviewConfig, TimingMark, Topic } from "@/lib/expert/contracts";
 import { FIXTURE_EVENTS } from "@/lib/expert/fixtures";
 import { DEFAULT_SCENARIO, formatScenarioOffsets, parseScenarioOffsets } from "@/lib/expert/scenario";
 import type { SessionState } from "@/lib/expert/session";
@@ -17,6 +17,12 @@ type Props = {
 
 const time = (iso: string) => iso.slice(11, 23);
 const TICK_MS = 200;
+/** Tuned live in the human gate; stored with the session (interview_config). */
+const TUNABLES: [keyof InterviewConfig, number][] = [
+  ["pause_ms", 100],
+  ["nudge_after_ms", 500],
+  ["mic_threshold", 0.01],
+];
 
 /**
  * Dev console for the expert flow: inject fixture pointing events, watch the topic
@@ -57,16 +63,18 @@ export function ExpertConsole({ session, raw }: Props) {
       <GateLine gate={connected ? session.gate : null} />
 
       <div className="ec-controls">
-        <label className="ec-small">
-          pause_ms{" "}
-          <input
-            type="number"
-            min={0}
-            step={100}
-            value={session.config.pause_ms}
-            onChange={e => session.setConfig({ pause_ms: Number(e.target.value) })}
-          />
-        </label>
+        {TUNABLES.map(([key, step]) => (
+          <label key={key} className="ec-small">
+            {key}{" "}
+            <input
+              type="number"
+              min={0}
+              step={step}
+              value={session.config[key]}
+              onChange={e => session.setConfig({ [key]: Number(e.target.value) })}
+            />
+          </label>
+        ))}
         <label className="ec-small">
           scenario offsets (s) <span className="ec-muted">evt-001, evt-003, evt-002, evt-004</span>{" "}
           <input value={offsets} onChange={e => setOffsets(e.target.value)} disabled={session.scenario.running} />
