@@ -336,3 +336,106 @@ export const synthesis = createWs6SynthesisModule({
 - Pending and failed evaluations are left out.
 
 **WS6.** `createWs6TutorEvaluator({ load_content, load_records, allow_fixture, judge? })` implements `TutorEvaluator` (`id: "ws5-tutor"`). It maps WS5 `rev-<n>` to WS6 revision ids in `cited`, `escalation` and `evidence`.
+
+## 11. Screen observation, tutor context, assessment and trust (Sprint 4)
+
+### Screen observation (`observation.ts`)
+
+`LearnerScreenContext` is what the evaluator and the tutor consume from the learner's screen:
+
+| Field | Meaning |
+|---|---|
+| `frame_asset_id` | The frame the observation is on: a screen-share still, or the case's trace frame the learner drew on. `null` = no frame |
+| `region` | WS3 `Region` (normalized box + frame pixel size) on that frame, as the learner marked it. `null` = nothing marked |
+| `visible_case_id` | The case on screen. Used only to drop stale contexts; never shown to the judge |
+| `draft_rev` | The draft revision the observation belongs to. Other revisions are stale |
+| `captured_at_utc` | When it was captured (session time, not signal time) |
+| `source` | `screen_share` (a still of the learner's shared screen) or `app_state` (the region marked in the app) |
+
+**One context = one observation on one frame.** A region is only meaningful on the frame it was drawn on. WS7 draws the region on the case's trace frame, not on the screen-share still, so `fromPracticeState` returns up to two contexts: `app_state` (region on the trace frame) and `screen_share` (the still, no region).
+
+**Hand-over.**
+- **WS7 → WS6.** WS7 sends the draft's region and the screen-share still ids.
+- **WS6 storage.** WS6 stores `LearnerDraft.visual_context = [{ asset_id, region }]`, using `toWs6VisualContext` (`frame_asset_id → asset_id`).
+- **WS6 → WS5.** `fromWs6VisualContext(draft, case_id)` restores the context. `source` is inferred (region present → `app_state`), and the capture time is the draft's `updated_at_utc`.
+- **Choosing the context.** `screenContextFor(contexts, { draft_rev, case_id })` picks the current one. It drops other revisions and cases, and prefers a marked region over a bare still.
+
+**What the evaluator and tutor read.**
+- `describeScreenContext` turns a context into position words only, for example "a region in the upper left part of the frame, about 20 percent of its width (frame …, from app state)".
+- It includes no case id, no capture time and no values read off the trace.
+- `createWs6TutorEvaluator` now passes this text as the judge's `visual_context`. Before Sprint 4 it was `null`.
+
+**Honest scope.**
+- Nothing in WS5 looks at pixels.
+- The screen-share stills are real observation of the learner's screen (WS7 `getDisplayMedia`, every 5 s and on review). They reach WS5 only as frame references.
+- The region the tutor talks about is structured app state.
+
+### Tutor context (`tutor-context.ts`)
+
+Knowledge reaches the ElevenLabs tutor only as silent contextual updates built here, never as a knowledge-base upload: the tutor agent has 0 docs.
+
+- **`buildEvaluationContextBlock`.** One block per evaluation, `contextId: ws5-evaluation-<eid>`. It contains:
+  - `[EVALUATION eid=… draft_rev=… outcome=…]`
+  - `guiding_question:`
+  - numbered `expert_quote N: "…" (entry, revision, kind, exchange; example image event)` lines
+  - `escalation:` / `uncertainty:` for `uncertain`
+  - `learner_screen:`
+  - the teaching rules
+  - `[/EVALUATION]`
+
+  The AI explanation is **not** passed: only the guiding question, verbatim citations and the uncertainty text, so the tutor has nothing to repeat except the expert's words. The escalation rule's own words are added when the evaluation did not cite them.
+- **Refusals.** The block builder throws `TutorContextError` (nothing is delivered) when:
+  - a cited revision is not teachable **now** (revoked, superseded, off-record, unknown);
+  - a quote is not verbatim or not in the named exchange;
+  - the question or uncertainty quotes uncited words;
+  - the escalation is not a teachable `escalation` entry;
+  - the screen context belongs to another draft revision.
+- **`buildSessionContextBlock`.** Orientation only; it carries no knowledge text.
+- **`buildKnowledgeChangedBlock`.** Withdraws entries by id without repeating their words. Send it on `entry.revoked` or a correction.
+- **No dynamic variables.** WS7's `TutorPanel` does not pass any, and an unfilled `{{placeholder}}` would break the session start.
+- **No client tools.** Review and Save are WS7 buttons, and the save gate stays on the WS6 server.
+- **Older format.** The prompt also understands WS7's current `[PRACTICE evaluation …]` line.
+
+### Assessment (`assessment.ts`)
+
+`buildAssessment({ session_id, timeline, evaluations, commits, knowledge: { pinned }, drafts?, earlier?, help_level?, source, created_at_utc })` → `Assessment` (`ws5.assessment.v0`):
+
+**Decisions**
+- Draft revisions are split at commits.
+- **Outcome classes:**
+  - `correct_unassisted`: committed with `ok`, and no intervene/uncertain review in the decision;
+  - `correct_after_help`: committed with `ok` after at least one;
+  - `unresolved_or_escalated`: no commit, an escalated save, a final review other than `ok`, or an intervention discovered after save.
+- **Interventions** are done or stale reviews with outcome `intervene` or `uncertain`. Each records:
+  - when it was evaluated;
+  - when the guidance was delivered (timeline);
+  - `caught_before_save` or `discovered_after_save`;
+  - its citations and escalation.
+- Failed and pending reviews count as neither help nor judgement.
+
+**Derived lists**
+- `needed_help_with` / `practice_next`: entries cited in interventions, plus the escalation rule. The practice suggestion is a fixed template ("another unseen case … with reduced help") plus the expert's verbatim words; it adds no domain content.
+- `skills_demonstrated`: entries cited by the accepted review that needed no coaching in that decision.
+
+**Labels.** Labels come from the pinned, eligible revisions only. A cited entry that has been revoked or changed since is listed with `still_taught: false` and without its words.
+
+**Limitations.** Always included:
+- `MASTERY_DISCLAIMER` = "One coached correction is not proof of independent mastery.";
+- what "correct" means (consistent with the pinned knowledge per the evaluator; no answer key; the expert did not check the case);
+- the observed n;
+- whether transfer was tested;
+- whether the data is fixture/stub.
+
+**Transfer.** Reported separately in `transfer[]`, from `earlier` assessments of other sessions that share an entry the learner needed help with.
+
+**Markdown.** `renderAssessmentMarkdown()` writes `knowledge/assessments/<sid>.md`. Its only mention of mastery is the disclaimer. It is not an entry (no frontmatter), and the assessments path is never eligible.
+
+**WS6.** `createWs6AssessmentModule({ load_content, load_records, allow_fixture })` (`id: "ws5-assessment"`) fills WS6's minimal `Assessment` fields (`initial_decision`, `assistance`, `final_outcome`, `evidence_used`, `practice_next`) and puts the WS5 structure in `content`. This answers open question 5 with "both".
+
+### Trust (`trust.ts`)
+
+- **`checkPinnedKnowledge(pinnedRefs, candidates, ctx)`** returns `current`, or `knowledge_changed` with the reason for each revision (`revoked`, `superseded`, `not_confirmed`, `off_record_evidence`, `missing`, …). WS6 maps `knowledge_changed` to `evaluation_stale` (`knowledge_changed`), re-pins with `selectEligible`, and sends `buildKnowledgeChangedBlock` to the tutor.
+- **`flagDependents({ candidates, revoked, deleted_exchange_ids?, deleted_event_ids?, current_revision_by_entry? })`** returns one flag per dependent revision: `evidence_deleted` > `shares_exchange` > `shares_event`.
+  - Flags are advisory and ask for the expert's re-confirmation.
+  - Deleted evidence already makes a revision ineligible, because its links no longer resolve.
+- **Revocation status.** Because WS6 revisions are immutable, WS6 must hand WS5 candidates whose `status` reflects `current.json` (revoked/unresolved) at read time. Eligibility then excludes them.
