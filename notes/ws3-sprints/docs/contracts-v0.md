@@ -1,8 +1,22 @@
-# WS3 Data Contracts — v0 (pending agreement)
+# WS3 Data Contracts — v1 (final WS3 field set; pending partner agreement)
 
-**Status:** v0 proposal from WS3, **pending agreement** with WS2, WS5 and WS6. Nothing here is a final API.
+**Status:** final WS3 field set after Sprint 4, still **pending agreement** with WS2, WS5 and WS6. The file keeps its `-v0` name so existing links work.
 
-**Schema version:** `ws3.v0`
+**Schema versions:**
+- Session records (snapshot, `session.json`, `completion.json`): **`ws3.v1`** (`SCHEMA_VERSION`).
+- `PointingEvent` (WS2 → WS3): **`ws3.v0`**, unchanged (`EVENT_SCHEMA_VERSION`). WS2 keeps sending `ws3.v0`.
+
+## Changes in ws3.v1 (Sprint 4)
+
+| Where | Change |
+|---|---|
+| `SessionSnapshot` | + `conversation_ids[]` (all ElevenLabs conversations of the session; a resume adds one; `conversation_id` = the latest), + `end_cause` (`stop`\|`disconnect`\|`error`\|null), + `recording_segments[]`, + `off_record_excluded` (counts), + `strikes[]`, + `elevenlabs_deletions[]`; `schema_version` `ws3.v1` |
+| `RecordingSegment` | + `trigger` (`session_start`\|`agent_tool`\|`console`\|`expert_phrase`\|`capture_event`\|`resume`); now actually written |
+| `SessionCompletion` | final shape (see below), written as `completion.json` / `completion.md` |
+| New | `Strike`, `OffRecordExcluded`, `ElevenLabsDeletionReport`, `SetRecordStateParams` |
+| `PhaseTrigger` | + `strike`, + `resume` |
+| Validation | `validateSessionSnapshot` refuses any event or exchange with `record_state: off_record`, and any transcript line, answer line, preamble line or timing mark inside an off-record segment (server-side leak guard); checks segments alternate and are closed, and strikes link to known records. New `validateSessionCompletion` (never `completed` without a confirmed revision), `validateSetRecordStateParams`, `validateDeletionReport` |
+| Behaviour | Off-record pointing events are no longer stored at all (Sprint 2 kept them as `dropped_off_record` topics). `Topic.state = dropped_off_record` and `ExpertExchange.record_state = off_record` therefore never appear in saved data; the fields stay for compatibility |
 
 **Canonical source:** `web/lib/expert/contracts.ts`, with types and validators: `validatePointingEvent`, plus `validateBeginQuestionParams`, `validateExpertExchange`, `validateTimingMark`, `validateSessionSnapshot` and `isValidSessionId` (added in Sprint 1).
 
@@ -119,11 +133,33 @@ The agenda is the top 5 gaps, frozen when the debrief starts (`debrief_agenda` i
 - New exchange fields: `gap_id` (debrief) and `revision_id` (teach-back).
 - `DeferredReason` adds `task_complete`.
 
-### SessionCompletion
+### SessionCompletion — Sprint 4 (`completion.json`, derived by `web/lib/expert/completion.ts`)
 
-- **Fields:** `session_id`, `ended_at_utc`, `end_reason` (`completed` \| `incomplete` \| `aborted`), `confirmed_revision_id` (nullable; null unless the latest revision was explicitly confirmed), `coverage[]`, `unresolved_open_question_ids[]`.
-- **Exclusions:** `excluded` = `{off_record_segments, excluded_exchange_ids[]}`.
-- **Counts:** `counts` = `{live_questions, live_guardrail_questions, debrief_questions}`, derived from stored exchanges.
+Derived only from the stored records when the session has ended (`ended_at_utc` set); removed again if the session is resumed.
+
+| Field | Meaning |
+|---|---|
+| `schema_version`, `session_id`, `conversation_ids[]`, `started_at_utc`, `ended_at_utc` | |
+| `end_reason` | `completed` only if the final phase is `confirmed` and the latest revision has an explicit, still-valid (not struck) `confirmed` confirmation; `aborted` when `end_cause = error`; otherwise `incomplete` |
+| `end_cause` | `stop` (Stop pressed), `disconnect` (connection dropped), `error` |
+| `final_phase`, `confirmed_revision_id` (null unless completed), `latest_revision_id` | |
+| `coverage[]` | Final grid, missing cells included |
+| `unresolved_open_question_ids[]`, `open_gap_ids[]` | Unanswered open questions; agenda gaps still `open`/`asked`/`partial` |
+| `unfinished[]` | Plain statements ("teach-back not confirmed (rev-1)", "2 debrief gap(s) unresolved: …", "debrief not started", "the session ended while off the record"). Never empty for an unfinished session |
+| `excluded` | `{off_record_segments, segments[{from_utc,to_utc}], excluded_exchange_ids[] (struck), transcript_lines, events, timing_marks, refused_tool_calls}` — counts and times only |
+| `counts` | `{live_questions, live_guardrail_questions, debrief_questions, teach_backs, confirmations (valid only), strikes}`, derived from the stored exchanges via `liveCounters` |
+
+### Strike — Sprint 4
+
+`{strike_id: str-NNN, exchange_id, at_utc, trigger: agent_tool|console, removed_line_count, superseded_revision_ids[], invalidated_confirmation_ids[]}`.
+- The struck exchange keeps its id (links stay valid) with `answer_lines: []`; its transcript lines and any strike-request lines said since are removed.
+- Coverage cells supported only by it are removed (others lose their AI note); its agenda gap reopens; an open question it answered reopens.
+- Revisions citing it are **superseded**: the citing steps' text becomes "(step removed: …)" with `supported: false`, a `change_reason` based on it is redacted, and the teach-back text of that revision is redacted. The store may rewrite exactly these revision files.
+- Confirmations of superseded revisions, or whose response was the struck exchange, are **invalidated**: they no longer count anywhere (step verification, completion, `confirmed` phase → back to `teach_back`, trigger `strike`).
+
+### ElevenLabsDeletionReport — Sprint 4
+
+`{session_id, at_utc, results: [{conversation_id, status: deleted|not_found|failed, detail}]}`. Appended to `elevenlabs-deletion.json` by the deletion route and to `SessionSnapshot.elevenlabs_deletions[]` by the client.
 
 ### TimingMark
 
@@ -153,15 +189,19 @@ Something the expert pointed at that the apprentice may ask about.
 
 `dedup_window_ms` 20000, `dedup_min_iou` 0.5, `stale_after_ms` 30000, `budget_max_questions` 5 per `budget_window_ms` 600000, `pause_ms` 1200, `release_timeout_ms` 30000, `nudge_after_ms` 2500 (0 = off), `speech_hold_ms` 400, `vad_threshold` 0.5, `mic_threshold` 0.04. The values used are stored with each session.
 
-### RecordingSegment
+### RecordingSegment — written since Sprint 4
 
-`segment_id`, `state` (`on_record` \| `off_record`), `started_at_utc`, `ended_at_utc` (nullable while open).
+`segment_id` (`seg-NNN`), `state` (`on_record` \| `off_record`), `started_at_utc`, `ended_at_utc` (null while open), `trigger`.
+- The first segment is `on_record` from the session start (`session_start`). Each change closes the current segment and opens the next; consecutive segments alternate. The last segment is the **acknowledged** current state (what the console shows; WS7 should show this, not a local toggle).
+- Going off the record by the agent tool or an expert phrase starts the segment at the expert utterance that asked for it (searched ≤ 30 s back), so "off the record, X" never stores X.
+- An off-record capture event switches off (`capture_event`); only a later on-record capture event, or the expert, ends such a segment. Only the expert (voice or console) ends any other segment.
+- `off_record_excluded` = `{transcript_lines, events, timing_marks, refused_tool_calls}` counts what was dropped. Content is never stored.
 
 ### SessionSnapshot — Sprint 1, written by `PUT /api/expert-sessions/<id>/snapshot`
 
 The full state of one expert session, validated by `validateSessionSnapshot` and saved idempotently.
 
-- **Fields:** `schema_version`, `session_id` (`^[a-z0-9-]{1,64}$`, e.g. `ses-20261004-011500-a1b2`), `conversation_id` (nullable), `started_at_utc`, `ended_at_utc` (nullable), `events[]`, `exchanges[]`, `active_exchange_id`, `awaiting_question_exchange_id`, `preamble[]` (AnswerLine: expert words before any question), `transcript[]`, `timing[]`, `unlinked_agent_questions[]`, *(Sprint 2)* `topics[]`, `interview_config`.
+- **Fields:** `schema_version`, `session_id` (`^[a-z0-9-]{1,64}$`, e.g. `ses-20261004-011500-a1b2`), `conversation_id` (nullable), *(v1)* `conversation_ids[]`, `end_cause`, `started_at_utc`, `ended_at_utc` (nullable), `events[]`, `exchanges[]`, `active_exchange_id`, `awaiting_question_exchange_id`, `preamble[]` (AnswerLine: expert words before any question), `transcript[]`, `timing[]`, `unlinked_agent_questions[]`, *(Sprint 2)* `topics[]`, `interview_config`, *(Sprint 3)* `phase`, `phase_log[]`, `coverage[]`, `open_questions[]`, `debrief_agenda[]`, `revisions[]`, `confirmations[]`, *(Sprint 4)* `recording_segments[]`, `off_record_excluded`, `strikes[]`, `elevenlabs_deletions[]`.
 - **TranscriptEntry:** `{line_id, role: user|agent, text, at_utc, exchange_id}`. `exchange_id` is the exchange that was active when the line arrived.
 - **UnlinkedQuestion:** `{line_id, text, at_utc}`. Agent speech ending in `?` with no preceding `begin_question`. It is a prompt-tuning defect signal.
 - **Validation also checks** that every record carries the snapshot's `session_id`, that each exchange's `event_id` is a known event, and that ids are unique. *(Sprint 2)* Topic primary/alias events and exchange `related_event_ids` must be known events; exchange `topic_id` must be a known topic.
@@ -190,6 +230,19 @@ Full table: `specs/20261004-003657-ws3-sprint-3-debrief-confirmation/contracts/a
   - `step_ids_reviewed` defaults to the steps taught.
 - **Phase blocks** go out as a contextual update with `contextId` `ws3-phase`, whenever they change. For the console path, a `[CONTROL]` nudge follows.
 
+### Client tools — Sprint 4
+
+Contract: `specs/20261004-081433-ws3-sprint-4-trust-completion/contracts/tools-and-routes.md`.
+
+- **`set_record_state({state: off_record|on_record})`** (also accepts `off`/`on`): idempotent; returns the acknowledgement instruction. While off the record every recording tool (`begin_question`, `record_coverage`, `signal_task_complete`, `propose_draft`, `confirm_revision`, `strike_last_answer`) returns `error the expert is off the record: …` and nothing is stored.
+- **`strike_last_answer({reason})`**: strikes the latest exchange holding expert words other than a strike request. `reason` is ignored and never stored (the agent tends to paraphrase the struck words into it). After a strike that supersedes the latest revision, `propose_draft` is allowed in the teach-back and the new revision is taught back in full.
+- Context updates: `[RECORD_STATE] off_record|on_record …` (`contextId` `ws3-record`), `[RESUME] …` (`ws3-resume`), `[TEACH_BACK rev-n superseded] …` (phase block after a strike).
+
+### Routes — Sprint 4
+
+- `POST /api/expert-sessions/<id>/elevenlabs-deletion`: deletes the ElevenLabs conversations listed in that session's saved `session.json` (`conversation_ids`), only if the session has ended and had an off-record segment (else 409). Never lists or bulk-deletes. Returns and appends the report.
+- `POST /api/expert-sessions/<id>/demo-evidence`: re-derives `demo-evidence.md` from the saved files, writes it, returns `{markdown, checklist, file}`.
+
 ### What the agent receives — Sprint 2
 
 Pointing events are **not** sent on arrival. A topic is released (contextual update, `contextId` = event id) only when the agent is silent, the expert is not speaking and has been quiet ≥ `pause_ms`, no other topic is open, and the budget allows it. If the agent stays silent for `nudge_after_ms`, one `[CONTROL]` user message gives it a turn; `[CONTROL]` lines are never stored as expert words. Budget state goes out as `[STATE] live_question_budget=…` (`contextId` `ws3-state`). Exact wording: `specs/20261004-015810-ws3-sprint-2-live-interview/contracts/release-protocol.md`.
@@ -202,7 +255,9 @@ Sprint 1 writes the first six files; Sprint 2 adds `timing-report.md`. The root 
 knowledge/sessions/<session_id>/
   session.json  events.json  exchanges.json  timing.json
   transcript.md  exchanges.md  timing-report.md
-  revisions/rev-N.json|md  confirmations.json  completion.json|md  knowledge-draft.md
+  revisions/rev-N.json|md  confirmations.json  knowledge-draft.md
+  completion.json  completion.md  demo-evidence.md      (Sprint 4, once the session has ended)
+  elevenlabs-deletion.json                              (Sprint 4, after a conversation deletion)
 ```
 
 *(Sprint 3)* The following are written:
@@ -210,7 +265,9 @@ knowledge/sessions/<session_id>/
 - `confirmations.json`.
 - `knowledge-draft.md`: the latest revision for WS5. Each step lists its verification, its event images (highlighted + full frame, FIXTURE-labeled) and the verbatim answers of its exchanges, followed by guardrails, open questions, the diff to the parent revision and the confirmations.
 
-`completion.json|md` follows in Sprint 4. `session.json.counts` adds `debrief_questions`, `debrief_gap_questions` and `teach_backs`.
+`session.json.counts` adds `debrief_questions`, `debrief_gap_questions` and `teach_backs`.
+
+*(Sprint 4)* Off-record content is absent from every file by construction (dropped in memory, refused by the validator). `transcript.md`, `exchanges.md`, `knowledge-draft.md` and `completion.md` show a neutral marker per off-record segment ("off-record segment from T1 to T2 (content excluded)") and the struck exchanges. `completion.*` and `demo-evidence.md` are written when the session has ended and removed if it is resumed.
 
 ## Open questions per partner
 
