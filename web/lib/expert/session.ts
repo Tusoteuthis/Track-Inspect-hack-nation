@@ -8,6 +8,7 @@ import {
   type DeferredReason,
   type ExpertExchange,
   type InterviewConfig,
+  type PhaseTrigger,
   type PointingEvent,
   SCHEMA_VERSION,
   type SessionSnapshot,
@@ -16,7 +17,9 @@ import {
   type Topic,
   validateBeginQuestionParams,
 } from "./contracts";
+import { beginPhaseQuestion, confirmRevision, endPhase, proposeDraft, recordCoverage, startDebrief } from "./debrief";
 import { DEFAULT_INTERVIEW_CONFIG, withConfig } from "./interview-config";
+import { type Stamp, closeActive, mark, updateExchange, updateTopic } from "./session-util";
 import { ingestEvent, releaseText } from "./topics";
 
 export type SessionState = SessionSnapshot & {
@@ -27,7 +30,6 @@ export type SessionState = SessionSnapshot & {
   last_answer_at: Stamp | null;
 };
 
-type Stamp = { at_utc: string; perf_ms: number };
 
 export type SessionAction =
   | { type: "connected"; conversation_id: string }
@@ -41,6 +43,10 @@ export type SessionAction =
   | ({ type: "topic_nudged"; topic_id: string } & Stamp)
   | ({ type: "topics_deferred"; topic_ids: string[]; reason: DeferredReason } & Stamp)
   | { type: "config_changed"; config: Partial<InterviewConfig> }
+  | ({ type: "task_completed"; trigger: PhaseTrigger } & Stamp)
+  | ({ type: "coverage_recorded"; params: unknown } & Stamp)
+  | ({ type: "draft_proposed"; params: unknown | null; trigger: PhaseTrigger } & Stamp)
+  | ({ type: "revision_confirmed"; params: unknown } & Stamp)
   | ({ type: "session_ended" } & Stamp);
 
 export function initialSession(
@@ -145,6 +151,18 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     case "question_begun":
       return beginQuestion(state, action);
 
+    case "task_completed":
+      return startDebrief(state, action.trigger, action);
+
+    case "coverage_recorded":
+      return recordCoverage(state, action.params);
+
+    case "draft_proposed":
+      return proposeDraft(state, action.params, action.trigger, action);
+
+    case "revision_confirmed":
+      return confirmRevision(state, action.params, action);
+
     case "agent_final_line": {
       const text = action.text.trim();
       const awaiting = state.awaiting_question_exchange_id;
@@ -215,7 +233,7 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     }
 
     case "session_ended": {
-      const closed = closeActive(state);
+      const closed = endPhase(closeActive(state), action);
       return { ...closed, ended_at_utc: action.at_utc, agent_speaking: false };
     }
   }
@@ -224,6 +242,9 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
 function beginQuestion(state: SessionState, action: { params: unknown } & Stamp): SessionState {
   const parsed = validateBeginQuestionParams(action.params);
   if (!parsed.ok) return { ...state, last_tool_result: `error ${parsed.errors.join("; ")}` };
+
+  const phased = beginPhaseQuestion(state, parsed.value, action);
+  if (phased) return phased;
 
   const { kind, question } = parsed.value;
   const asked = parsed.value.event_id;
@@ -289,39 +310,6 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
     last_tool_result: `ok exchange_id=${exchange_id}`,
     timing: [...closed.timing, mark(state, "question_tool_called", event_id, exchange_id, action)],
   };
-}
-
-/** Ends the active exchange's answer window, logging `answer_ended` at the last answer line. */
-function closeActive(state: SessionState): SessionState {
-  const active = state.exchanges.find(x => x.exchange_id === state.active_exchange_id);
-  const base = { ...state, active_exchange_id: null, awaiting_question_exchange_id: null, last_answer_at: null };
-  if (!active || active.answer_lines.length === 0 || !state.last_answer_at) return base;
-  return {
-    ...base,
-    timing: [...state.timing, mark(state, "answer_ended", active.event_id, active.exchange_id, state.last_answer_at)],
-  };
-}
-
-function updateTopic(topics: Topic[], id: string, update: (t: Topic) => Topic): Topic[] {
-  return topics.map(t => (t.topic_id === id ? update(t) : t));
-}
-
-function updateExchange(
-  exchanges: ExpertExchange[],
-  id: string,
-  update: (x: ExpertExchange) => ExpertExchange
-): ExpertExchange[] {
-  return exchanges.map(x => (x.exchange_id === id ? update(x) : x));
-}
-
-function mark(
-  state: SessionState,
-  name: TimingMarkName,
-  event_id: string | null,
-  exchange_id: string | null,
-  at: Stamp
-): TimingMark {
-  return { session_id: state.session_id, event_id, exchange_id, mark: name, at_utc: at.at_utc, at_perf_ms: at.perf_ms };
 }
 
 /** The persisted part of the state (drops client-only bookkeeping). */

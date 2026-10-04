@@ -72,13 +72,21 @@ export function applyCoverage(items: CoverageItem[], u: CoverageUpdate): Coverag
   return existing ? items.map(c => (c === existing ? next : c)) : [...items, next];
 }
 
-/** Topics that get coverage rows: on record, not deferred (those become open questions). */
-const discussedTopics = (topics: Topic[]) =>
-  topics.filter(t => t.record_state === "on_record" && t.state !== "dropped_off_record" && t.state !== "deferred_to_debrief");
+/**
+ * Topics that get coverage rows: on record and discussed. A deferred topic gets its rows once
+ * something was recorded for it (its open question was answered in the debrief).
+ */
+const discussedTopics = (topics: Topic[], coverage: CoverageItem[]) =>
+  topics.filter(
+    t =>
+      t.record_state === "on_record" &&
+      t.state !== "dropped_off_record" &&
+      (t.state !== "deferred_to_debrief" || coverage.some(c => c.event_id === t.primary_event_id))
+  );
 
 /** Full event × dimension grid (missing where nothing was recorded), topics in queue order, session row last. */
 export function coverageGrid(snap: Pick<SessionSnapshot, "topics" | "coverage">): CoverageItem[] {
-  const rows: (string | null)[] = [...discussedTopics(snap.topics).map(t => t.primary_event_id), null];
+  const rows: (string | null)[] = [...discussedTopics(snap.topics, snap.coverage).map(t => t.primary_event_id), null];
   return rows.flatMap(event_id =>
     COVERAGE_DIMENSIONS.map(
       dimension =>
@@ -142,7 +150,7 @@ type GapSnap = Pick<SessionSnapshot, "topics" | "coverage" | "exchanges" | "open
  * then the rest; within a tier missing before partial, then dimension, then topic order.
  */
 export function selectGaps(snap: GapSnap): Gap[] {
-  const topics = discussedTopics(snap.topics);
+  const topics = discussedTopics(snap.topics, snap.coverage);
   const topicOf = (event: string | null) => snap.topics.find(t => t.primary_event_id === event);
   const asked = new Set(
     snap.exchanges
