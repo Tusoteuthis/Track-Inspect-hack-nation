@@ -80,7 +80,7 @@ export function formatDebriefUpdate(agenda: DebriefItem[]): string {
 export function formatTeachBackUpdate(revision: DraftRevision, toTeach: DraftStep[]): string {
   const head = revision.parent_revision_id
     ? `[TEACH_BACK ${revision.revision_id} corrects ${revision.parent_revision_id}] Re-teach only these corrected steps, briefly, then ask explicitly whether it is right now.`
-    : `[TEACH_BACK ${revision.revision_id}] Explain the process to the expert as instructions a newcomer could apply ("First …, if … then …, stop and escalate when …"), not as a summary of what they said. Keep their qualifiers ("usually", "only if"). Then ask explicitly whether that is right.`;
+    : `[TEACH_BACK ${revision.revision_id}] The debrief is over: ask no more agenda questions. Now explain the process to the expert as instructions a newcomer could apply ("First …, if … then …, stop and escalate when …"), not as a summary of what they said. Keep their qualifiers ("usually", "only if"). Then ask explicitly whether that is right.`;
   const steps = toTeach.map(s => `${s.step_id} (${s.kind}): ${s.text}`).join(" | ") || "none";
   const open = revision.steps.filter(s => !s.supported);
   const tail = open.length
