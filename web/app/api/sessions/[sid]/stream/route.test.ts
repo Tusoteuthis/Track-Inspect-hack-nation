@@ -25,7 +25,7 @@ const ctx = (sid: string) => ({ params: Promise.resolve({ sid }) });
 
 describe("GET /api/sessions/:sid/stream", () => {
   it("streams events after Last-Event-ID as text/event-stream", async () => {
-    const { session } = await createSession({ role: "expert", source: "fixture", trace_ref: null });
+    const { session } = await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null });
     const sid = session.session_id;
     for (let i = 1; i <= 3; i++) await appendBus(sid, "event.stored", { event_id: `evt-00${i}` });
 

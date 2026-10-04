@@ -40,11 +40,18 @@ export type Session = z.output<typeof SessionSchema>;
 export const parseSession = makeParser(SessionSchema);
 
 /** `POST /api/sessions` body (expert since S1, newcomer since S3). */
-export const CreateExpertSessionRequestSchema = z.strictObject({
-  role: z.literal("expert"),
-  source: SourceSchema.default("live"),
-  trace_ref: z.string().nullable().default(null),
-});
+/** Expert: `case_id` (integration G8) names a case marked `shown_to_expert`; its trace becomes `trace_ref`. */
+export const CreateExpertSessionRequestSchema = z
+  .strictObject({
+    role: z.literal("expert"),
+    source: SourceSchema.default("live"),
+    trace_ref: z.string().nullable().default(null),
+    case_id: IdSchema.nullable().default(null),
+  })
+  .refine(r => r.case_id === null || r.trace_ref === null, {
+    path: ["trace_ref"],
+    message: "send case_id or trace_ref, not both (the case decides its trace)",
+  });
 /** Newcomer: `case_id` omitted → the server picks a case not shown to the expert. */
 export const CreateNewcomerSessionRequestSchema = z.strictObject({
   role: z.literal("newcomer"),

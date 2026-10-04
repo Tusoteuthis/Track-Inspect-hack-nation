@@ -22,7 +22,7 @@ export async function useTempDirs(prefix: string): Promise<{ dir: string; cleanu
 }
 
 export async function newExpertSession(): Promise<string> {
-  return (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+  return (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
 }
 
 const file = (name: string, sha: string) => ({

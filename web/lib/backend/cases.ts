@@ -76,6 +76,34 @@ export async function listCaseIds(): Promise<string[]> {
   return entries.filter(e => e.isDirectory() && isValidId(e.name)).map(e => e.name).sort();
 }
 
+/** `GET /api/cases` (integration G7): every usable case as its learner view; unusable files are skipped. */
+export async function listLearnerCases(audience?: "expert" | "newcomer"): Promise<LearnerCase[]> {
+  const out: LearnerCase[] = [];
+  for (const id of await listCaseIds()) {
+    const view = await getLearnerCase(id).catch(() => null);
+    if (!view) continue;
+    if (audience === "expert" && !view.shown_to_expert) continue;
+    if (audience === "newcomer" && view.shown_to_expert) continue;
+    out.push(view);
+  }
+  return out;
+}
+
+/**
+ * The expert's case (integration G8): only a case marked `shown_to_expert`. Every other case is
+ * reserved for newcomers, who must practise on a case the expert did not explain.
+ */
+export async function pickExpertCase(caseId: string): Promise<CaseFile> {
+  const file = await loadCaseFile(caseId);
+  if (!file.shown_to_expert) {
+    throw new ApiError("case_not_permitted", "This case is reserved for newcomers; the expert needs a case marked shown_to_expert.", {
+      case_id: caseId,
+      reason: "not_shown_to_expert",
+    });
+  }
+  return file;
+}
+
 /**
  * The newcomer's case: the requested one if it was not shown to the expert, otherwise the first
  * usable unseen case. Unusable case files are skipped when picking.

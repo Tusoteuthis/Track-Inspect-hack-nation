@@ -23,7 +23,7 @@ let sid: string;
 beforeEach(async () => {
   dir = await fsp.mkdtemp(path.join(os.tmpdir(), "ws6-asset-routes-"));
   setConfigForTests({ knowledgeDir: path.join(dir, "knowledge"), runtimeDir: path.join(dir, "runtime") });
-  sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+  sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
 });
 
 afterEach(async () => {

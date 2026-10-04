@@ -27,7 +27,7 @@ export async function useNewcomerDirs(prefix: string) {
  */
 export async function seedConfirmedKnowledge(opts: { synthesis: "stub" | "real"; source?: Source } = { synthesis: "real" }) {
   const source = opts.source ?? "fixture";
-  const sid = (await createSession({ role: "expert", source, trace_ref: null })).session.session_id;
+  const sid = (await createSession({ role: "expert", source, trace_ref: null, case_id: null })).session.session_id;
   const ws3Source = source === "live" ? "live" : "fixture";
   await seedAssetWithFiles(sid, "a-1");
   await seedAssetWithFiles(sid, "a-2");

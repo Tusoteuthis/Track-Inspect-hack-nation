@@ -252,7 +252,7 @@ describe("job control", () => {
 
   it("refuses newcomer and aborted sessions", async () => {
     // Newcomer creation is Sprint 3; write the record directly.
-    const newcomer = (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+    const newcomer = (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
     const file = sessionFile(newcomer);
     await fsp.writeFile(file, JSON.stringify({ ...JSON.parse(await fsp.readFile(file, "utf8")), role: "newcomer" }));
     expect(await codeOf(requestSynthesis(newcomer))).toBe("invalid_transition");

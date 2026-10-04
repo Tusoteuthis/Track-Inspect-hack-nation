@@ -133,7 +133,7 @@ describe("computeCascade (pure)", () => {
 describe("off the record = not stored", () => {
   let sid: string;
   beforeEach(async () => {
-    sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+    sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
   });
 
   it("an event captured inside an off-record segment is dropped even after the session is back on record", async () => {
@@ -214,7 +214,7 @@ async function revisionsById() {
 
 describe("deletion cascade", () => {
   it("a delayed job after deletion recreates nothing (exchange deleted mid-synthesis)", async () => {
-    const sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+    const sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
     await seedAssetWithFiles(sid, "a-1");
     await putEvent(sid, "evt-001", makeEvent(sid, "evt-001", "a-1"));
     await putExchange(sid, "x-1", expertExchange(sid, "x-1", "evt-001", ["FIXTURE words that must vanish."]));
@@ -243,7 +243,7 @@ describe("deletion cascade", () => {
   });
 
   it("a purge that only trims lines (same exchange rev) still discards a running job via the generation token", async () => {
-    const sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+    const sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
     const s = await getSession(sid);
     await fsp.writeFile(
       path.join(sessionDir(sid), "session.json"),
@@ -275,7 +275,7 @@ describe("deletion cascade", () => {
   });
 
   it("a late retry of a deleted ID → 410 gone (event, exchange, asset, session)", async () => {
-    const sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+    const sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
     await seedAsset(sid, "a-1");
     await seedAsset(sid, "a-9");
     const event = makeEvent(sid, "evt-001", "a-1");

@@ -16,11 +16,11 @@ const fixture = (name: string): unknown =>
 describe("CreateSessionRequest", () => {
   it("accepts an expert request with defaults", () => {
     const r = parseCreateSessionRequest({ role: "expert" });
-    expect(r).toEqual({ ok: true, value: { role: "expert", source: "live", trace_ref: null } });
+    expect(r).toEqual({ ok: true, value: { role: "expert", source: "live", trace_ref: null, case_id: null } });
   });
   it("accepts source and trace_ref", () => {
     const r = parseCreateSessionRequest({ role: "expert", source: "fixture", trace_ref: "trace A" });
-    expect(r.ok && r.value).toEqual({ role: "expert", source: "fixture", trace_ref: "trace A" });
+    expect(r.ok && r.value).toEqual({ role: "expert", source: "fixture", trace_ref: "trace A", case_id: null });
   });
   it("accepts a newcomer with an optional case_id", () => {
     expect(parseCreateSessionRequest({ role: "newcomer" })).toEqual({
@@ -44,9 +44,11 @@ describe("CreateSessionRequest", () => {
 describe("LifecycleRequest / RecordStateRequest", () => {
   it("accepts valid bodies", () => {
     expect(parseLifecycleRequest({ action: "start", rev: 1 }).ok).toBe(true);
+    expect(parseLifecycleRequest({ action: "pause", rev: 1 }).ok).toBe(true);
+    expect(parseLifecycleRequest({ action: "resume", rev: 1 }).ok).toBe(true);
     expect(parseRecordStateRequest({ state: "off_record" }).ok).toBe(true);
   });
-  it.each([{ action: "pause", rev: 1 }, { action: "start" }, { action: "end", rev: 0 }, { action: "end", rev: 1.5 }])(
+  it.each([{ action: "sleep", rev: 1 }, { action: "start" }, { action: "end", rev: 0 }, { action: "end", rev: 1.5 }])(
     "rejects lifecycle %j",
     (body) => expect(parseLifecycleRequest(body).ok).toBe(false),
   );

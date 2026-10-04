@@ -40,7 +40,7 @@ afterEach(async () => {
 const req = (query: string) => new NextRequest(`http://localhost/api/conversation-token?${query}`);
 
 async function newSession() {
-  const { session } = await createSession({ role: "expert", source: "fixture", trace_ref: null });
+  const { session } = await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null });
   return session;
 }
 

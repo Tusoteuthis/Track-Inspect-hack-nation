@@ -56,8 +56,8 @@ export type PrepareSession = () => Promise<SessionInit>;
 async function writeNewSession(req: CreateSessionRequest, now: Date, prepare?: PrepareSession): Promise<Session> {
   const at = now.toISOString();
   let init: SessionInit;
-  if (req.role === "expert") init = { case_id: null, trace_ref: req.trace_ref, pinned_knowledge: null };
-  else if (prepare) init = await prepare();
+  if (prepare) init = await prepare();
+  else if (req.role === "expert") init = { case_id: null, trace_ref: req.trace_ref, pinned_knowledge: null };
   else throw new Error("newcomer sessions are created through createNewcomerSession");
   const session: Session = {
     session_id: newId("ses", now),

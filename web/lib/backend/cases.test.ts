@@ -2,10 +2,12 @@ import { promises as fsp, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { GET as getCaseRoute } from "@/app/api/cases/[case_id]/route";
+import { GET as listCasesRoute } from "@/app/api/cases/route";
+import { POST as createSessionRoute } from "@/app/api/sessions/route";
 import { GET as getTraceRoute } from "@/app/api/cases/[case_id]/trace/route";
 import { parseCaseFile, parseLearnerCase } from "@/lib/contracts";
 import { useTempDirs } from "./capture-test-helpers";
-import { caseTraceResponse, getLearnerCase, listCaseIds, pickNewcomerCase } from "./cases";
+import { caseTraceResponse, getLearnerCase, listCaseIds, listLearnerCases, pickExpertCase, pickNewcomerCase } from "./cases";
 import { getConfig, setConfigForTests } from "./config";
 import { FIXTURE_CASES_DIR } from "./learner-test-helpers";
 import { assetDir, caseDir, casesRoot, imagesRoot } from "./paths";
@@ -79,6 +81,57 @@ describe("newcomer case choice", () => {
   it("picks the first unseen case when none is named", async () => {
     expect((await pickNewcomerCase(null)).case_id).toBe("fx-n01");
     expect((await pickNewcomerCase("fx-n02")).case_id).toBe("fx-n02");
+  });
+});
+
+describe("case list (integration G7)", () => {
+  it("lists every usable case as a learner view; ?for= filters by shown_to_expert", async () => {
+    expect((await listLearnerCases()).map(c => c.case_id)).toEqual(["fx-e01", "fx-n01", "fx-n02"]);
+    expect((await listLearnerCases("expert")).map(c => c.case_id)).toEqual(["fx-e01"]);
+    expect((await listLearnerCases("newcomer")).map(c => c.case_id)).toEqual(["fx-n01", "fx-n02"]);
+    for (const c of await listLearnerCases()) expect(parseLearnerCase(c).ok).toBe(true);
+  });
+
+  it("GET /api/cases → 200 array; bad ?for → 400", async () => {
+    const res = await listCasesRoute(new Request("http://t/api/cases?for=expert"));
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as { case_id: string }[]).map(c => c.case_id)).toEqual(["fx-e01"]);
+    expect((await listCasesRoute(new Request("http://t/api/cases?for=judge"))).status).toBe(400);
+  });
+
+  it("skips unusable case files instead of failing the list", async () => {
+    const root = path.join(dir, "cases");
+    await fsp.cp(FIXTURE_CASES_DIR, root, { recursive: true });
+    await fsp.mkdir(path.join(root, "c-bad"), { recursive: true });
+    await fsp.writeFile(path.join(root, "c-bad", "case.json"), JSON.stringify({ case_id: "c-bad", expected_decision: "x" }));
+    setConfigForTests({ casesDir: root });
+    expect((await listLearnerCases()).map(c => c.case_id)).toEqual(["fx-e01", "fx-n01", "fx-n02"]);
+  });
+});
+
+describe("expert case choice (integration G8)", () => {
+  it("accepts a case shown to the expert; refuses an unseen one (it is reserved for newcomers)", async () => {
+    expect((await pickExpertCase("fx-e01")).case_id).toBe("fx-e01");
+    await expect(pickExpertCase("fx-n01")).rejects.toMatchObject({ code: "case_not_permitted", details: { reason: "not_shown_to_expert" } });
+    await expect(pickExpertCase("nope")).rejects.toMatchObject({ code: "not_found" });
+  });
+
+  it("POST /api/sessions {role:expert, case_id} stores case_id and the case trace as trace_ref", async () => {
+    const post = (body: unknown, key?: string) =>
+      createSessionRoute(
+        new Request("http://t/api/sessions", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...(key ? { "Idempotency-Key": key } : {}) },
+          body: JSON.stringify(body),
+        }),
+      );
+    const res = await post({ role: "expert", case_id: "fx-e01" }, "k-expert-case");
+    expect(res.status).toBe(201);
+    expect(await res.json()).toMatchObject({ role: "expert", case_id: "fx-e01", trace_ref: "/api/cases/fx-e01/trace" });
+    expect((await post({ role: "expert", case_id: "fx-e01" }, "k-expert-case")).status).toBe(200);
+    expect((await post({ role: "expert", case_id: "fx-n01" })).status).toBe(409);
+    expect((await post({ role: "expert", case_id: "fx-e01", trace_ref: "/elsewhere.png" })).status).toBe(400);
+    expect(await (await post({ role: "expert", trace_ref: "/t.png" })).json()).toMatchObject({ case_id: null, trace_ref: "/t.png" });
   });
 });
 

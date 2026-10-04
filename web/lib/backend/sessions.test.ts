@@ -34,7 +34,7 @@ async function codeOf(p: Promise<unknown>): Promise<string | null> {
   );
 }
 
-const expert = { role: "expert" as const, source: "fixture" as const, trace_ref: null };
+const expert = { role: "expert" as const, source: "fixture" as const, trace_ref: null, case_id: null };
 
 describe("createSession", () => {
   it("creates an expert session with a server ID, on-record, one open segment, rev 1", async () => {

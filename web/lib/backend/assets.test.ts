@@ -34,7 +34,7 @@ let sid: string;
 beforeEach(async () => {
   dir = await fsp.mkdtemp(path.join(os.tmpdir(), "ws6-assets-"));
   setConfigForTests({ knowledgeDir: path.join(dir, "knowledge"), runtimeDir: path.join(dir, "runtime") });
-  sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+  sid = (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
 });
 
 afterEach(async () => {
@@ -111,7 +111,7 @@ describe("putAsset", () => {
 
   it("the same aid from a different session → 409", async () => {
     await putFull();
-    const other = (await createSession({ role: "expert", source: "fixture", trace_ref: null })).session.session_id;
+    const other = (await createSession({ role: "expert", source: "fixture", trace_ref: null, case_id: null })).session.session_id;
     expect((await errorOf(putFull(other)))?.code).toBe("conflict_immutable");
   });
 
