@@ -300,3 +300,39 @@ export const synthesis = createWs6SynthesisModule({
 1. Render `[expert words · …]` items and `[AI synthesis]` items with distinct styling. Never restyle synthesis as a quote.
 2. `workflow_position` is the teaching order. Should the recording timeline (`session_time_ms`) be a secondary view?
 3. Revoked entries: hide them, or show them with the revoked banner in an audit view?
+
+## 10. Tutor evaluation (Sprint 3)
+
+`evaluate({ draft, case_view, knowledge }, judge)` decides whether a newcomer's draft may be saved. It returns `TutorEvaluation`:
+- `outcome`: `ok` | `intervene` | `uncertain`;
+- `cited[]`: `{ entry_id, revision_id, exchange_ids, quote }`;
+- `feedback_text`, `guiding_question`, `uncertainty`, `escalation`;
+- `evidence[]`, `guard_notes[]`, `produced_by`.
+
+**Pipeline**
+1. **Input guard.**
+   - `assertLearnerCaseView` takes only `{ case_id, title, visible_context[], source }`. It rejects evaluator or answer-key keys, evaluator paths and unknown fields.
+   - Every knowledge candidate must pass `isTeachable`. Otherwise it throws `IneligibleKnowledgeError`.
+2. **Retrieve.** Uses `retrieve()` with limit 8, with the eligibility context re-checked. Guardrails and escalation rules are always included.
+3. **Judge.** The judge receives `JudgeInput` `{ draft, visible_case[], knowledge[] }`.
+   - Each knowledge item carries its expert quotes verbatim and its AI wording labelled.
+   - The judge never sees the case id, case title, paths, statuses or other cases.
+4. **Output guard** (`guardVerdict`, pure).
+   - A citation must name an entry the judge was shown. Its quote must be at least 3 words, verbatim in that revision's quotes and verbatim in the linked answer line.
+   - An `ok` or `intervene` with no valid citation becomes `uncertain`.
+   - Quoted spans in the question, explanation, uncertainty or context request must lie inside a valid citation; otherwise they are replaced or removed.
+   - An escalation must be a pinned `escalation` entry and applies only to `uncertain`. Its words are cited.
+   - An `uncertain` with no escalation always carries a request for missing context. It never carries a rule.
+5. **Feedback.** It starts with the guiding question, then the explanation, then each citation with an evidence pointer (event + highlighted image). Cited guardrails are labelled "Guardrail — the expert said".
+
+**Failure.** A judge failure (transport, refusal, truncation, invalid JSON) throws `JudgeError`. WS6 must then store `failed`, which never permits a commit.
+
+**Judge (D1 a).** `createAnthropicJudge()` calls `claude-opus-5-5` through `client.beta.messages.create` with:
+- `output_config: { effort: "high", format: { type: "json_schema" } }`;
+- `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`).
+
+**Timeline.** `buildTimeline(drafts, evaluations, commits, deliveries?)` returns the ordered `proposed | revised | evaluated | guidance_delivered | committed` entries.
+- An `intervene` is marked `caught_before_save` if it comes before the first commit, else `discovered_after_save`.
+- Pending and failed evaluations are left out.
+
+**WS6.** `createWs6TutorEvaluator({ load_content, load_records, allow_fixture, judge? })` implements `TutorEvaluator` (`id: "ws5-tutor"`). It maps WS5 `rev-<n>` to WS6 revision ids in `cited`, `escalation` and `evidence`.
