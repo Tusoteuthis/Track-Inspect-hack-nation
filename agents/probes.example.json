@@ -2087,16 +2087,12 @@
           "begin_question": "declined session_budget: the live question budget (5) is used up; remaining topics go to the debrief. Do not ask it and do not rephrase it; call skip_turn and say nothing."
         },
         "expect": {
-          "toolCalled": "begin_question",
-          "toolOptional": true,
-          "maxQuestions": 0,
-          "forbidPatterns": [
-            "declin",
-            "budget",
-            "limit",
-            "not allowed",
-            "can't ask",
-            "cannot ask"
+          "maxWords": 0,
+          "forbidTools": [
+            {
+              "name": "begin_question",
+              "paramsPattern": "\"kind\": ?\"(reasoning|distinction|context|guardrail|exception)\""
+            }
           ]
         }
       },
