@@ -1,0 +1,9 @@
+{
+  "status": "pending WS5 agreement",
+  "note": "WS5 defines outcomes; WS6 only enforces these consequences. Unknown outcomes are blocked.",
+  "outcomes": {
+    "ok": "allow",
+    "intervene": "block",
+    "uncertain": "allow_with_escalation"
+  }
+}
