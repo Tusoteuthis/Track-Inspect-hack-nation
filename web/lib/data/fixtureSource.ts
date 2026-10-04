@@ -83,6 +83,7 @@ export function createFixtureSource(options: FixtureSourceOptions = {}): Fixture
   const expert = createExpertScript({
     session: SESSION,
     caseIds: CASES.map(c => c.case_id),
+    mediaCaseIds: CASES.filter(c => c.media).map(c => c.case_id),
     latencyMs,
     replayMs: options.replayMs ?? DEFAULT_FIXTURE_REPLAY_MS,
     fail: { offRecord: options.failOffRecord, pause: options.failPause, stop: options.failStop },

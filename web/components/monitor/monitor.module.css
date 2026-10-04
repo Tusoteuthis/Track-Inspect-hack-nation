@@ -1,0 +1,225 @@
+/*
+ * The monitor is always dark, whatever the OS theme: it is read through the
+ * glasses camera in a demo room. Chrome text is at least 20px. The video has
+ * its own grid row, so no chrome ever sits on top of it.
+ */
+.monitor {
+  --m-bg: #0b0b0e;
+  --m-bar: #141419;
+  --m-line: #2a2a33;
+  --m-text: #f4f4f7;
+  --m-muted: #a3a3b0;
+  --m-brand: #5b54d6;
+  --m-brand-soft: #b3aef5;
+  --m-held: #8c86f0;
+  --m-rec: #f06b6b;
+  --m-fixture: #f2c94c;
+  --logo-ink: #e9eef5;
+
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--m-bg);
+  color: var(--m-text);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.topBar,
+.bottomBar {
+  background: var(--m-bar);
+  border-color: var(--m-line);
+  border-style: solid;
+  border-width: 0;
+}
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom-width: 1px;
+}
+.brand { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+.caseTitle { font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topRight { display: flex; align-items: center; gap: 0.75rem; flex: none; }
+
+.sessionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid var(--m-line);
+  border-radius: 8px;
+  background: #1d1d24;
+  color: var(--m-muted);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+.sessionPill[data-session="recording"] { color: var(--m-text); border-color: color-mix(in srgb, var(--m-rec) 60%, transparent); }
+.sessionPill[data-session="recording"] > span:first-child { color: var(--m-rec); }
+.sessionPill[data-session="off_record"] { color: var(--m-rec); border: 2px solid var(--m-rec); }
+.sessionPill[data-session="paused"] { color: var(--m-fixture); border-style: dashed; }
+
+.fixtureBadge {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--m-fixture);
+  border-radius: 6px;
+  color: var(--m-fixture);
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* Video row */
+.stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+/* Held: a violet frame along the edge of the stage, never over the picture's middle. */
+.stage[data-held="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 4px solid var(--m-held);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.6);
+  pointer-events: none;
+}
+/* Absolutely placed, so the video's intrinsic size can never grow its row. */
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.video[hidden] { display: none; }
+.errorMessage { margin: 0; padding: 2rem; font-size: 1.4em; text-align: center; }
+
+/* Bottom instrument bar */
+.bottomBar {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem 1.25rem 1rem;
+  border-top-width: 1px;
+}
+
+.prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  min-height: 3.2rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--m-line);
+  border-radius: 12px;
+  background: #1b1b22;
+}
+.prompt[data-tone="held"] {
+  border: 2px solid var(--m-held);
+  background: color-mix(in srgb, var(--m-brand) 18%, #1b1b22);
+}
+.prompt[data-tone="quiet"] { color: var(--m-muted); }
+.promptText { font-size: 1.15em; }
+.prompt[data-tone="held"] .promptText strong { color: var(--m-brand-soft); }
+.keys { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; color: var(--m-muted); font-size: 0.85em; }
+.keyHint kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.4em;
+  border: 1px solid #3a3a46;
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: #23232c;
+  color: var(--m-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+}
+
+.timelineRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+}
+.time { font-variant-numeric: tabular-nums; font-weight: 650; white-space: nowrap; }
+.timeTotal { color: var(--m-muted); font-weight: 500; }
+.autoHold { color: var(--m-muted); white-space: nowrap; font-size: 0.85em; }
+.autoHold[data-on="true"] { color: var(--m-brand-soft); }
+
+/* Timeline (shared with the companion strip; compact uses the page theme) */
+.timeline { position: relative; padding-top: 1.5em; }
+.track {
+  position: relative;
+  height: 0.6em;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+.chapter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+}
+.chapter:first-child { border-left: 0; }
+.chapterLabel {
+  position: absolute;
+  bottom: calc(100% + 0.35em);
+  left: 0.5em;
+  font-size: 0.7em;
+  color: color-mix(in srgb, currentColor 60%, transparent);
+  white-space: nowrap;
+}
+.chapter[data-current="true"] .chapterLabel { color: inherit; font-weight: 650; }
+.progress {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--m-brand, var(--brand));
+}
+.holdTick {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--m-brand-soft, var(--brand-soft));
+  border-radius: 50%;
+  background: var(--m-bar, var(--panel));
+  color: var(--m-brand-soft, var(--brand-soft));
+  font-size: 0.65em;
+  font-weight: 700;
+}
+.holdTick[data-passed="true"] { background: var(--m-brand, var(--brand)); border-color: var(--m-brand, var(--brand)); color: #fff; }
+.holdTick[data-held="true"] { width: 1.9em; height: 1.9em; box-shadow: 0 0 0 4px color-mix(in srgb, var(--m-held, var(--brand)) 40%, transparent); }
+.playhead {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 1.7em;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
+  background: var(--m-text, var(--text));
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 0.5);
+}
+.timeline[data-size="compact"] { font-size: 0.8rem; padding-top: 1.4em; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .holdTick[data-held="true"] { transition: box-shadow 200ms; }
+}
+
+@media (max-width: 48rem) {
+  .monitor { font-size: 16px; }
+  .timelineRow { grid-template-columns: minmax(0, 1fr); }
+}

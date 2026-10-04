@@ -23,13 +23,15 @@ test("entry → expert companion → review → Work Map → practice (wrong →
 
   // 1. Entry
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Track Inspect" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "NSPCT" })).toBeVisible();
   await shot(page, "01-entry");
   await page.getByRole("link", { name: /Expert session/ }).first().click();
 
   // 2. Expert companion: pointing replay, ambiguous region, then stop.
   await expect(page.getByRole("heading", { level: 1, name: "Expert session" })).toBeVisible();
   await expectFixtureLabelled(page);
+  // The still trace runs the timed pointing replay (the video case follows the monitor; see expert.spec).
+  await page.getByRole("radio", { name: /Trace A/ }).check();
   await page.getByRole("button", { name: "Start session" }).click();
   await expect(page.getByTestId("control-rail")).toBeVisible();
   await expect(page.getByTestId("region-outline")).toHaveAttribute("data-style", "solid");

@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { AppNav } from "@/components/shell/AppNav";
 import { DataSourceProvider } from "@/lib/data/DataSourceProvider";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+
 export const metadata: Metadata = {
-  title: "Track Inspect",
-  description: "Voice agent for capturing and teaching railway sensor-trace expertise",
+  title: "NSPCT",
+  description: "NSPCT: Neural Smart Perception for Critical Tasks. Capture and teach railway sensor-trace expertise.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body>
         <DataSourceProvider>
           <div className="app-shell">

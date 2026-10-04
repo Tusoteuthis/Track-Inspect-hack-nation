@@ -3,7 +3,7 @@
 // Expert session setup: pick a case, see the real connection status, open the
 // full-bleed trace display for the demo monitor, then start. Start shows
 // "Starting…" until the session service acknowledges it.
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useDataSource, useSourceQuery } from "@/lib/data/DataSourceProvider";
 import type { AgentState } from "@/lib/ui/agentState";
 import type { CaseSummary, SessionView } from "@/lib/ui/contracts";
@@ -16,11 +16,13 @@ type Props = {
   /** Case currently selected; lifted so the optional screen share can follow it. */
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** Live state of the demo monitor for the chosen case (video cases). */
+  renderMonitor?: (chosen: CaseSummary) => ReactNode;
 };
 
 export const displayHref = (caseId: string) => `/expert/display?case=${encodeURIComponent(caseId)}`;
 
-export function ExpertSetup({ agent, onStarted, selectedId, onSelect }: Props) {
+export function ExpertSetup({ agent, onStarted, selectedId, onSelect, renderMonitor }: Props) {
   const source = useDataSource();
   const cases = useSourceQuery("cases", s => s.listCases());
   const [starting, setStarting] = useState(false);
@@ -79,6 +81,11 @@ export function ExpertSetup({ agent, onStarted, selectedId, onSelect }: Props) {
                   />
                   {c.title}
                 </span>
+                {c.media ? (
+                  <span className={styles.caseMeta}>
+                    Video · {(c.media.duration_ms / 1000).toFixed(1)} s · {c.media.holds.length} holds
+                  </span>
+                ) : null}
                 {/* eslint-disable-next-line @next/next/no-img-element -- trace thumbnails at their own aspect */}
                 <img src={c.asset.original_url} alt="" width={c.asset.width_px} height={c.asset.height_px} />
               </label>
@@ -90,9 +97,11 @@ export function ExpertSetup({ agent, onStarted, selectedId, onSelect }: Props) {
       <section className={styles.panel} aria-labelledby="display-heading">
         <h2 id="display-heading">2. Put the trace on the demo monitor</h2>
         <p className={styles.hint}>
-          Opens the trace full-screen at the largest legible size, for reading through the glasses. Move the window to
-          the demo monitor.
+          {chosen?.media
+            ? "Opens the inspection player full-screen. The expert drives it at the monitor: Space plays, it holds at each marked moment for pointing, PgUp goes back. Move the window to the demo monitor."
+            : "Opens the trace full-screen at the largest legible size, for reading through the glasses. Move the window to the demo monitor."}
         </p>
+        {chosen && renderMonitor ? renderMonitor(chosen) : null}
         <div className={styles.actions}>
           {chosen ? (
             <a className={styles.secondary} href={displayHref(chosen.case_id)} target="_blank" rel="noopener">

@@ -1,8 +1,8 @@
 .screen { display: grid; gap: var(--space-4); }
 .screenHeader { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-6); }
 .screenHeader h1 { margin: 0; font-size: var(--font-xxl); }
-.revision { margin: 0; font-size: var(--font-lg); font-weight: 600; }
-.notice { margin: 0; padding: var(--space-3) var(--space-4); border: 2px solid var(--warn); border-radius: var(--radius); }
+.revision { margin: 0; font-size: var(--font-sm); font-weight: 500; color: var(--muted); }
+.notice { margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--warn); border-radius: var(--radius); }
 
 .layout { display: grid; grid-template-columns: minmax(18rem, 26rem) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
 @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
@@ -13,57 +13,83 @@
 .item {
   width: 100%; display: grid; grid-template-columns: 2rem 1fr auto; grid-template-areas: "num kind badge" "num title title" "num marker marker";
   gap: var(--space-1) var(--space-2); align-items: center; text-align: left; cursor: pointer;
-  padding: var(--space-3); background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius);
+  padding: var(--space-3); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
 }
-.item:hover { border-color: var(--text); }
+.item:hover { border-color: var(--line-strong); background: color-mix(in srgb, var(--panel) 94%, var(--text)); }
 /* Selection: thicker border + left bar + bold title, not colour alone. */
-.item[aria-current="true"] { border-color: var(--focus); border-width: 3px; box-shadow: inset 6px 0 0 var(--focus); }
-.item[aria-current="true"] .title { font-weight: 700; }
-.number { grid-area: num; align-self: start; font-weight: 700; font-size: var(--font-lg); text-align: center; }
-.title { grid-area: title; font-size: var(--font-lg); }
+.item[aria-current="true"] { border-color: color-mix(in srgb, var(--brand) 55%, var(--line)); background: var(--selected); box-shadow: inset 2px 0 0 var(--brand); }
+.item[aria-current="true"] .title { font-weight: 600; }
+.number { grid-area: num; align-self: start; font-weight: 500; font-size: var(--font-sm); color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+.title { grid-area: title; font-size: 1rem; font-weight: 500; }
 .item .kind { grid-area: kind; justify-self: start; }
 .item .badge { grid-area: badge; }
-.marker { grid-area: marker; font-weight: 700; color: var(--warn); }
+.marker { grid-area: marker; font-weight: 600; color: var(--warn); }
 .item_revoked .title { text-decoration: line-through; color: var(--muted); }
 .item_missing .title { color: var(--muted); font-style: italic; }
 
-.kind { font-size: var(--font-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 var(--space-2); border: 2px solid currentColor; border-radius: 4px; }
+.kind { font-size: var(--font-xs); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 0 var(--space-2); border: 1px solid currentColor; border-radius: 4px; }
 .kind_guardrail, .kind_exception { color: var(--warn); }
 
-.badge { display: inline-flex; gap: var(--space-1); align-items: center; font-size: var(--font-sm); font-weight: 700; padding: 0.1rem var(--space-2); border-radius: 999px; border: 2px solid var(--line); white-space: nowrap; }
+.badge { display: inline-flex; gap: var(--space-1); align-items: center; font-size: var(--font-xs); font-weight: 500; padding: 0.1rem var(--space-2); border-radius: 999px; border: 1px solid var(--line); white-space: nowrap; }
 .badge_confirmed { border-color: var(--accent); color: var(--accent); }
 .badge_draft { border-style: dashed; }
 .badge_unresolved { border-color: var(--warn); color: var(--warn); }
 .badge_revoked, .badge_missing { border-color: var(--danger); color: var(--danger); }
 
 /* Detail panel */
-.detail { display: grid; gap: var(--space-4); padding: var(--space-4); background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius); }
+.detail { display: grid; gap: var(--space-4); padding: var(--space-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 .detailHeader { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
 .detailHeader h2 { margin: 0; font-size: var(--font-xl); flex-basis: 100%; order: 1; }
 .detailHeader .kind { order: 0; }
 .detailHeader .badge { order: 2; }
 .statusText { order: 3; margin: 0; color: var(--muted); }
-.notTeaching { margin: 0; padding: var(--space-4); border: 2px solid var(--danger); border-radius: var(--radius); font-weight: 600; }
-.unresolved { padding: var(--space-3) var(--space-4); border: 2px dashed var(--warn); border-radius: var(--radius); }
+.notTeaching { margin: 0; padding: var(--space-4); border: 1px solid var(--danger); border-radius: var(--radius); font-weight: 600; }
+.unresolved { padding: var(--space-3) var(--space-4); border: 1px dashed var(--warn); border-radius: var(--radius); }
 .unresolved p { margin: 0.2rem 0; }
 
 .section { display: grid; gap: var(--space-2); }
 .section h3 { margin: 0; font-size: var(--font-lg); }
 .section > p { margin: 0; }
 .hint { color: var(--muted); font-size: var(--font-sm); }
-.missing { padding: var(--space-3); border: 2px dashed var(--danger); border-radius: var(--radius); font-weight: 700; }
+.missing { padding: var(--space-3); border: 1px dashed var(--danger); border-radius: var(--radius); font-weight: 600; }
 .evidencePicker { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-.evidencePicker button { padding: var(--space-1) var(--space-3); border: 2px solid var(--line); border-radius: var(--radius); background: var(--panel); cursor: pointer; }
-.evidencePicker button[aria-pressed="true"] { border-color: var(--focus); font-weight: 700; box-shadow: inset 0 -4px 0 var(--focus); }
+.evidencePicker button { padding: var(--space-1) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); cursor: pointer; }
+.evidencePicker button[aria-pressed="true"] { border-color: var(--line-strong); font-weight: 600; background: var(--selected); box-shadow: inset 0 -2px 0 var(--brand); }
 
 /* Expert speaking: solid bar, large text, quote marks. */
-.quotes { padding: var(--space-3) var(--space-4); border-left: 6px solid var(--accent); background: var(--bg); border-radius: 0 var(--radius) var(--radius) 0; }
+.quotes { padding: var(--space-3) var(--space-4); border-left: 2px solid var(--accent); background: var(--bg); border-radius: 0 var(--radius) var(--radius) 0; }
 .quote { margin: 0; }
 .quote blockquote { margin: 0; font-size: var(--font-lg); font-style: italic; }
 .quote blockquote::before { content: "“"; }
 .quote blockquote::after { content: "”"; }
-.quote figcaption { font-weight: 700; margin-top: var(--space-1); }
+.quote figcaption { font-weight: 600; margin-top: var(--space-1); }
 
 /* Apprentice synthesis: dashed frame, upright text, labelled as AI. */
-.synthesis { padding: var(--space-3) var(--space-4); border: 2px dashed var(--line); border-radius: var(--radius); }
+.synthesis { padding: var(--space-3) var(--space-4); border: 1px dashed var(--line); border-radius: var(--radius); }
 .synthesis ul { margin: 0; padding-left: 1.2rem; }
+
+.evidencePicker button:not([aria-pressed="true"]):hover { background: var(--hover); }
+
+/* App-style card: large radius, header row with a hairline divider. */
+.detail, .item { border-radius: var(--radius-lg); }
+.detail > .detailHeader {
+  margin: 0 calc(-1 * var(--space-4));
+  padding: 0 var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+/* App-style buttons: dark filled secondary, violet primary. */
+.evidencePicker button {
+  min-height: 2.5rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+/* App-style pills: filled chip, icon + text; status colour stays on border/text. */
+.badge, .kind { background: var(--panel-2); border-radius: var(--radius-pill); }
+
+.item { border-radius: 12px; }
+.screenHeader h1 { font-size: var(--font-xxl); }
+.item[aria-current="true"] .number { color: var(--brand-soft); }

@@ -1,12 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { AgentStateBridge } from "@/components/companion/AgentStateBridge";
 import { CompanionFixtureControls } from "@/components/companion/CompanionFixtureControls";
 import { ExpertCompanion } from "@/components/companion/ExpertCompanion";
 import { ExpertScreenShare } from "@/components/companion/ExpertScreenShare";
-import { ExpertSetup } from "@/components/companion/ExpertSetup";
+import { displayHref, ExpertSetup } from "@/components/companion/ExpertSetup";
+import { MonitorStrip } from "@/components/companion/MonitorStrip";
+import { useMonitorLink } from "@/components/monitor/useMonitorLink";
 import styles from "@/components/companion/companion.module.css";
 import { useExpertSession } from "@/components/expert/useExpertSession";
 import { FixtureBanner } from "@/components/shell/FixtureBanner";
@@ -17,7 +19,9 @@ import { createFixtureSource, type FixtureDataSource } from "@/lib/data/fixtureS
 import type { DataSource } from "@/lib/data/source";
 import { parseFixtureSettings } from "@/lib/practice/fixtureSettings";
 import type { AgentState } from "@/lib/ui/agentState";
+import type { SessionRecording } from "@/lib/monitor/monitorChannel";
 import type { CaseSummary } from "@/lib/ui/contracts";
+import { PageEyebrow } from "@/components/shell/PageEyebrow";
 
 export default function ExpertPage() {
   return (
@@ -46,11 +50,35 @@ function Expert() {
   // WS3 expert flow: its reducer records exchanges; this page only reads the agent state.
   const expert = useExpertSession();
 
+  // Demo monitor link (video cases): mirror its playback here, send it the recording state.
+  const [recording, setRecording] = useState<SessionRecording>("none");
+  const monitor = useMonitorLink(phase.kind === "session" ? recording : "none");
+  const renderMonitor = (chosen: CaseSummary, showOpenLink: boolean) =>
+    chosen.media ? (
+      <MonitorStrip
+        caseId={chosen.case_id}
+        media={chosen.media}
+        monitor={monitor}
+        openHref={displayHref(chosen.case_id)}
+        showOpenLink={showOpenLink}
+      />
+    ) : null;
+
+  // Fixture mode: a monitor hold stands in for the glasses' pointing detection.
+  const sessionCase = phase.kind === "session" ? phase.chosen : null;
+  useEffect(() => {
+    if (!fixtureControls || !sessionCase?.media || monitor?.status !== "held") return;
+    if (monitor.case_id !== sessionCase.case_id) return;
+    const hold = sessionCase.media.holds.find(h => h.hold_id === monitor.hold_id);
+    if (hold) fixtureControls.pointAtHold(hold);
+  }, [fixtureControls, monitor, sessionCase]);
+
   return (
     <DataSourceProvider source={source}>
       <div className={styles.screen}>
         <FixtureBanner source={source.kind === "fixture" ? "fixture" : "live"} />
         <header className={styles.header}>
+          <PageEyebrow />
           <h1>Expert session</h1>
           <p className={styles.hint}>
             You point at the trace and talk through the glasses. This page shows what was understood and the session
@@ -67,6 +95,7 @@ function Expert() {
               setSelectedId(chosen.case_id);
               setPhase({ kind: "session", sessionId: session.session_id, chosen });
             }}
+            renderMonitor={chosen => renderMonitor(chosen, false)}
           />
         ) : (
           <ExpertCompanion
@@ -80,6 +109,8 @@ function Expert() {
               </VoiceSession>
             }
             fixtureControls={fixtureControls ? <CompanionFixtureControls controls={fixtureControls} /> : undefined}
+            monitorStrip={renderMonitor(phase.chosen, true)}
+            onRecordingChange={setRecording}
           />
         )}
 

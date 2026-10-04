@@ -201,9 +201,41 @@ export type AssessmentView = {
 export type CaseSummary = {
   case_id: string;
   title: string;
-  /** The trace picture shown in setup and in the full-bleed display. */
+  /** The trace picture shown in setup and in the full-bleed display (a video case: its poster frame). */
   asset: EvidenceAsset;
+  /** Present when the monitor plays a video for this case instead of showing the still asset. */
+  media?: CaseMedia;
   source: DataOrigin;
+};
+
+export type MediaChapter = { chapter_id: string; label: string; start_ms: number; end_ms: number };
+
+/** A moment the monitor freezes on so the expert can point at a still picture. Never names what is shown. */
+export type MediaHold = {
+  hold_id: string;
+  /** Media time (position in the case video). */
+  at_ms: number;
+  /** Still captured from the video at at_ms. */
+  frame_url: string;
+  frame_width_px: number;
+  frame_height_px: number;
+};
+
+/**
+ * A case video. Its times are media time: a position in this video. Media time
+ * is neither session time (recording time) nor a signal-axis position, even
+ * where the video draws its own "time [s]" axis.
+ */
+export type CaseMedia = {
+  kind: "video";
+  url: string;
+  poster_url: string;
+  duration_ms: number;
+  width_px: number;
+  height_px: number;
+  chapters: MediaChapter[];
+  /** Sorted by at_ms. */
+  holds: MediaHold[];
 };
 
 /**
@@ -220,4 +252,8 @@ export type CompanionEvent = {
   record_state: "on_record" | "off_record";
   /** null = unknown; shown as unknown, never guessed. */
   channel_label: string | null;
+  /** Media time of the monitor video when the pointed-at frame was shown; absent for still traces. */
+  media_time_ms?: number | null;
+  /** The monitor hold this event was made at, if any. */
+  hold_id?: string | null;
 };

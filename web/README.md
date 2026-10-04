@@ -1,4 +1,4 @@
-# Track Inspect web app
+# NSPCT web app
 
 Next.js 16 / React 19 / strict TypeScript. One app hosts every WS7 screen, the WS3 voice flows and (once merged) the WS6 API routes.
 

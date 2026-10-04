@@ -12,6 +12,7 @@ import { resolveDeepLink } from "@/lib/workmap/deepLink";
 import type { MarkMap } from "@/lib/review/markState";
 import type { ReviewMark, WorkMapView } from "@/lib/ui/contracts";
 import styles from "./workmap.module.css";
+import { PageEyebrow } from "@/components/shell/PageEyebrow";
 
 export type WorkMapScreenProps = {
   /** Session whose live updates refresh the map; null = none (the WS6 Work Map itself is global). */
@@ -45,6 +46,7 @@ export function WorkMapScreen({ sessionId, entryId, revisionId, onSelect }: Work
       <FixtureBanner source={view?.source} />
       <section className={styles.screen}>
         <header className={styles.screenHeader}>
+          <PageEyebrow />
           <h1>Work Map</h1>
           {view ? <p className={styles.revision}>Showing {view.revision_label}</p> : null}
         </header>

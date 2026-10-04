@@ -17,6 +17,7 @@ import { ScreenSharePanel } from "./ScreenSharePanel";
 import { usePracticeLoop } from "./usePracticeLoop";
 import { useScreenObservation } from "./useScreenObservation";
 import styles from "./practice.module.css";
+import { PageEyebrow } from "@/components/shell/PageEyebrow";
 
 type Props = {
   source: DataSource;
@@ -59,6 +60,7 @@ export function PracticeScreen({ source, caseView, sessionId, renderTutor, rende
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
+        <PageEyebrow />
         <h1>Newcomer practice</h1>
         <p className="muted">
           Look at this trace, draft your decision with a reason, and get it reviewed by the tutor before saving.

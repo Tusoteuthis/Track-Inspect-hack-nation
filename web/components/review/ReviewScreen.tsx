@@ -18,6 +18,7 @@ import { initialReviewState, reviewReducer, type ReviewNotice } from "@/lib/revi
 import type { MarkMap } from "@/lib/review/markState";
 import type { ReviewMark, ReviewView } from "@/lib/ui/contracts";
 import styles from "./review.module.css";
+import { PageEyebrow } from "@/components/shell/PageEyebrow";
 
 function noticeText(notice: ReviewNotice): string {
   switch (notice.kind) {
@@ -58,6 +59,7 @@ export function ReviewScreen({ sessionId }: { sessionId: string }) {
     <>
       <FixtureBanner source={review?.source} />
       <section className={styles.screen}>
+        <PageEyebrow />
         <h1>Review</h1>
         <p className={styles.spoken}>
           <span aria-hidden="true">🗣 </span>

@@ -66,6 +66,10 @@ export type PointingEvent = {
   record_state: RecordState;
   /** Dev-UI hint only. Never sent to the agent, never an interpretation. */
   label?: string;
+  /** Media time of the monitor video when the frame was shown (video cases only). Not session or signal time. */
+  media_time_ms?: number | null;
+  /** The monitor hold the expert pointed during (video cases only). */
+  hold_id?: string | null;
 };
 
 /** A verbatim expert transcript line attached to an exchange. */
@@ -290,6 +294,16 @@ export function validatePointingEvent(input: unknown): ValidationResult<Pointing
     errors.push(`record_state must be one of ${RECORD_STATES.join(", ")}`);
   }
   if (input.label !== undefined && typeof input.label !== "string") errors.push("label must be a string if present");
+  if (
+    input.media_time_ms !== undefined &&
+    input.media_time_ms !== null &&
+    (!isFiniteNumber(input.media_time_ms) || input.media_time_ms < 0)
+  ) {
+    errors.push("media_time_ms must be a number ≥ 0 or null if present");
+  }
+  if (input.hold_id !== undefined && !isNullableString(input.hold_id)) {
+    errors.push("hold_id must be a non-empty string or null if present");
+  }
 
   return errors.length ? { ok: false, errors } : { ok: true, value: input as PointingEvent };
 }

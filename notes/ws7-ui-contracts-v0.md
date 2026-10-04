@@ -130,3 +130,12 @@ All of these are additive:
 | `deleteEvidence(sid, eventId)` | `DELETE /api/sessions/:sid/events/:eid` (WS6 S4, not implemented yet). Revoked entries arrive as `entry.revoked`. |
 
 - **`apiSource`** (`web/lib/data/apiSource.ts`) implements every method against WS6 api-v0. The mapping rules and every mismatch are listed in `notes/ws7-sprints/handoff-sprint-4.md`.
+
+## 9. Monitor video additions (4 October 2026, spec `specs/006-ws7-monitor-video/spec.md`)
+
+All additive; still-image cases are unchanged.
+- **`CaseSummary.media?: CaseMedia`** — `{kind:"video", url, poster_url, duration_ms, width_px, height_px, chapters[], holds[]}`. `asset` stays required (for a video case it is the poster frame). `MediaHold = {hold_id, at_ms, frame_url, frame_width_px, frame_height_px}`: a still captured from the video at `at_ms`. Holds carry **no label**: the monitor never names what is shown; the expert supplies the interpretation.
+- **Media time** (`media_time_ms`, `at_ms`) is a position in the case video. It is neither `session_time_ms` (recording time) nor `signal_interval` (the trace's horizontal axis), even where the video draws its own "time [s]" axis. Never substitute one for another.
+- **`PointingEvent.media_time_ms?` / `hold_id?`** (optional, validated when present) and the same optional fields on **`CompanionEvent`**, set when pointing happened during a monitor hold.
+- **Monitor ⇄ companion link** (`web/lib/monitor/monitorChannel.ts`, `BroadcastChannel("nspct-monitor")`, same browser only): the monitor sends `monitor_state` (status `start|playing|paused|held|ended|error`, media time, hold n of N, auto-hold) and `bye`; the companion sends `session_state` (`recording|off_record|paused|none`); either sends `hello` to resync. Invalid messages are dropped.
+- **Fixture mode:** for a video case the timed pointing replay is off; a monitor hold triggers one simulated pointing event on that hold's still frame (`web/fixtures/ui/video-holds.json`, never part of the learner case listing). Live mode is unchanged: pointing comes from WS2/WS3 only.

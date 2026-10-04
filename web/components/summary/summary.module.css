@@ -11,7 +11,7 @@
 
 .group {
   padding: var(--space-4);
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
 }
@@ -23,13 +23,13 @@
 
 /* Each group has its own border style as well as its icon, so it never relies on colour. */
 .group[data-group="independent"] { border-style: solid; }
-.group[data-group="assisted"] { border-style: double; border-width: 4px; }
+.group[data-group="assisted"] { border-style: double; border-width: 2px; }
 .group[data-group="unresolved"] { border-style: dashed; }
 
 .icon {
   display: inline-block;
   min-width: 1.4em;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .count {
@@ -70,7 +70,7 @@
   border: 1px solid currentColor;
   border-radius: 4px;
   font-size: var(--font-sm);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .help h3,
@@ -94,10 +94,24 @@
 
 .limitations {
   padding: var(--space-4);
-  border-left: 4px solid var(--muted);
+  border-left: 2px solid var(--muted);
 }
 
 .limitations h2 {
   margin: 0;
   font-size: var(--font-lg);
 }
+
+/* App-style card: large radius, header row with a hairline divider. */
+.group { border-radius: var(--radius-lg); }
+.group > h2:first-child {
+  margin: 0 calc(-1 * var(--space-4));
+  padding: 0 var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+/* App-style pills: filled chip, icon + text; status colour stays on border/text. */
+.tag { background: var(--panel-2); border-radius: var(--radius-pill); }
+
+.group > h2:first-child + .hint { margin-top: var(--space-3); }
+.screen h1 { font-size: var(--font-xxl); }

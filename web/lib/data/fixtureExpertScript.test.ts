@@ -132,4 +132,49 @@ describe("fixtureExpertScript", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect((await ack).status).toBe("failed");
   });
+
+  describe("video case: pointing follows the monitor holds", () => {
+    const VIDEO = "fixture-case-video-001";
+    const HOLD = {
+      hold_id: "hold-2",
+      at_ms: 12_400,
+      frame_url: "/fixtures/video/hold-2.jpg",
+      frame_width_px: 832,
+      frame_height_px: 464,
+    };
+    const videoSetup = () => setup({ caseIds: ["case-1", VIDEO], mediaCaseIds: [VIDEO] });
+
+    it("does not run the timed replay for a video case", async () => {
+      const { script, updates } = videoSetup();
+      void script.startSession(VIDEO);
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(types(updates)).toEqual(["session"]);
+    });
+
+    it("emits one pointing event per hold while active, on the hold's frame", async () => {
+      const { script, updates } = videoSetup();
+      expect(script.controls.pointAtHold(HOLD)).toBe(false); // not started
+      void script.startSession(VIDEO);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(script.controls.pointAtHold(HOLD)).toBe(true);
+      expect(script.controls.pointAtHold(HOLD)).toBe(false); // once per hold
+      expect(types(updates)).toEqual(["session", "event:evt-hold-2"]);
+      const pushed = updates[1];
+      expect(pushed.type === "pointing_event" && pushed.event).toMatchObject({
+        image_ref: "/fixtures/video/hold-2.jpg",
+        media_time_ms: 12_400,
+        hold_id: "hold-2",
+      });
+      expect(await script.getRecentEvents(SID)).toHaveLength(1);
+    });
+
+    it("emits nothing while paused", async () => {
+      const { script } = videoSetup();
+      void script.startSession(VIDEO);
+      await vi.advanceTimersByTimeAsync(100);
+      void script.requestPause(SID, true);
+      await vi.advanceTimersByTimeAsync(100);
+      expect(script.controls.pointAtHold(HOLD)).toBe(false);
+    });
+  });
 });

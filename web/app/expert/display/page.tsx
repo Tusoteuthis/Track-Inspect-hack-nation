@@ -1,9 +1,11 @@
 "use client";
 
-// Full-bleed trace for the demo monitor, read through the glasses: the trace
-// at the largest size that fits, minimal chrome, Esc returns to setup.
+// The demo monitor, read through the glasses. A video case gets the inspection
+// player (VideoMonitor); a still trace is shown full-bleed at the largest size
+// that fits, with minimal chrome. Esc returns to setup.
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useCallback, useEffect } from "react";
+import { VideoMonitor } from "@/components/monitor/VideoMonitor";
 import { useScreenSource } from "@/components/shell/useScreenSource";
 import { DataSourceProvider, useSourceQuery } from "@/lib/data/DataSourceProvider";
 import styles from "./display.module.css";
@@ -26,16 +28,22 @@ function TraceDisplay() {
   const caseId = useSearchParams().get("case");
   const router = useRouter();
   const cases = useSourceQuery("cases", s => s.listCases());
+  const chosen = cases.status === "ready" ? (cases.data.find(c => c.case_id === caseId) ?? null) : null;
+  const exit = useCallback(() => router.push("/expert"), [router]);
+  const isVideo = Boolean(chosen?.media);
 
+  // The video player has its own keys (Esc included).
   useEffect(() => {
+    if (isVideo) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") router.push("/expert");
+      if (e.key === "Escape") exit();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [router]);
+  }, [exit, isVideo]);
 
-  const chosen = cases.status === "ready" ? (cases.data.find(c => c.case_id === caseId) ?? null) : null;
+  // A video case gets the inspection player; still traces keep the plain full-bleed view.
+  if (chosen?.media) return <VideoMonitor caseSummary={{ ...chosen, media: chosen.media }} onExit={exit} />;
 
   return (
     <div className={styles.display} data-testid="trace-display">

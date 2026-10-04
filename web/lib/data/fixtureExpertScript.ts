@@ -6,8 +6,9 @@ import evt001 from "@/fixtures/pointing-events/evt-001-resolved.json";
 import evt003 from "@/fixtures/pointing-events/evt-003-repeat-of-001.json";
 import evt004 from "@/fixtures/pointing-events/evt-004-ambiguous.json";
 import type { PointingEvent } from "@/lib/expert/contracts";
+import { holdPointingEvent } from "@/lib/monitor/holdEvidence";
 import { acknowledged, failed, type Ack, type SourceUpdate } from "@/lib/data/source";
-import type { SessionView } from "@/lib/ui/contracts";
+import type { MediaHold, SessionView } from "@/lib/ui/contracts";
 
 /** Resolved → repeat of the same spot → ambiguous. */
 export const REPLAY_EVENTS = [evt001, evt003, evt004] as PointingEvent[];
@@ -15,6 +16,8 @@ export const REPLAY_EVENTS = [evt001, evt003, evt004] as PointingEvent[];
 export type ExpertScriptOptions = {
   session: SessionView;
   caseIds: string[];
+  /** Video cases: pointing follows the monitor's holds instead of the timed replay. */
+  mediaCaseIds?: string[];
   latencyMs: number;
   replayMs: number;
   fail?: { offRecord?: boolean; pause?: boolean; stop?: boolean };
@@ -26,12 +29,19 @@ export type ExpertScriptControls = {
   /** Subscribers see "connected" and are expected to resync. */
   restore(): void;
   connected(): boolean;
+  /**
+   * Simulated pointing at a monitor hold (video cases). Emits once per hold and
+   * session, only while the session is active. Returns whether an event was emitted.
+   */
+  pointAtHold(hold: MediaHold): boolean;
 };
 
 const FAIL_TEXT = "Simulated failure (fixture): the request was not confirmed.";
 
 export function createExpertScript(options: ExpertScriptOptions) {
   const { latencyMs, replayMs, caseIds } = options;
+  const mediaCaseIds = options.mediaCaseIds ?? [];
+  let startedAt = 0;
   const fail = options.fail ?? {};
   let session: SessionView = { ...structuredClone(options.session), rev: options.session.rev ?? 0 };
   const delivered: PointingEvent[] = [];
@@ -47,6 +57,7 @@ export function createExpertScript(options: ExpertScriptOptions) {
 
   const scheduleReplay = () => {
     if (replayTimer || nextEvent >= REPLAY_EVENTS.length || session.lifecycle !== "active") return;
+    if (session.case_id && mediaCaseIds.includes(session.case_id)) return;
     replayTimer = setTimeout(() => {
       replayTimer = null;
       // Capture is held while paused or after the end: nothing new is pointed at.
@@ -96,6 +107,20 @@ export function createExpertScript(options: ExpertScriptOptions) {
       emit({ type: "connection", state: "connected" });
     },
     connected: () => connected,
+    pointAtHold(hold) {
+      if (session.lifecycle !== "active" || !session.case_id) return false;
+      const event = holdPointingEvent({
+        sessionId: session.session_id,
+        caseId: session.case_id,
+        hold,
+        sessionTimeMs: Date.now() - startedAt,
+        now: new Date(),
+      });
+      if (!event || delivered.some(e => e.event_id === event.event_id)) return false;
+      delivered.push(event);
+      emit({ type: "pointing_event", event });
+      return true;
+    },
   };
 
   return {
@@ -112,6 +137,7 @@ export function createExpertScript(options: ExpertScriptOptions) {
       act(false, s => {
         if (!caseIds.includes(caseId)) return "Unknown case.";
         if (s.lifecycle === "ended") return ended;
+        startedAt = Date.now();
         return { ...s, lifecycle: "active", case_id: caseId };
       }),
     requestOffRecord: (sessionId: string, offRecord: boolean) =>

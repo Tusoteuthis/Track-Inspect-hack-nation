@@ -45,8 +45,23 @@ describe("fixtureSource", () => {
     expect(cases.length).toBeGreaterThan(0);
     for (const c of cases) {
       expect(c.source).toBe("fixture");
-      expect(Object.keys(c).sort()).toEqual(["asset", "case_id", "source", "title"]);
+      const keys = Object.keys(c).filter(k => k !== "media").sort();
+      expect(keys).toEqual(["asset", "case_id", "source", "title"]);
     }
+  });
+
+  it("lists the video case first, with chapters and sorted holds on its own frames", async () => {
+    const [video] = await fixtureSource.listCases();
+    expect(video.media?.kind).toBe("video");
+    const holds = video.media!.holds;
+    expect(holds.map(h => h.at_ms)).toEqual([...holds.map(h => h.at_ms)].sort((a, b) => a - b));
+    for (const h of holds) {
+      expect(h.at_ms).toBeLessThan(video.media!.duration_ms);
+      expect(h.frame_url).toMatch(/^\/fixtures\/video\//);
+    }
+    expect(video.media!.chapters.at(-1)!.end_ms).toBe(video.media!.duration_ms);
+    // Holds never name what is shown: no label field at all.
+    expect(Object.keys(holds[0]).sort()).toEqual(["at_ms", "frame_height_px", "frame_url", "frame_width_px", "hold_id"]);
   });
 
   it("acknowledges off-record for the expert session (Sprint 3)", async () => {

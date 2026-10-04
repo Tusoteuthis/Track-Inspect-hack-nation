@@ -24,11 +24,11 @@ for (const route of FIXTURE_ROUTES) {
 
 test("entry links lead to the three main areas", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Track Inspect" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "NSPCT" })).toBeVisible();
   await page.getByRole("link", { name: /Newcomer practice/ }).click();
   await expect(page).toHaveURL(/\/practice$/);
   await expect(page.getByRole("link", { name: "Practice" })).toHaveAttribute("aria-current", "page");
-  await page.getByRole("link", { name: "Track Inspect" }).click();
+  await page.getByRole("link", { name: "NSPCT" }).click();
   await page.getByRole("link", { name: /Work Map/ }).first().click();
   await expect(page).toHaveURL(/\/map$/);
 });

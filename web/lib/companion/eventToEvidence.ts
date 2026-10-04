@@ -29,5 +29,7 @@ export function eventToEvidence(event: PointingEvent): CompanionEvent {
     },
     record_state: event.record_state,
     channel_label: event.channel_id,
+    ...(event.media_time_ms !== undefined ? { media_time_ms: event.media_time_ms } : {}),
+    ...(event.hold_id !== undefined ? { hold_id: event.hold_id } : {}),
   };
 }

@@ -4,9 +4,15 @@ const shot = (page: Page, name: string) => page.screenshot({ path: `test-results
 
 const FAST = "/expert?fixture_replay_ms=700&fixture_latency=600";
 
+/** The still Trace A case runs the timed pointing replay; the video case (first) follows the monitor's holds. */
+async function chooseTraceA(page: Page) {
+  await page.getByRole("radio", { name: /Trace A/ }).check();
+}
+
 async function startSession(page: Page, url = FAST) {
   await page.goto(url);
   await expect(page.getByRole("heading", { level: 1, name: "Expert session" })).toBeVisible();
+  await chooseTraceA(page);
   await page.getByRole("button", { name: "Start session" }).click();
   await expect(page.getByTestId("control-rail")).toBeVisible();
 }
@@ -23,6 +29,7 @@ test("setup → companion with event replay → off-record → stop → debrief 
   await expect(page.getByTestId("connection-Voice apprentice")).toContainText("Apprentice not connected");
   await shot(page, "01-setup");
 
+  await chooseTraceA(page);
   await page.getByRole("button", { name: "Start session" }).click();
   await expect(page.getByRole("button", { name: /Starting… waiting for confirmation/ })).toBeVisible();
   await expect(page.getByTestId("control-rail")).toBeVisible();
@@ -121,4 +128,55 @@ test("entry offers Expert session and Newcomer practice", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("main").getByRole("link", { name: /Expert session/ })).toHaveAttribute("href", "/expert");
   await expect(page.getByRole("main").getByRole("link", { name: /Newcomer practice/ })).toHaveAttribute("href", "/practice");
+});
+
+test("monitor video: Space plays, it holds for pointing, the companion mirrors it and gets the hold's evidence", async ({
+  context,
+}) => {
+  const companion = await context.newPage();
+  await companion.goto("/expert?fixture_latency=300");
+  await expect(companion.getByRole("radio", { name: /Wheel sensor pass/ })).toBeChecked();
+  await expect(companion.getByText("Video · 22.8 s · 4 holds")).toBeVisible();
+  await expect(companion.getByTestId("monitor-strip")).toHaveAttribute("data-monitor", "none");
+  await companion.getByRole("button", { name: "Start session" }).click();
+  await expect(companion.getByTestId("control-rail")).toBeVisible();
+
+  const monitor = await context.newPage();
+  await monitor.setViewportSize({ width: 1600, height: 900 });
+  await monitor.goto("/expert/display?case=fixture-case-video-001");
+  await expect(monitor.getByTestId("monitor-prompt")).toHaveText(/Press Space to start/);
+  await expect(monitor.getByTestId("monitor-session")).toContainText("REC");
+  await expect(monitor.getByRole("status").filter({ hasText: "FIXTURE DATA" })).toBeVisible();
+  // Chrome sits above and below the video, never on it.
+  const video = (await monitor.locator("video").boundingBox())!;
+  const prompt = (await monitor.getByTestId("monitor-prompt").boundingBox())!;
+  expect(intersects(video, prompt)).toBe(false);
+  await shot(monitor, "10-monitor-start");
+
+  await monitor.keyboard.press("Space");
+  await expect(monitor.getByTestId("video-monitor")).toHaveAttribute("data-status", "playing");
+  await expect(monitor.getByTestId("monitor-prompt")).toContainText("Hold 1 of 4", { timeout: 15_000 });
+  await expect(monitor.getByTestId("monitor-prompt")).toContainText("Point at what you see and explain it.");
+  await expect(monitor.getByTestId("monitor-time")).toContainText("10.6 s");
+  await shot(monitor, "11-monitor-hold");
+
+  await expect(companion.getByTestId("monitor-strip")).toHaveAttribute("data-monitor", "held");
+  await expect(companion.getByTestId("monitor-strip")).toContainText("Hold 1 of 4");
+  await expect(companion.getByTestId("recent-event")).toHaveCount(1);
+  await expect(companion.getByTestId("region-outline")).toBeVisible();
+  await shot(companion, "12-companion-monitor-strip");
+
+  // Resume to hold 2, back with PgUp, restart with R.
+  await monitor.keyboard.press("PageDown");
+  await expect(monitor.getByTestId("monitor-prompt")).toContainText("Hold 2 of 4", { timeout: 15_000 });
+  await expect(companion.getByTestId("recent-event")).toHaveCount(2);
+  await monitor.keyboard.press("PageUp");
+  await expect(monitor.getByTestId("monitor-prompt")).toContainText("Hold 1 of 4");
+  await expect(companion.getByTestId("recent-event")).toHaveCount(2); // each hold points once
+  await monitor.keyboard.press("r");
+  await expect(monitor.getByTestId("monitor-prompt")).toHaveText(/Press Space to start/);
+
+  // Off record on the companion shows on the monitor.
+  await companion.keyboard.press("o");
+  await expect(monitor.getByTestId("monitor-session")).toContainText("OFF RECORD");
 });

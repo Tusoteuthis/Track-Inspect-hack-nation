@@ -1,0 +1,12 @@
+{
+  "_comment": "FIXTURE: simulated pointing for the video case's monitor holds (fixture mode only). Regions are normalized boxes on each hold frame (832x464). They stand in for the glasses' pointing detection; they are not interpretations, and never reach the learner case listing.",
+  "source": "fixture",
+  "case_id": "fixture-case-video-001",
+  "trace_id": "trace-wheel-sensor-pass",
+  "holds": {
+    "hold-1": { "x": 0.33, "y": 0.35, "width": 0.24, "height": 0.18, "channel_id": null },
+    "hold-2": { "x": 0.83, "y": 0.5, "width": 0.12, "height": 0.4, "channel_id": null },
+    "hold-3": { "x": 0.71, "y": 0.62, "width": 0.1, "height": 0.2, "channel_id": null },
+    "hold-4": { "x": 0.89, "y": 0.6, "width": 0.1, "height": 0.17, "channel_id": "SYS2" }
+  }
+}

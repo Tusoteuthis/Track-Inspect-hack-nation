@@ -18,6 +18,7 @@ import {
 } from "@/lib/companion/copy";
 import { shortcutFor, SHORTCUT_KEYS } from "@/lib/companion/shortcuts";
 import type { DataSource } from "@/lib/data/source";
+import type { SessionRecording } from "@/lib/monitor/monitorChannel";
 import type { AgentState } from "@/lib/ui/agentState";
 import type { EvidenceAsset } from "@/lib/ui/contracts";
 import { ConnectionPanel } from "./ConnectionPanel";
@@ -37,9 +38,22 @@ type Props = {
   /** The voice session (WS3); lives in the rail and stays mounted when the rail collapses. */
   voice?: ReactNode;
   fixtureControls?: ReactNode;
+  /** Demo monitor mirror (video cases), shown above the trace. */
+  monitorStrip?: ReactNode;
+  /** Reports the recording state for the monitor's session pill. */
+  onRecordingChange?: (recording: SessionRecording) => void;
 };
 
-export function ExpertCompanion({ source, sessionId, caseAsset, agent, voice, fixtureControls }: Props) {
+export function ExpertCompanion({
+  source,
+  sessionId,
+  caseAsset,
+  agent,
+  voice,
+  fixtureControls,
+  monitorStrip,
+  onRecordingChange,
+}: Props) {
   const { state, loadError, syncing, request } = useCompanion(source, sessionId);
   const [railOpen, setRailOpen] = useState(true);
   const [stopArmed, setStopArmed] = useState(false);
@@ -54,6 +68,15 @@ export function ExpertCompanion({ source, sessionId, caseAsset, agent, voice, fi
 
   const { session, pending } = state;
   const recording = displayRecording(state);
+  const monitorRecording: SessionRecording =
+    !session || session.lifecycle === "ended"
+      ? "none"
+      : session.lifecycle === "paused"
+        ? "paused"
+        : session.recording_state === "off_record"
+          ? "off_record"
+          : "recording";
+  useEffect(() => onRecordingChange?.(monitorRecording), [monitorRecording, onRecordingChange]);
 
   const pressPause = useCallback(() => {
     if (!session) return;
@@ -186,6 +209,7 @@ export function ExpertCompanion({ source, sessionId, caseAsset, agent, voice, fi
 
       <div className={styles.layout} data-rail={railOpen ? "expanded" : "collapsed"}>
         <section className={styles.trace} aria-label="Active trace" data-testid="companion-trace">
+          {monitorStrip}
           {latest ? (
             <EvidenceViewer
               key={latest.event_id}

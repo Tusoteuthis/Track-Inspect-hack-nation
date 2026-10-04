@@ -8,6 +8,7 @@ import { summaryGroups } from "@/lib/summary/groups";
 import type { AssessmentItem, AssessmentView, Citation } from "@/lib/ui/contracts";
 import { mapHref } from "@/lib/workmap/deepLink";
 import styles from "./summary.module.css";
+import { PageEyebrow } from "@/components/shell/PageEyebrow";
 
 /**
  * Renders the WS5 assessment as returned. No overall score: WS5 does not supply
@@ -24,6 +25,7 @@ export function SummaryScreen({ sessionId }: { sessionId: string | null }) {
       <FixtureBanner source={query.status === "ready" ? query.data?.source : undefined} />
       <section className={styles.screen}>
         <header>
+          <PageEyebrow />
           <h1>Learning summary</h1>
           <p className="muted">
             What the newcomer did on the unseen case, as assessed by the tutor. Decisions corrected after help are
