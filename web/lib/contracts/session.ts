@@ -21,6 +21,8 @@ export const SessionSchema = z
     case_id: IdSchema.nullable(),
     trace_ref: z.string().nullable(),
     pinned_knowledge: z.array(KnowledgeRefSchema).nullable(),
+    /** S4: bumped by every deletion cascade or off-record purge; jobs started on an older one are discarded. */
+    generation: z.number().int().min(0).optional(),
     /** S3, newcomer only: fixture/stub knowledge may be pinned (`?allow_fixture_knowledge=1`). */
     knowledge_fixture_allowed: z.boolean().optional(),
     source: SourceSchema,
@@ -64,7 +66,13 @@ export const LifecycleRequestSchema = z.strictObject({
 export type LifecycleRequest = z.output<typeof LifecycleRequestSchema>;
 export const parseLifecycleRequest = makeParser(LifecycleRequestSchema);
 
-/** `POST /api/sessions/:sid/record-state` body. */
-export const RecordStateRequestSchema = z.strictObject({ state: RecordStateSchema });
+/**
+ * `POST /api/sessions/:sid/record-state` body. S4: `since_utc` (off_record only) starts the
+ * off-record segment in the past — "that last part was off the record" — and purges what was
+ * stored since then. It must lie inside the current on-record segment.
+ */
+export const RecordStateRequestSchema = z
+  .strictObject({ state: RecordStateSchema, since_utc: UtcSchema.optional() })
+  .refine(r => r.since_utc === undefined || r.state === "off_record", { path: ["since_utc"], message: "only with state off_record" });
 export type RecordStateRequest = z.output<typeof RecordStateRequestSchema>;
 export const parseRecordStateRequest = makeParser(RecordStateRequestSchema);

@@ -95,12 +95,11 @@ describe("putEvent", () => {
     expect(await codeOf(putEvent(sid, "../x", makeEvent(sid, "evt-001", "a-1")))).toBe("validation_failed");
   });
 
-  it("refuses off-record events and writes while the session is off-record or aborted", async () => {
-    expect(
-      await codeOf(putEvent(sid, "evt-001", makeEvent(sid, "evt-001", "a-1", { record_state: "off_record" }))),
-    ).toBe("off_record");
+  it("drops off-record events (202, nothing stored) and refuses aborted sessions", async () => {
+    const dropped = { status: 202, dropped: { status: "dropped_off_record", kind: "event", id: "evt-001" } };
+    expect(await putEvent(sid, "evt-001", makeEvent(sid, "evt-001", "a-1", { record_state: "off_record" }))).toEqual(dropped);
     await changeRecordState(sid, { state: "off_record" });
-    expect(await codeOf(putEvent(sid, "evt-002", makeEvent(sid, "evt-002", "a-1")))).toBe("off_record");
+    expect((await putEvent(sid, "evt-002", makeEvent(sid, "evt-002", "a-1"))).status).toBe(202);
     await changeRecordState(sid, { state: "on_record" });
     const s2 = await newExpertSession();
     await seedAsset(s2, "a-2");
@@ -130,7 +129,7 @@ describe("putEvent", () => {
     expect(retry.status).toBe(200);
     const bus = await readBusAfter(sid, 0);
     expect(bus.filter((e) => e.type === "event.stored")).toHaveLength(1);
-    expect(retry.ack.seq).toBe(bus[bus.length - 1].seq);
+    expect(retry.ack!.seq).toBe(bus[bus.length - 1].seq);
   });
 });
 

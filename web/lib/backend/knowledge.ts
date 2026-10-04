@@ -338,6 +338,18 @@ export async function appendStatusTransition(
   return record;
 }
 
+export const REDACTED_HEADING = "REDACTED — evidence deleted";
+
+/**
+ * Deletion beats immutability (S4): a revision quoting deleted or off-record evidence keeps its
+ * frontmatter (IDs, hashes) but loses its body, so the expert's words are really gone.
+ * Call inside `withKnowledgeLock`.
+ */
+export async function redactRevisionFile(revision: KnowledgeRevision, reason: string): Promise<void> {
+  const body = `# ${REDACTED_HEADING}\n\n> This revision was revoked and its content removed (${reason}).\n`;
+  await writeFileAtomic(revisionFile(revision.entry_id, revision.revision_no), renderRevisionFile(revision, body));
+}
+
 // --- workflow ---------------------------------------------------------------------
 
 const WorkflowLinkSchema = z.object({

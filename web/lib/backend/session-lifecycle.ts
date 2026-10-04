@@ -52,14 +52,29 @@ export function applyLifecycle(session: Session, req: LifecycleRequest, now: Dat
   };
 }
 
-export function applyRecordState(session: Session, state: RecordState, now: Date, segmentId: string): Applied {
+/**
+ * `sinceUtc` (off_record only, S4) backdates the new off-record segment into the current on-record
+ * segment: "that last part was off the record". The caller then purges what was stored since.
+ */
+export function applyRecordState(session: Session, state: RecordState, now: Date, segmentId: string, sinceUtc?: string): Applied {
   if (isTerminal(session.lifecycle)) {
     throw new ApiError("invalid_transition", `Cannot change record state of a session that is ${session.lifecycle}.`, {
       from: session.lifecycle,
     });
   }
   if (session.record_state === state) return { changed: false, session };
-  const at = now.toISOString();
+  let at = now.toISOString();
+  if (sinceUtc !== undefined) {
+    const open = session.recording_segments.find(s => s.ended_at_utc === null);
+    const since = Date.parse(sinceUtc);
+    if (!open || since < Date.parse(open.started_at_utc) || since > now.getTime()) {
+      throw new ApiError("validation_failed", "since_utc must lie inside the current on-record segment.", {
+        field: "since_utc",
+        segment_started_at_utc: open?.started_at_utc ?? null,
+      });
+    }
+    at = new Date(since).toISOString();
+  }
   return {
     changed: true,
     session: {

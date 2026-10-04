@@ -172,12 +172,15 @@ async function readInputs(sid: string) {
     exchanges: Object.fromEntries(exchanges.map(x => [x.exchange_id, x.rev])),
     entries: Object.fromEntries(entries.map(e => [e.entry_id, e.current_revision_id])),
     confirmation_ids: confirmations.map(c => c.confirmation_id).sort(),
+    generation: session.generation ?? 0,
   };
   return { session, events, exchanges, confirmations, prior, revs };
 }
 
 /** First input that changed or disappeared since the snapshot; additions don't count. */
 function inputChange(before: JobInputRevs, now: JobInputRevs): string | null {
+  // S4: any deletion cascade or off-record purge on this session bumps its generation.
+  if ((before.generation ?? 0) !== (now.generation ?? 0)) return `generation_changed:${before.generation ?? 0}->${now.generation ?? 0}`;
   const events = new Set(now.event_ids);
   for (const id of before.event_ids) if (!events.has(id)) return `event_deleted:${id}`;
   for (const [id, rev] of Object.entries(before.exchanges)) {

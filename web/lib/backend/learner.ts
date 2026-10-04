@@ -86,6 +86,41 @@ export async function markEvaluationsStale(sid: string, reason: StaleReason, now
   }
 }
 
+/**
+ * S4 cascade: evaluations that used revoked revisions become stale (`knowledge_changed`); with
+ * `redact`, every evaluation citing them also loses its quoted text (deleted evidence must not
+ * survive as a quote). Call inside the session lock. Returns the changed evaluation IDs.
+ */
+export async function invalidateEvaluationsLocked(sid: string, revisionIds: ReadonlySet<string>, redact: boolean, now: Date): Promise<string[]> {
+  const changed: string[] = [];
+  for (const e of await listEvaluations(sid)) {
+    const usesRevoked = e.knowledge_revision_ids.some(id => revisionIds.has(id));
+    const stale = usesRevoked && (e.status === "pending" || e.status === "done");
+    const citesRevoked = e.cited.some(c => revisionIds.has(c.revision_id)) || (e.escalation ? revisionIds.has(e.escalation.revision_id) : false);
+    const scrub = redact && citesRevoked && (e.feedback_text !== null || e.cited.some(c => c.quote !== undefined));
+    if (!stale && !scrub) continue;
+    const next: Evaluation = {
+      ...e,
+      ...(stale ? { status: "stale" as const, stale_reason: "knowledge_changed" as const } : {}),
+      ...(scrub
+        ? {
+            cited: e.cited.map(({ quote: _quote, ...c }) => c),
+            feedback_text: null,
+            guiding_question: null,
+            uncertainty: null,
+            evidence: undefined,
+            guard_notes: undefined,
+          }
+        : {}),
+      updated_at_utc: now.toISOString(),
+    };
+    await writeJsonAtomic(evaluationFile(sid, e.evaluation_id), EvaluationSchema.parse(next));
+    await appendBus(sid, "evaluation.updated", { evaluation_id: e.evaluation_id, draft_rev: String(e.draft_rev) }, now);
+    changed.push(e.evaluation_id);
+  }
+  return changed;
+}
+
 // --- draft ------------------------------------------------------------------------
 
 export async function getLearnerDraft(sid: string): Promise<LearnerDraft> {
@@ -152,7 +187,7 @@ export type EvaluationHandle = { status: 200 | 202; evaluation: Evaluation; done
 
 export async function requestEvaluation(sid: string, req: EvaluationRequest, now: Date = new Date()): Promise<EvaluationHandle> {
   const provider = tutorProvider();
-  const started = await withSessionLock(sid, async (): Promise<EvaluationHandle | { start: Evaluation }> => {
+  const started = await withSessionLock(sid, async (): Promise<EvaluationHandle | { start: Evaluation; generation: number }> => {
     const session = await requireOpenNewcomer(sid);
     const draft = await loadDraft(sid);
     if (!draft || draft.draft_rev !== req.draft_rev) {
@@ -194,13 +229,13 @@ export async function requestEvaluation(sid: string, req: EvaluationRequest, now
     };
     await putImmutable(evaluationFile(sid, evaluation.evaluation_id), evaluation, EvaluationSchema);
     await appendBus(sid, "evaluation.updated", { evaluation_id: evaluation.evaluation_id, draft_rev: String(draft.draft_rev) }, now);
-    return { start: evaluation };
+    return { start: evaluation, generation: session.generation ?? 0 };
   });
   if (!("start" in started)) return started;
   const evaluation = started.start;
   // `done` never rejects: nobody awaits it in production, and a vanished record (session deleted)
   // must not become an unhandled rejection. The failure is logged by ID only.
-  const done = runEvaluation(sid, evaluation, provider).catch(async () => {
+  const done = runEvaluation(sid, evaluation, provider, started.generation).catch(async () => {
     await diag({ component: "evaluations", op: "finish", ids: { session_id: sid, evaluation_id: evaluation.evaluation_id }, outcome: "error", duration_ms: 0, error_code: "internal" });
     return evaluation;
   });
@@ -260,7 +295,7 @@ function acceptResult(r: TutorResult, pinnedIds: readonly string[]): Partial<Eva
   };
 }
 
-async function runEvaluation(sid: string, evaluation: Evaluation, provider: TutorProvider): Promise<Evaluation> {
+async function runEvaluation(sid: string, evaluation: Evaluation, provider: TutorProvider, generation: number): Promise<Evaluation> {
   let fields: Partial<Evaluation> | null = null;
   let errorCode: string | null = null;
   try {
@@ -286,13 +321,19 @@ async function runEvaluation(sid: string, evaluation: Evaluation, provider: Tuto
     // Module errors may carry content; only the code is stored.
     errorCode = "module_error";
   }
-  return finishEvaluation(sid, evaluation.evaluation_id, fields, errorCode);
+  return finishEvaluation(sid, evaluation.evaluation_id, fields, errorCode, generation);
 }
 
 const sameSet = (a: readonly string[], b: readonly string[]) => canonicalJson([...a].sort()) === canonicalJson([...b].sort());
 
 /** Stores the result under the session lock; a draft or knowledge change meanwhile → `stale`, never `done`. */
-async function finishEvaluation(sid: string, eid: string, fields: Partial<Evaluation> | null, errorCode: string | null): Promise<Evaluation> {
+async function finishEvaluation(
+  sid: string,
+  eid: string,
+  fields: Partial<Evaluation> | null,
+  errorCode: string | null,
+  generation: number,
+): Promise<Evaluation> {
   return withSessionLock(sid, async () => {
     const now = new Date();
     const e = await loadEvaluation(sid, eid);
@@ -302,6 +343,8 @@ async function finishEvaluation(sid: string, eid: string, fields: Partial<Evalua
     const draft = await loadDraft(sid);
     let staleReason: StaleReason | null = e.status === "stale" ? (e.stale_reason ?? "draft_changed") : null;
     if (!staleReason && (!draft || draft.draft_rev !== e.draft_rev)) staleReason = "draft_changed";
+    // A cascade touched this session (e.g. a visual-context frame was deleted) while the tutor ran.
+    if (!staleReason && (session.generation ?? 0) !== generation) staleReason = "draft_changed";
     const pins = pinsOf(session);
     if (!staleReason && (!sameSet(pins.map(p => p.revision_id), e.knowledge_revision_ids) || !(await pinnedKnowledgeCurrent(pins)))) {
       staleReason = "knowledge_changed";

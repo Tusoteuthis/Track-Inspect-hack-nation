@@ -225,6 +225,17 @@ export const EventAckSchema = z.strictObject({
   status: z.literal("stored"),
   seq: z.number().int().min(1),
 });
+
+/**
+ * S4: `202` answer for a write that arrived off the record. Nothing was stored except a
+ * content-free tombstone, so a retry gets the same answer.
+ */
+export const DroppedOffRecordSchema = z.strictObject({
+  status: z.literal("dropped_off_record"),
+  kind: z.enum(["asset", "event", "exchange"]),
+  id: IdSchema,
+});
+export type DroppedOffRecord = z.output<typeof DroppedOffRecordSchema>;
 export type EventAck = z.output<typeof EventAckSchema>;
 export const parseEventAck = makeParser(EventAckSchema);
 

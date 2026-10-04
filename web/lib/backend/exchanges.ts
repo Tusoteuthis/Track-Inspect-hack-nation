@@ -3,13 +3,15 @@
  * write. This is how a delayed answer keeps its original event: no later write can re-attach it.
  */
 import path from "node:path";
-import { ExchangePutSchema, parseExchangePut, type ExchangePut } from "@/lib/contracts";
+import { ExchangePutSchema, parseExchangePut, type DroppedOffRecord, type ExchangePut } from "@/lib/contracts";
 import { appendBus } from "./bus";
 import { ApiError } from "./errors";
 import { eventExists, listRecordIds } from "./events";
 import { assertSafeId } from "./ids";
 import { sessionDir, sessionRecordFile } from "./paths";
-import { getSession, requireWritableSession, withSessionLock } from "./sessions";
+import { isOffRecordWrite, onRecordLines } from "./off-record";
+import { getSession, requireLiveSession, withSessionLock } from "./sessions";
+import { droppedAnswer, droppedTombstone, tombstoneAnswer, writeTombstone } from "./tombstones";
 import { canonicalJson, putMutable, readJson } from "./store";
 
 function parseExchangeBody(sid: string, xid: string, body: unknown): ExchangePut {
@@ -25,21 +27,31 @@ function parseExchangeBody(sid: string, xid: string, body: unknown): ExchangePut
   return exchange;
 }
 
-export async function putExchange(
-  sid: string,
-  xid: string,
-  body: unknown,
-): Promise<{ status: 200 | 201; exchange: ExchangePut }> {
+export type PutExchangeResult =
+  | { status: 200 | 201; exchange: ExchangePut; dropped?: undefined }
+  | { status: 202; dropped: DroppedOffRecord; exchange?: undefined };
+
+export async function putExchange(sid: string, xid: string, body: unknown): Promise<PutExchangeResult> {
   assertSafeId(sid, "session_id");
   assertSafeId(xid, "exchange_id");
-  const exchange = parseExchangeBody(sid, xid, body);
+  const received = parseExchangeBody(sid, xid, body);
   const file = sessionRecordFile(sid, "exchanges", xid);
-  return withSessionLock(sid, async () => {
+  return withSessionLock(sid, async (): Promise<PutExchangeResult> => {
+    const session = await getSession(sid);
+    // Lines spoken inside an off-record segment are never stored, also not on retries.
+    const exchange: ExchangePut = { ...received, answer_lines: onRecordLines(session, received.answer_lines) };
     const stored = await readJson(file, ExchangePutSchema);
     if (stored !== null && canonicalJson(stored) === canonicalJson(exchange)) {
       return { status: 200 as const, exchange: stored };
     }
-    await requireWritableSession(sid, exchange.record_state);
+    const tomb = await tombstoneAnswer("exchange", xid, sid);
+    if (tomb) return { status: 202, dropped: tomb };
+    await requireLiveSession(sid);
+    if (exchange.record_state === "off_record") return { status: 202, dropped: droppedAnswer("exchange", xid) };
+    if (stored === null && isOffRecordWrite(session, exchange.record_state, exchange.asked_at_utc)) {
+      await writeTombstone(droppedTombstone("exchange", xid, sid, new Date()));
+      return { status: 202, dropped: droppedAnswer("exchange", xid) };
+    }
     if (stored !== null && stored.event_id !== exchange.event_id) {
       throw new ApiError("conflict_immutable", "event_id cannot change after the first write.", { field: "event_id" });
     }

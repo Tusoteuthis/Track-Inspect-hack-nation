@@ -18,10 +18,12 @@ export const ErrorCodeSchema = z.enum([
   // S3 (reserved by D12). canCommit codes travel in `details.policy_code` (D10).
   "no_confirmed_knowledge",
   "case_not_permitted",
+  // S4: a deleted record's ID was used again (tombstone).
+  "gone",
 ]);
 export type ErrorCode = z.output<typeof ErrorCodeSchema>;
 
-export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 500;
+export type ErrorStatus = 400 | 401 | 403 | 404 | 409 | 410 | 500;
 
 /** HTTP status for each error code. */
 export const ERROR_STATUS: Readonly<Record<ErrorCode, ErrorStatus>> = {
@@ -40,6 +42,7 @@ export const ERROR_STATUS: Readonly<Record<ErrorCode, ErrorStatus>> = {
   internal: 500,
   no_confirmed_knowledge: 409,
   case_not_permitted: 409,
+  gone: 410,
 };
 
 /** `{error: {code, message, details?}}` body returned by every failing route. */

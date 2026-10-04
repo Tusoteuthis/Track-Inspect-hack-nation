@@ -102,12 +102,12 @@ describe("putExchange", () => {
     expect(await codeOf(putExchange(sid, "../x", makeExchange(sid, "x-1", "evt-001", 1)))).toBe("validation_failed");
   });
 
-  it("refuses off-record exchanges and writes to off-record or aborted sessions", async () => {
-    expect(
-      await codeOf(putExchange(sid, "x-1", { ...makeExchange(sid, "x-1", "evt-001", 1), record_state: "off_record" })),
-    ).toBe("off_record");
+  it("drops off-record exchanges and new exchanges while off-record (202); refuses aborted sessions", async () => {
+    const r = await putExchange(sid, "x-1", { ...makeExchange(sid, "x-1", "evt-001", 1), record_state: "off_record" });
+    expect(r).toEqual({ status: 202, dropped: { status: "dropped_off_record", kind: "exchange", id: "x-1" } });
     await changeRecordState(sid, { state: "off_record" });
-    expect(await codeOf(putExchange(sid, "x-1", makeExchange(sid, "x-1", "evt-001", 1)))).toBe("off_record");
+    expect((await putExchange(sid, "x-2", makeExchange(sid, "x-2", "evt-001", 1))).status).toBe(202);
+    expect(await codeOf(getExchange(sid, "x-2"))).toBe("not_found");
     await changeLifecycle(sid, { action: "abort", rev: 2 });
     expect(await codeOf(putExchange(sid, "x-1", makeExchange(sid, "x-1", "evt-001", 1)))).toBe("invalid_transition");
   });

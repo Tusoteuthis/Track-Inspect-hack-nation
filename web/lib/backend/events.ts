@@ -5,13 +5,21 @@
  */
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { PointingEventIngestSchema, parsePointingEventIngest, type EventAck, type PointingEventIngest } from "@/lib/contracts";
+import {
+  PointingEventIngestSchema,
+  parsePointingEventIngest,
+  type DroppedOffRecord,
+  type EventAck,
+  type PointingEventIngest,
+} from "@/lib/contracts";
 import { appendBus, findBusSeq, readBusAfter } from "./bus";
 import { loadAssetMeta } from "./assets";
 import { ApiError } from "./errors";
 import { assertSafeId } from "./ids";
 import { sessionDir, sessionRecordFile } from "./paths";
-import { getSession, requireWritableSession, withSessionLock } from "./sessions";
+import { isOffRecordWrite } from "./off-record";
+import { getSession, requireLiveSession, withSessionLock } from "./sessions";
+import { droppedAnswer, droppedTombstone, tombstoneAnswer, writeTombstone } from "./tombstones";
 import { canonicalJson, putImmutable, readJson } from "./store";
 
 export type StoredEvent = PointingEventIngest & { asset_id: string };
@@ -55,23 +63,29 @@ async function ackSeq(sid: string, event: StoredEvent): Promise<number> {
   return (await appendBus(sid, "event.stored", { event_id: event.event_id, asset_id: event.asset_id })).seq;
 }
 
-export async function putEvent(
-  sid: string,
-  eid: string,
-  body: unknown,
-): Promise<{ status: 200 | 201; ack: EventAck }> {
+export type PutEventResult =
+  | { status: 200 | 201; ack: EventAck; dropped?: undefined }
+  | { status: 202; dropped: DroppedOffRecord; ack?: undefined };
+
+export async function putEvent(sid: string, eid: string, body: unknown): Promise<PutEventResult> {
   assertSafeId(sid, "session_id");
   assertSafeId(eid, "event_id");
   const event = parseEventBody(sid, eid, body);
   const file = sessionRecordFile(sid, "events", eid);
-  return withSessionLock(sid, async () => {
+  return withSessionLock(sid, async (): Promise<PutEventResult> => {
     const stored = await readJson(file, PointingEventIngestSchema);
     if (stored !== null && canonicalJson(stored) === canonicalJson(event)) {
       // An identical retry stores nothing, so it is answered even if the session went off-record since.
       return { status: 200 as const, ack: { event_id: eid, status: "stored" as const, seq: await ackSeq(sid, event) } };
     }
     if (stored !== null) throw new ApiError("conflict_immutable", "A different event already exists with this ID.");
-    await requireWritableSession(sid, event.record_state);
+    const tomb = await tombstoneAnswer("event", eid, sid);
+    if (tomb) return { status: 202, dropped: tomb };
+    const session = await requireLiveSession(sid);
+    if (isOffRecordWrite(session, event.record_state, event.captured_at_utc)) {
+      await writeTombstone(droppedTombstone("event", eid, sid, new Date()));
+      return { status: 202, dropped: droppedAnswer("event", eid) };
+    }
     await requireAvailableAsset(sid, event.asset_id);
     const result = await putImmutable(file, event, PointingEventIngestSchema);
     const seq = (await appendBus(sid, "event.stored", { event_id: eid, asset_id: event.asset_id })).seq;

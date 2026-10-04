@@ -11,4 +11,5 @@ export * from "./workmap";
 export * from "./learner";
 export * from "./assessment";
 export * from "./bus";
+export * from "./trust";
 export * from "./errors";

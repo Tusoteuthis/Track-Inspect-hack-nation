@@ -21,6 +21,8 @@ export const JobInputRevsSchema = z.object({
   /** entry_id → current_revision_id, for every knowledge entry */
   entries: z.record(IdSchema, IdSchema),
   confirmation_ids: z.array(IdSchema),
+  /** S4: the session's generation when the job read its inputs. */
+  generation: z.number().int().min(0).optional(),
 });
 export type JobInputRevs = z.output<typeof JobInputRevsSchema>;
 

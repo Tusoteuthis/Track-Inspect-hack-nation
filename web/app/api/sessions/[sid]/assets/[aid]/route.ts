@@ -39,11 +39,11 @@ export async function PUT(request: Request, ctx: Ctx): Promise<Response> {
     } catch {
       throw new ApiError("validation_failed", "Request body must be multipart/form-data.");
     }
-    const { status, asset } = await putAsset(sid, aid, {
+    const r = await putAsset(sid, aid, {
       meta: await readMeta(form.get("meta")),
       original: await readImage(form, "original"),
       highlighted: await readImage(form, "highlighted"),
     });
-    return Response.json(asset, { status });
+    return Response.json(r.status === 202 ? r.dropped : r.asset, { status: r.status });
   });
 }

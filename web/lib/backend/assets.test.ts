@@ -73,7 +73,7 @@ describe("putAsset", () => {
       source: "fixture",
       status: "stored",
     });
-    expect(asset.original.sha256).toBe("eb900185cbb5efd0a18f695f7c0f518db99e3394e4742c11cf2cbf0472866728");
+    expect(asset!.original.sha256).toBe("eb900185cbb5efd0a18f695f7c0f518db99e3394e4742c11cf2cbf0472866728");
     const d = assetDir(AID);
     expect(new Uint8Array(await fsp.readFile(path.join(d, "original.png")))).toEqual(ORIGINAL);
     expect(new Uint8Array(await fsp.readFile(path.join(d, "highlighted.png")))).toEqual(HIGHLIGHTED);
@@ -86,7 +86,7 @@ describe("putAsset", () => {
   it("stores an asset without a highlighted image", async () => {
     const { status, asset } = await putAsset(sid, AID, { meta: NO_HIGHLIGHT, original: ORIGINAL, highlighted: null });
     expect(status).toBe(201);
-    expect(asset.highlighted).toBeNull();
+    expect(asset!.highlighted).toBeNull();
     expect(await exists(path.join(assetDir(AID), "highlighted.png"))).toBe(false);
   });
 
@@ -115,17 +115,19 @@ describe("putAsset", () => {
     expect((await errorOf(putFull(other)))?.code).toBe("conflict_immutable");
   });
 
-  it("off-record session → 403 and nothing written", async () => {
+  it("off-record session → 202 dropped_off_record and no bytes written; a retry gets the same answer", async () => {
     await changeRecordState(sid, { state: "off_record" });
-    expect((await errorOf(putFull()))?.code).toBe("off_record");
+    const dropped = { status: 202, dropped: { status: "dropped_off_record", kind: "asset", id: AID } };
+    expect(await putFull()).toEqual(dropped);
+    expect(await exists(assetDir(AID))).toBe(false);
+    await changeRecordState(sid, { state: "on_record" });
+    expect(await putFull()).toEqual(dropped);
     expect(await exists(assetDir(AID))).toBe(false);
   });
 
-  it("off-record label in meta → 403 and nothing written", async () => {
-    const err = await errorOf(
-      putAsset(sid, AID, { meta: { ...META, record_state: "off_record" }, original: ORIGINAL, highlighted: HIGHLIGHTED }),
-    );
-    expect(err?.code).toBe("off_record");
+  it("off-record label in meta → 202 and nothing written", async () => {
+    const r = await putAsset(sid, AID, { meta: { ...META, record_state: "off_record" }, original: ORIGINAL, highlighted: HIGHLIGHTED });
+    expect(r.status).toBe(202);
     expect(await exists(assetDir(AID))).toBe(false);
   });
 

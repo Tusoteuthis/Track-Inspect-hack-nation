@@ -21,6 +21,7 @@ import { withLock } from "./locks";
 import { sessionFile } from "./paths";
 import { applyLifecycle, applyRecordState } from "./session-lifecycle";
 import { putMutable, readJson, writeJsonAtomic } from "./store";
+import { assertSessionNotDeleted } from "./tombstones";
 
 export function withSessionLock<T>(sid: string, fn: () => Promise<T>): Promise<T> {
   return withLock(`sess:${sid}`, fn);
@@ -33,7 +34,10 @@ export async function loadSession(sid: string): Promise<Session | null> {
 
 export async function getSession(sid: string): Promise<Session> {
   const session = await loadSession(sid);
-  if (!session) throw new ApiError("not_found", "Session not found.", { session_id: sid });
+  if (!session) {
+    await assertSessionNotDeleted(sid);
+    throw new ApiError("not_found", "Session not found.", { session_id: sid });
+  }
   return session;
 }
 
@@ -109,12 +113,22 @@ export async function changeRecordState(sid: string, req: RecordStateRequest, no
   assertSafeId(sid, "session_id");
   return withSessionLock(sid, async () => {
     const segmentId = newId("seg", now);
-    const applied = applyRecordState(await getSession(sid), req.state, now, segmentId);
+    const applied = applyRecordState(await getSession(sid), req.state, now, segmentId, req.since_utc);
     if (!applied.changed) return applied.session;
     await putMutable(sessionFile(sid), applied.session, { schema: SessionSchema });
     await appendBus(sid, "record_state.changed", { segment_id: segmentId }, now);
     return applied.session;
   });
+}
+
+/** Bumps the session's generation (S4 cascades/purges); jobs that read an older one are discarded. Call inside the session lock. */
+export async function bumpGenerationLocked(sid: string, now: Date = new Date()): Promise<Session | null> {
+  const session = await loadSession(sid);
+  if (!session) return null;
+  const next: Session = { ...session, generation: (session.generation ?? 0) + 1, rev: session.rev + 1 };
+  await putMutable(sessionFile(sid), next, { schema: SessionSchema });
+  await appendBus(sid, "session.updated", { session_id: sid }, now);
+  return next;
 }
 
 /**
@@ -129,6 +143,15 @@ export async function requireWritableSession(sid: string, recordState?: RecordSt
   }
   if (session.record_state === "off_record" || recordState === "off_record") {
     throw new ApiError("off_record", "Session is off the record; nothing was stored.");
+  }
+  return session;
+}
+
+/** Content writes need a session that is not aborted; off-record is decided per record (S4). */
+export async function requireLiveSession(sid: string): Promise<Session> {
+  const session = await getSession(sid);
+  if (session.lifecycle === "aborted") {
+    throw new ApiError("invalid_transition", "Session is aborted.", { lifecycle: session.lifecycle });
   }
   return session;
 }

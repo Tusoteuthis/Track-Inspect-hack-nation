@@ -12,6 +12,7 @@ import { BusEventSchema, type BusEvent } from "@/lib/contracts";
 import { ApiError } from "./errors";
 import { withLock } from "./locks";
 import { sessionDir } from "./paths";
+import { assertSessionNotDeleted } from "./tombstones";
 
 export type BusListener = (event: BusEvent) => void | Promise<void>;
 
@@ -51,6 +52,8 @@ export async function appendBus(
   ids: BusEvent["ids"],
   now: Date = new Date(),
 ): Promise<BusEvent> {
+  // A late job must never recreate a deleted session's directory, not even for an ID-only line.
+  await assertSessionNotDeleted(sid);
   const file = busFile(sid);
   const event = await withLock(`bus:${file}`, async () => {
     let last = state.lastSeq.get(file);

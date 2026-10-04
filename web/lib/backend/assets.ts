@@ -10,6 +10,7 @@ import {
   EvidenceAssetSchema,
   parseAssetUploadMeta,
   type AssetFile,
+  type DroppedOffRecord,
   type EvidenceAsset,
 } from "@/lib/contracts";
 import { appendBus } from "./bus";
@@ -19,7 +20,9 @@ import { assertSafeId } from "./ids";
 import { sniffImage } from "./image-info";
 import { withLock } from "./locks";
 import { assetDir, imagesRoot } from "./paths";
-import { requireWritableSession, withSessionLock } from "./sessions";
+import { isOffRecordWrite } from "./off-record";
+import { requireLiveSession, withSessionLock } from "./sessions";
+import { droppedAnswer, droppedTombstone, tombstoneAnswer, writeTombstone } from "./tombstones";
 import { canonicalJson, readJson, writeFileAtomic, writeJsonAtomic } from "./store";
 
 type Which = "original" | "highlighted";
@@ -69,11 +72,11 @@ function prepareFile(
   };
 }
 
-export async function putAsset(
-  sid: string,
-  aid: string,
-  input: AssetUploadInput,
-): Promise<{ status: 200 | 201; asset: EvidenceAsset }> {
+export type PutAssetResult =
+  | { status: 200 | 201; asset: EvidenceAsset; dropped?: undefined }
+  | { status: 202; dropped: DroppedOffRecord; asset?: undefined };
+
+export async function putAsset(sid: string, aid: string, input: AssetUploadInput): Promise<PutAssetResult> {
   assertSafeId(sid, "session_id");
   assertSafeId(aid, "asset_id");
   const parsed = parseAssetUploadMeta(input.meta);
@@ -105,14 +108,21 @@ export async function putAsset(
       status: "stored",
     };
     // The session lock does not cover another session reusing this aid; the asset lock does.
-    return withLock(`asset:${aid}`, async () => {
+    return withLock(`asset:${aid}`, async (): Promise<PutAssetResult> => {
       const stored = await loadAssetMeta(aid);
       if (stored) {
         // An identical retry stores nothing, so it is answered even if the session went off-record since.
         if (canonicalJson(stored) === canonicalJson(asset)) return { status: 200 as const, asset: stored };
         throw new ApiError("conflict_immutable", "A different asset already exists with this ID.", { asset_id: aid });
       }
-      await requireWritableSession(sid, meta.record_state);
+      const tomb = await tombstoneAnswer("asset", aid, sid);
+      if (tomb) return { status: 202, dropped: tomb };
+      const session = await requireLiveSession(sid);
+      if (isOffRecordWrite(session, meta.record_state, meta.captured_at_utc)) {
+        // Off the record = not stored: no bytes, only a content-free tombstone.
+        await writeTombstone(droppedTombstone("asset", aid, sid, new Date()));
+        return { status: 202, dropped: droppedAnswer("asset", aid) };
+      }
       const dir = assetDir(aid);
       for (const f of [original, highlighted]) {
         if (f) await writeFileAtomic(path.join(dir, f.file.path), f.bytes);
