@@ -1,0 +1,3 @@
+MWDAT_APP_ID =
+MWDAT_CLIENT_TOKEN =
+#include? "Secrets.xcconfig"
