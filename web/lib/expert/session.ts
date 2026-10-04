@@ -6,6 +6,7 @@
 import {
   type AnswerLine,
   type DeferredReason,
+  type EndCause,
   type ExpertExchange,
   type InterviewConfig,
   type PhaseTrigger,
@@ -23,6 +24,7 @@ import {
 import { beginPhaseQuestion, confirmRevision, endPhase, proposeDraft, recordCoverage, startDebrief } from "./debrief";
 import { DEFAULT_INTERVIEW_CONFIG, withConfig } from "./interview-config";
 import { type Stamp, closeActive, mark, updateExchange, updateTopic } from "./session-util";
+import { resumeSession } from "./resume";
 import { strikeLastAnswer } from "./strike";
 import { ingestEvent, releaseText } from "./topics";
 import {
@@ -67,7 +69,8 @@ export type SessionAction =
   | ({ type: "record_state_tool"; params: unknown } & Stamp)
   | ({ type: "strike_requested"; trigger: "agent_tool" | "console" } & Stamp)
   | ({ type: "record_state_changed"; to: RecordState; trigger: RecordStateTrigger } & Stamp)
-  | ({ type: "session_ended" } & Stamp);
+  | ({ type: "session_ended"; cause?: EndCause } & Stamp)
+  | ({ type: "resumed" } & Stamp);
 
 /** Actions that record content: refused while off the record (agent tools get OFF_RECORD_REFUSAL). */
 const RECORDING_ACTIONS = new Set<SessionAction["type"]>([
@@ -312,7 +315,11 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
 
     case "session_ended": {
       const closed = endPhase(closeActive(state), action);
-      return { ...closed, ended_at_utc: action.at_utc, agent_speaking: false };
+      return { ...closed, ended_at_utc: action.at_utc, end_cause: action.cause ?? "stop", agent_speaking: false };
+    }
+
+    case "resumed": {
+      return resumeSession(state, action);
     }
   }
 }

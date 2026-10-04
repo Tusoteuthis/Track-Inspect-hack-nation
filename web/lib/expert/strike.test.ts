@@ -4,39 +4,12 @@ import { selectGaps } from "./coverage";
 import { activeConfirmations, stepVerification } from "./draft";
 import { phaseBlock } from "./debrief";
 import { toSnapshot } from "./session";
-import { driver } from "./test-driver";
+import { A2, confirmedSession as scripted, driver } from "./test-driver";
+
+const confirmedSession = () => scripted("ses-20261004-100000-str1");
 
 const A1 = "That spike is usually from the wheel set passing a gap.";
-const A2 = "If both channels show the mango signature I stop and call the measurement team.";
 const has = (v: unknown, needle: string) => JSON.stringify(v).toLowerCase().includes(needle.toLowerCase());
-
-/** Live Q&A on evt-001, debrief, rev-1 citing both answers, explicit confirmation. */
-function confirmedSession() {
-  const d = driver("ses-20261004-100000-str1");
-  d.event("evt-001");
-  d.ask({ event_id: "evt-001", kind: "explain", question: "What do you recognise in this region?" });
-  d.expert(A1);
-  d.act({ type: "coverage_recorded", params: { exchange_id: "ex-001", dimensions: [{ dimension: "decision", status: "covered", note: "spike from gap" }] } });
-  d.ask({ event_id: "evt-001", kind: "guardrail", question: "When would you stop and ask someone else?" });
-  d.expert(A2);
-  d.act({ type: "coverage_recorded", params: { exchange_id: "ex-002", dimensions: [{ dimension: "guardrails", status: "covered", note: "mango signature: call team" }] } });
-  d.act({ type: "task_completed", trigger: "console" });
-  d.act({
-    type: "draft_proposed",
-    trigger: "console",
-    params: {
-      steps: [
-        { kind: "step", text: "Scan SYS1 for a narrow spike; it is usually the wheel set passing a gap.", event_ids: ["evt-001"], exchange_ids: ["ex-001"] },
-        { kind: "guardrail", text: "If both channels show the mango signature, stop and call the measurement team.", event_ids: ["evt-001"], exchange_ids: ["ex-002"] },
-      ],
-    },
-  });
-  d.agent("First scan SYS1 for a narrow spike. If both channels show the mango signature, stop and call the team. Is that right?");
-  d.expert("Yes, that's right.");
-  d.act({ type: "revision_confirmed", params: { revision_id: "rev-1", status: "confirmed" } });
-  expect(d.state.phase).toBe("confirmed");
-  return d;
-}
 
 describe("strike_last_answer", () => {
   it("refuses when nothing is recorded", () => {
