@@ -300,3 +300,8 @@ export function getBlobStore(): BlobStore {
 export function setBlobStoreForTests(store: BlobStore | undefined): void {
   g.__ws6BlobStore = store;
 }
+
+/** Names of the immediate children of `dir` ([] when it does not exist). */
+export async function listNames(dir: string): Promise<string[]> {
+  return (await getBlobStore().list(dir)).map((e) => e.name);
+}

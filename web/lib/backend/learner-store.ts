@@ -1,10 +1,10 @@
 /** Learner files: `knowledge/learner/<sid>/{draft.json, drafts/<rev>.json, evaluations/<eid>.json, commit.json}`. */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { CommitSchema, EvaluationSchema, LearnerDraftSchema, type Commit, type Evaluation, type LearnerDraft } from "@/lib/contracts";
 import { isValidId, safeJoin } from "./ids";
 import { learnerDir } from "./paths";
 import { readJson } from "./store";
+import { listNames } from "./blobstore";
 
 export const draftFile = (sid: string) => path.join(learnerDir(sid), "draft.json");
 export const draftHistoryFile = (sid: string, rev: number) => path.join(learnerDir(sid), "drafts", `${rev}.json`);
@@ -18,7 +18,7 @@ export function loadDraft(sid: string): Promise<LearnerDraft | null> {
 
 /** Every stored draft revision, oldest first. */
 export async function listDrafts(sid: string): Promise<LearnerDraft[]> {
-  const names = await fs.readdir(path.join(learnerDir(sid), "drafts")).catch(() => [] as string[]);
+  const names = await listNames(path.join(learnerDir(sid), "drafts")).catch(() => [] as string[]);
   const revs = names.map(n => /^([1-9]\d*)\.json$/.exec(n)?.[1]).filter((n): n is string => !!n).map(Number).sort((a, b) => a - b);
   const out: LearnerDraft[] = [];
   for (const rev of revs) {
@@ -34,7 +34,7 @@ export function loadEvaluation(sid: string, eid: string): Promise<Evaluation | n
 
 /** All evaluations of a session, oldest first. */
 export async function listEvaluations(sid: string): Promise<Evaluation[]> {
-  const names = await fs.readdir(evaluationsDir(sid)).catch(() => [] as string[]);
+  const names = await listNames(evaluationsDir(sid)).catch(() => [] as string[]);
   const out: Evaluation[] = [];
   for (const n of names) {
     const id = n.endsWith(".json") ? n.slice(0, -5) : "";
