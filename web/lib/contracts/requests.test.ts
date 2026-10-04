@@ -22,7 +22,20 @@ describe("CreateSessionRequest", () => {
     const r = parseCreateSessionRequest({ role: "expert", source: "fixture", trace_ref: "trace A" });
     expect(r.ok && r.value).toEqual({ role: "expert", source: "fixture", trace_ref: "trace A" });
   });
-  it.each([{ role: "newcomer" }, {}, { role: "expert", source: "x" }, { role: "expert", extra: 1 }])(
+  it("accepts a newcomer with an optional case_id", () => {
+    expect(parseCreateSessionRequest({ role: "newcomer" })).toEqual({
+      ok: true,
+      value: { role: "newcomer", source: "live", case_id: null },
+    });
+    expect(parseCreateSessionRequest({ role: "newcomer", case_id: "fx-n01" }).ok).toBe(true);
+  });
+  it.each([
+    {},
+    { role: "expert", source: "x" },
+    { role: "expert", extra: 1 },
+    { role: "newcomer", trace_ref: "t" },
+    { role: "newcomer", case_id: "N01" },
+  ])(
     "rejects %j",
     (body) => expect(parseCreateSessionRequest(body).ok).toBe(false),
   );

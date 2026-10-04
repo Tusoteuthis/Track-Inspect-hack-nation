@@ -21,6 +21,8 @@ export const SessionSchema = z
     case_id: IdSchema.nullable(),
     trace_ref: z.string().nullable(),
     pinned_knowledge: z.array(KnowledgeRefSchema).nullable(),
+    /** S3, newcomer only: fixture/stub knowledge may be pinned (`?allow_fixture_knowledge=1`). */
+    knowledge_fixture_allowed: z.boolean().optional(),
     source: SourceSchema,
     created_at_utc: UtcSchema,
     rev: z.number().int().min(1),
@@ -32,12 +34,22 @@ export const SessionSchema = z
 export type Session = z.output<typeof SessionSchema>;
 export const parseSession = makeParser(SessionSchema);
 
-/** `POST /api/sessions` body. Newcomer sessions arrive in S3. */
-export const CreateSessionRequestSchema = z.strictObject({
+/** `POST /api/sessions` body (expert since S1, newcomer since S3). */
+export const CreateExpertSessionRequestSchema = z.strictObject({
   role: z.literal("expert"),
   source: SourceSchema.default("live"),
   trace_ref: z.string().nullable().default(null),
 });
+/** Newcomer: `case_id` omitted → the server picks a case not shown to the expert. */
+export const CreateNewcomerSessionRequestSchema = z.strictObject({
+  role: z.literal("newcomer"),
+  source: SourceSchema.default("live"),
+  case_id: IdSchema.nullable().default(null),
+});
+export const CreateSessionRequestSchema = z.discriminatedUnion("role", [
+  CreateExpertSessionRequestSchema,
+  CreateNewcomerSessionRequestSchema,
+]);
 export type CreateSessionRequest = z.output<typeof CreateSessionRequestSchema>;
 export const parseCreateSessionRequest = makeParser(CreateSessionRequestSchema);
 

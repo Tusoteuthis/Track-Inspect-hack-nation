@@ -93,6 +93,8 @@ export const StatusTransitionSchema = z.object({
   to: EntryStatusSchema,
   at_utc: UtcSchema,
   confirmation_id: IdSchema.nullable(),
+  /** Why (revocations and cascades); never expert content. */
+  reason: z.string().max(500).optional(),
 });
 export type StatusTransition = z.output<typeof StatusTransitionSchema>;
 

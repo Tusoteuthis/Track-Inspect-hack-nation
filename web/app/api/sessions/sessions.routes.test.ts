@@ -68,8 +68,8 @@ describe("POST /api/sessions", () => {
     expect(b.body.session_id).toBe(a.body.session_id);
   });
 
-  it("rejects a newcomer role → 400 validation_failed with issues", async () => {
-    const res = await createRoute(post(BASE, { role: "newcomer" }));
+  it("rejects an unknown role → 400 validation_failed with issues", async () => {
+    const res = await createRoute(post(BASE, { role: "admin" }));
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error.code).toBe("validation_failed");
