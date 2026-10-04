@@ -9,7 +9,6 @@
  * - Every write here must run inside `withKnowledgeLock`. Lock order: session lock, then knowledge.
  */
 import { createHash } from "node:crypto";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import {
@@ -31,6 +30,7 @@ import { ApiError } from "./errors";
 import { assertSafeId, isValidId, newId, safeJoin } from "./ids";
 import { withLock } from "./locks";
 import { readJson, writeFileAtomic, writeJsonAtomic } from "./store";
+import { getBlobStore, listNames } from "./blobstore";
 
 export function withKnowledgeLock<T>(fn: () => Promise<T>): Promise<T> {
   return withLock("knowledge", fn);
@@ -45,17 +45,8 @@ const currentFile = (entryId: string) => path.join(entryDir(entryId), "current.j
 const statusLogFile = (entryId: string) => path.join(entryDir(entryId), "status.ndjson");
 export const workflowFile = () => path.join(getConfig().knowledgeDir, "workflow.md");
 
-function isErrno(err: unknown, code: string): boolean {
-  return err instanceof Error && (err as NodeJS.ErrnoException).code === code;
-}
-
-async function readTextOrNull(file: string): Promise<string | null> {
-  try {
-    return await fs.readFile(file, "utf8");
-  } catch (err) {
-    if (isErrno(err, "ENOENT")) return null;
-    throw err;
-  }
+function readTextOrNull(file: string): Promise<string | null> {
+  return getBlobStore().getText(file);
 }
 
 // --- file format ----------------------------------------------------------------
@@ -124,12 +115,7 @@ export async function loadEntry(entryId: string): Promise<KnowledgeEntry | null>
 }
 
 async function listEntryIds(): Promise<string[]> {
-  try {
-    return (await fs.readdir(entriesRoot())).filter(isValidId).sort();
-  } catch (err) {
-    if (isErrno(err, "ENOENT")) return [];
-    throw err;
-  }
+  return (await listNames(entriesRoot())).filter(isValidId).sort();
 }
 
 /** Every entry with a current.json, ordered by entry_id. */
@@ -148,16 +134,11 @@ async function readRevisionFileAt(entryId: string, no: number): Promise<{ revisi
 }
 
 async function revisionNumbers(entryId: string): Promise<number[]> {
-  try {
-    return (await fs.readdir(entryDir(entryId)))
-      .map(f => /^rev-([1-9]\d*)\.md$/.exec(f)?.[1])
-      .filter((n): n is string => n !== undefined)
-      .map(Number)
-      .sort((a, b) => a - b);
-  } catch (err) {
-    if (isErrno(err, "ENOENT")) return [];
-    throw err;
-  }
+  return (await listNames(entryDir(entryId)))
+    .map(f => /^rev-([1-9]\d*)\.md$/.exec(f)?.[1])
+    .filter((n): n is string => n !== undefined)
+    .map(Number)
+    .sort((a, b) => a - b);
 }
 
 /** All revisions of one entry, oldest first. */
@@ -324,8 +305,7 @@ export async function appendStatusTransition(
     ...(t.reason !== undefined ? { reason: t.reason } : {}),
   });
   const file = statusLogFile(record.entry_id);
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  await fs.appendFile(file, JSON.stringify(record) + "\n");
+  await getBlobStore().append(file, JSON.stringify(record) + "\n");
   const entry = await loadEntry(record.entry_id);
   if (entry && entry.current_revision_id === record.revision_id && entry.status !== record.to) {
     await writeJsonAtomic(currentFile(record.entry_id), {
@@ -438,7 +418,7 @@ export async function unresolvedLocalLinks(entryId: string, markdown: string): P
   for (const target of relativeLinkTargets(markdown)) {
     const resolved = path.resolve(base, decodeURI(target));
     const inside = resolved.startsWith(root + path.sep);
-    const exists = inside && (await fs.stat(resolved).then(s => s.isFile(), () => false));
+    const exists = inside && (await getBlobStore().stat(resolved))?.kind === "file";
     if (!exists) out.push(target);
   }
   return out;

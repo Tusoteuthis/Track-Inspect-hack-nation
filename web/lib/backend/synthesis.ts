@@ -50,9 +50,24 @@ import { sessionDir } from "./paths";
 import { getSession, withSessionLock } from "./sessions";
 import { readJson, writeJsonAtomic } from "./store";
 
-type Running = { job_id: string; done: Promise<Job> };
-const g = globalThis as typeof globalThis & { __ws6SynthesisJobs?: Map<string, Running> };
-const active = (g.__ws6SynthesisJobs ??= new Map());
+export type RunningJob = { job_id: string; done: Promise<Job> };
+
+/**
+ * Which synthesis job is executing for a session. Default: a process-wide Map (kept on globalThis
+ * so Next dev reloads share it). On Workers the session Durable Object plays this role (durable.ts).
+ */
+export interface JobTracker {
+  get(sid: string): RunningJob | undefined;
+  set(sid: string, running: RunningJob): void;
+  delete(sid: string): void;
+}
+
+const g = globalThis as typeof globalThis & { __ws6SynthesisJobs?: Map<string, RunningJob> };
+let active: JobTracker = (g.__ws6SynthesisJobs ??= new Map());
+
+export function setJobTracker(next: JobTracker): void {
+  active = next;
+}
 
 const gapsFile = (sid: string) => path.join(sessionDir(sid), "gaps.json");
 const draftFile = (sid: string) => path.join(sessionDir(sid), "draft.json");

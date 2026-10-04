@@ -6,9 +6,9 @@
  * Single-process assumption (constitution W8): subscribers and the seq cache live in this
  * process. They hang off globalThis so Next dev module reloads keep one shared bus.
  */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { BusEventSchema, type BusEvent } from "@/lib/contracts";
+import { getBlobStore } from "./blobstore";
 import { ApiError } from "./errors";
 import { withLock } from "./locks";
 import { sessionDir } from "./paths";
@@ -26,13 +26,8 @@ export function busFile(sid: string): string {
 }
 
 async function readAll(file: string): Promise<BusEvent[]> {
-  let text: string;
-  try {
-    text = await fs.readFile(file, "utf8");
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw err;
-  }
+  const text = await getBlobStore().getText(file);
+  if (text === null) return [];
   const events: BusEvent[] = [];
   for (const line of text.split("\n")) {
     if (!line.trim()) continue;
@@ -63,8 +58,7 @@ export async function appendBus(
     }
     const parsed = BusEventSchema.safeParse({ seq: last + 1, type, session_id: sid, ids, at_utc: now.toISOString() });
     if (!parsed.success) throw new ApiError("validation_failed", "Bus events carry IDs only.");
-    await fs.mkdir(path.dirname(file), { recursive: true });
-    await fs.appendFile(file, JSON.stringify(parsed.data) + "\n");
+    await getBlobStore().append(file, JSON.stringify(parsed.data) + "\n");
     state.lastSeq.set(file, parsed.data.seq);
     return parsed.data;
   });

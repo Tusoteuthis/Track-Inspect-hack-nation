@@ -1,9 +1,8 @@
 // Local-file persistence for expert sessions. Kept behind `ExpertSessionStore`
 // so WS6 can swap in the shared backend without touching conversation logic.
 
-import { randomBytes } from "node:crypto";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
+import { getBlobStore } from "@/lib/backend/blobstore";
 import { type ElevenLabsDeletionReport, type SessionSnapshot, isValidSessionId, validateSessionSnapshot } from "./contracts";
 import { deriveCompletion, renderCompletionMd } from "./completion";
 import { type ChecklistRow, demoChecklist, renderDemoEvidenceMd } from "./demo-evidence";
@@ -59,11 +58,10 @@ export function createFileStore(root: string, options: { publicDir?: string } = 
       const dir = sessionDir(snapshot.session_id);
       const imageHref = hrefFor(dir);
       const contents = sessionFiles(snapshot, imageHref);
-      await mkdir(dir, { recursive: true });
       const revisionFiles = await writeRevisions(dir, snapshot);
       for (const name of SESSION_FILES) await writeAtomic(join(dir, name), contents[name]);
       if (snapshot.ended_at_utc === null) {
-        for (const name of END_FILES) await rm(join(dir, name), { force: true });
+        for (const name of END_FILES) await getBlobStore().delete(join(dir, name));
         return { dir, files: [...SESSION_FILES, ...revisionFiles] };
       }
       const completion = deriveCompletion(snapshot);
@@ -75,7 +73,11 @@ export function createFileStore(root: string, options: { publicDir?: string } = 
 
     async loadSnapshot(sessionId) {
       const dir = sessionDir(sessionId);
-      const read = async (name: string): Promise<unknown> => JSON.parse(await readFile(join(dir, name), "utf8"));
+      const read = async (name: string): Promise<unknown> => {
+        const text = await getBlobStore().getText(join(dir, name));
+        if (text === null) throw new Error(`saved session ${sessionId} is missing ${name}`);
+        return JSON.parse(text);
+      };
       let session: Record<string, unknown>;
       try {
         session = (await read("session.json")) as Record<string, unknown>;
@@ -101,7 +103,10 @@ export function createFileStore(root: string, options: { publicDir?: string } = 
 
     async saveDeletionReport(report) {
       const path = join(sessionDir(report.session_id), DELETION_FILE);
-      const existing = await readFile(path, "utf8").then(t => JSON.parse(t) as ElevenLabsDeletionReport[]).catch(() => []);
+      const existing = await getBlobStore()
+        .getText(path)
+        .then(t => (t === null ? [] : (JSON.parse(t) as ElevenLabsDeletionReport[])))
+        .catch(() => []);
       await writeAtomic(path, JSON.stringify([...existing, report], null, 2) + "\n");
     },
   };
@@ -141,7 +146,6 @@ function sessionFiles(
 async function writeRevisions(dir: string, snap: SessionSnapshot): Promise<string[]> {
   if (!snap.revisions.length) return [];
   const revDir = join(dir, "revisions");
-  await mkdir(revDir, { recursive: true });
   const files: string[] = [];
   // a strike redacts the revisions that relied on the struck words; only those may be rewritten
   const redacted = new Set(snap.strikes.flatMap(st => st.superseded_revision_ids));
@@ -152,7 +156,7 @@ async function writeRevisions(dir: string, snap: SessionSnapshot): Promise<strin
     ];
     for (const [name, data] of pairs) {
       const path = join(revDir, name);
-      const existing = await readFile(path, "utf8").catch(() => null);
+      const existing = await getBlobStore().getText(path).catch(() => null);
       if (existing !== null && existing !== data && !redacted.has(rev.revision_id)) {
         throw new Error(`revision ${rev.revision_id} already exists with different content; revisions are immutable`);
       }
@@ -163,14 +167,7 @@ async function writeRevisions(dir: string, snap: SessionSnapshot): Promise<strin
   return files;
 }
 
-/** Write to a temp file in the same directory, then rename: readers never see a half-written file. */
-async function writeAtomic(path: string, data: string): Promise<void> {
-  const tmp = `${path}.tmp-${process.pid}-${randomBytes(4).toString("hex")}`;
-  try {
-    await writeFile(tmp, data, "utf8");
-    await rename(tmp, path);
-  } catch (error) {
-    await rm(tmp, { force: true });
-    throw error;
-  }
+/** Atomic replace through the backend BlobStore (fs: temp file + rename): readers never see a half-written file. */
+function writeAtomic(path: string, data: string): Promise<void> {
+  return getBlobStore().put(path, data);
 }

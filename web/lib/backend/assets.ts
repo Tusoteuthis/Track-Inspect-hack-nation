@@ -4,7 +4,6 @@
  * under the images root and never inside RUNTIME_DIR / EVALUATOR_DIR (research R5).
  */
 import { createHash } from "node:crypto";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import {
   EvidenceAssetSchema,
@@ -24,6 +23,7 @@ import { isOffRecordWrite } from "./off-record";
 import { requireLiveSession, withSessionLock } from "./sessions";
 import { droppedAnswer, droppedTombstone, tombstoneAnswer, writeTombstone } from "./tombstones";
 import { canonicalJson, readJson, writeFileAtomic, writeJsonAtomic } from "./store";
+import { getBlobStore } from "./blobstore";
 
 type Which = "original" | "highlighted";
 
@@ -146,12 +146,8 @@ export async function getAsset(aid: string): Promise<EvidenceAsset> {
   return asset;
 }
 
-async function realpathOrNull(p: string): Promise<string | null> {
-  try {
-    return await fs.realpath(p);
-  } catch {
-    return null;
-  }
+function realpathOrNull(p: string): Promise<string | null> {
+  return getBlobStore().realpath(p).catch(() => null);
 }
 
 const isInside = (child: string, root: string) => child === root || child.startsWith(root + path.sep);
@@ -171,12 +167,9 @@ export async function readAssetFile(
     const realForbidden = await realpathOrNull(forbidden);
     if (realForbidden && isInside(realFile, realForbidden)) throw notFound(aid);
   }
-  let bytes: Buffer;
-  try {
-    bytes = await fs.readFile(realFile);
-  } catch {
-    throw notFound(aid);
-  }
+  const read = await getBlobStore().getBytes(realFile).catch(() => null);
+  if (!read) throw notFound(aid);
+  const bytes = Buffer.from(read.buffer, read.byteOffset, read.byteLength);
   return { bytes, mime: file.mime, sha256: file.sha256 };
 }
 
