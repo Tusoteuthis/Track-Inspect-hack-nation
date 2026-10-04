@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "asset_not_available",
+    "message": "FIXTURE asset not available",
+    "details": { "asset_id": "fixture-asset-001" }
+  }
+}

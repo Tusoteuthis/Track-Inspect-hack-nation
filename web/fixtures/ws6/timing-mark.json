@@ -1,0 +1,8 @@
+{
+  "session_id": "fixture-session-001",
+  "event_id": "fixture-event-001",
+  "exchange_id": null,
+  "mark": "event_received",
+  "at_utc": "2026-10-03T10:00:05.050Z",
+  "at_perf_ms": 5050.5
+}

@@ -5,4 +5,11 @@
 .DS_Store
 
 # WS3 captured expert sessions are data, not source
+# WS6 runtime data (curated knowledge/workflow.md and knowledge/entries/ stay committable)
 knowledge/sessions/
+knowledge/images/
+knowledge/assessments/
+web/.runtime/
+knowledge/learner/
+knowledge/confirmations/
+knowledge/tombstones/

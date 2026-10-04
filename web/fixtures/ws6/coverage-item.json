@@ -1,0 +1,7 @@
+{
+  "dimension": "decision",
+  "event_id": "fixture-event-001",
+  "status": "partial",
+  "supporting_exchange_ids": ["fixture-exchange-001"],
+  "note": "FIXTURE coverage note"
+}

@@ -1,0 +1,22 @@
+{
+  "evaluation_id": "fixture-evaluation-001",
+  "session_id": "fixture-session-001",
+  "draft_rev": 2,
+  "knowledge_revision_ids": ["rev-20261003100500-fx0001"],
+  "status": "done",
+  "outcome": "fixture",
+  "cited": [
+    {
+      "entry_id": "fixture-entry-001",
+      "revision_id": "rev-20261003100500-fx0001",
+      "exchange_ids": ["fixture-exchange-001"],
+      "quote": "FIXTURE expert answer line 1"
+    }
+  ],
+  "feedback_text": "FIXTURE feedback",
+  "guiding_question": "FIXTURE guiding question",
+  "escalation": null,
+  "created_at_utc": "2026-10-03T11:02:05.000Z",
+  "updated_at_utc": "2026-10-03T11:02:09.000Z",
+  "produced_by": { "module": "fixture", "version": "0.0.0", "source": "fixture" }
+}

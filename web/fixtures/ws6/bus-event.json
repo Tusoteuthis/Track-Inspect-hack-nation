@@ -1,0 +1,7 @@
+{
+  "seq": 1,
+  "type": "event.stored",
+  "session_id": "fixture-session-001",
+  "ids": { "event_id": "fixture-event-001", "asset_ids": ["fixture-asset-001"] },
+  "at_utc": "2026-10-03T10:00:05.100Z"
+}
