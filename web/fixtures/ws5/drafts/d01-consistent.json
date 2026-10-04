@@ -1,0 +1,27 @@
+{
+  "source": "fixture",
+  "draft_id": "d01-consistent",
+  "class": "consistent_with_confirmed_step",
+  "label": {
+    "outcome": "ok",
+    "must_cite_any": ["ent-decision-a"],
+    "never_cite": ["ent-revoked-a", "ent-unresolved-b", "ent-offrecord-e", "ent-draft-start", "ent-invalid-quote"]
+  },
+  "case_view": {
+    "case_id": "fx-case-101",
+    "title": "FIXTURE practice trace 101",
+    "visible_context": [
+      "FIXTURE pattern A in region A on the upper channel",
+      "FIXTURE cue B is visible",
+      "FIXTURE cue D is visible",
+      "The second channel shows no FIXTURE condition C"
+    ],
+    "source": "fixture"
+  },
+  "draft": {
+    "draft_rev": 1,
+    "decision": "FIXTURE decision A",
+    "reason": "The upper channel shows FIXTURE pattern A in region A, and both FIXTURE cue B and FIXTURE cue D are visible. I checked the second channel: no FIXTURE condition C.",
+    "visual_context": "region A on the upper channel"
+  }
+}

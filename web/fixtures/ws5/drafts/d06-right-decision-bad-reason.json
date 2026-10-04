@@ -1,0 +1,28 @@
+{
+  "source": "fixture",
+  "draft_id": "d06-right-decision-bad-reason",
+  "class": "correct_decision_bad_reason",
+  "label": {
+    "outcome": "intervene",
+    "must_cite_any": ["ent-decision-a"],
+    "never_cite": ["ent-revoked-a", "ent-unresolved-b", "ent-offrecord-e", "ent-draft-start", "ent-invalid-quote"],
+    "policy_note": "WS5 policy: the task is decision + reason; a reason that skips the conditions the expert confirmed is not a sound decision yet, so it is intervened (the decision itself may stand)."
+  },
+  "case_view": {
+    "case_id": "fx-case-106",
+    "title": "FIXTURE practice trace 106",
+    "visible_context": [
+      "FIXTURE pattern A in region A on the upper channel",
+      "FIXTURE cue B is visible",
+      "FIXTURE cue D is visible",
+      "The second channel shows no FIXTURE condition C"
+    ],
+    "source": "fixture"
+  },
+  "draft": {
+    "draft_rev": 1,
+    "decision": "FIXTURE decision A",
+    "reason": "Anything in region A is always FIXTURE decision A, no need to check anything else.",
+    "visual_context": "region A on the upper channel"
+  }
+}

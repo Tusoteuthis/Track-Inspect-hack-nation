@@ -1,0 +1,27 @@
+{
+  "source": "fixture",
+  "draft_id": "d04-relies-on-revoked",
+  "class": "relies_on_revoked_entry",
+  "label": {
+    "outcome": "intervene",
+    "must_cite_any": ["ent-decision-a"],
+    "never_cite": ["ent-revoked-a", "ent-unresolved-b", "ent-offrecord-e", "ent-draft-start", "ent-invalid-quote"]
+  },
+  "case_view": {
+    "case_id": "fx-case-104",
+    "title": "FIXTURE practice trace 104",
+    "visible_context": [
+      "FIXTURE pattern A in region A on the upper channel",
+      "No FIXTURE cue B is visible",
+      "No FIXTURE cue D is visible",
+      "The second channel shows no FIXTURE condition C"
+    ],
+    "source": "fixture"
+  },
+  "draft": {
+    "draft_rev": 1,
+    "decision": "FIXTURE decision A",
+    "reason": "The expert said: I choose FIXTURE decision A. Pattern A is there, so decision A.",
+    "visual_context": "region A on the upper channel"
+  }
+}
