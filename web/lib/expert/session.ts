@@ -23,6 +23,7 @@ import {
 import { beginPhaseQuestion, confirmRevision, endPhase, proposeDraft, recordCoverage, startDebrief } from "./debrief";
 import { DEFAULT_INTERVIEW_CONFIG, withConfig } from "./interview-config";
 import { type Stamp, closeActive, mark, updateExchange, updateTopic } from "./session-util";
+import { strikeLastAnswer } from "./strike";
 import { ingestEvent, releaseText } from "./topics";
 import {
   OFF_RECORD_REFUSAL,
@@ -64,6 +65,7 @@ export type SessionAction =
   | ({ type: "draft_proposed"; params: unknown | null; trigger: PhaseTrigger } & Stamp)
   | ({ type: "revision_confirmed"; params: unknown } & Stamp)
   | ({ type: "record_state_tool"; params: unknown } & Stamp)
+  | ({ type: "strike_requested"; trigger: "agent_tool" | "console" } & Stamp)
   | ({ type: "record_state_changed"; to: RecordState; trigger: RecordStateTrigger } & Stamp)
   | ({ type: "session_ended" } & Stamp);
 
@@ -74,6 +76,7 @@ const RECORDING_ACTIONS = new Set<SessionAction["type"]>([
   "task_completed",
   "draft_proposed",
   "revision_confirmed",
+  "strike_requested",
 ]);
 
 export function initialSession(
@@ -130,6 +133,9 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
 
     case "record_state_changed":
       return switchRecordState(state, action.to, action.trigger, action);
+
+    case "strike_requested":
+      return strikeLastAnswer(state, action.trigger, action);
 
     case "connected":
       return {

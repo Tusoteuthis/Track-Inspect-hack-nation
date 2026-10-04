@@ -87,6 +87,8 @@ async function writeRevisions(dir: string, snap: SessionSnapshot): Promise<strin
   const revDir = join(dir, "revisions");
   await mkdir(revDir, { recursive: true });
   const files: string[] = [];
+  // a strike redacts the revisions that relied on the struck words; only those may be rewritten
+  const redacted = new Set(snap.strikes.flatMap(st => st.superseded_revision_ids));
   for (const rev of snap.revisions) {
     const pairs: [string, string][] = [
       [`${rev.revision_id}.json`, JSON.stringify(rev, null, 2) + "\n"],
@@ -95,10 +97,10 @@ async function writeRevisions(dir: string, snap: SessionSnapshot): Promise<strin
     for (const [name, data] of pairs) {
       const path = join(revDir, name);
       const existing = await readFile(path, "utf8").catch(() => null);
-      if (existing !== null && existing !== data) {
+      if (existing !== null && existing !== data && !redacted.has(rev.revision_id)) {
         throw new Error(`revision ${rev.revision_id} already exists with different content; revisions are immutable`);
       }
-      if (existing === null) await writeAtomic(path, data);
+      if (existing !== data) await writeAtomic(path, data);
       files.push(`revisions/${name}`);
     }
   }

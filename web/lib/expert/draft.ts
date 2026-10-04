@@ -192,6 +192,16 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
+/** Confirmations that still count: a strike can invalidate one ("forget what I just said"). */
+export function activeConfirmations(s: Pick<SessionSnapshot, "confirmations" | "strikes">): ExpertConfirmation[] {
+  const invalid = new Set(s.strikes.flatMap(st => st.invalidated_confirmation_ids));
+  return s.confirmations.filter(c => !invalid.has(c.confirmation_id));
+}
+
+/** Revisions a strike superseded: their derived text is redacted and they can no longer be confirmed. */
+export const isSuperseded = (s: Pick<SessionSnapshot, "strikes">, revisionId: string) =>
+  s.strikes.some(st => st.superseded_revision_ids.includes(revisionId));
+
 export type StepStatus = "confirmed" | "unresolved";
 
 /**

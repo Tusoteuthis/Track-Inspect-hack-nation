@@ -3,7 +3,8 @@
 // (images) and the expert's verbatim words; step text is labeled as AI synthesis.
 
 import type { DraftRevision, DraftStep, ExpertExchange, PointingEvent, SessionSnapshot } from "./contracts";
-import { diffRevisions, stepVerification } from "./draft";
+import { activeConfirmations, diffRevisions, isSuperseded, stepVerification } from "./draft";
+import { renderExcludedMd } from "./render";
 
 export type KnowledgeRenderOptions = { imageHref?: (ref: string) => string };
 
@@ -40,8 +41,10 @@ export function renderKnowledgeDraftMd(snap: SessionSnapshot, options: Knowledge
     return out.join("\n") + "\n";
   }
   const parent = snap.revisions.find(r => r.revision_id === rev.parent_revision_id) ?? null;
-  const verification = stepVerification(snap.revisions, snap.confirmations);
-  const final = snap.confirmations.find(c => c.revision_id === rev.revision_id && c.status === "confirmed");
+  const valid = activeConfirmations(snap);
+  const verification = stepVerification(snap.revisions, valid);
+  const final = isSuperseded(snap, rev.revision_id) ? undefined : valid.find(c => c.revision_id === rev.revision_id && c.status === "confirmed");
+  const invalidBy = new Map(snap.strikes.flatMap(st => st.invalidated_confirmation_ids.map(c => [c, st.strike_id] as const)));
   const events = new Map(snap.events.map(e => [e.event_id, e]));
   const exchanges = new Map(snap.exchanges.map(x => [x.exchange_id, x]));
   const fixtures = snap.events.filter(e => e.source === "fixture").length;
@@ -49,6 +52,7 @@ export function renderKnowledgeDraftMd(snap: SessionSnapshot, options: Knowledge
   out.push(
     `- Revision: **${rev.revision_id}**${parent ? ` (corrects ${parent.revision_id}: ${rev.change_reason ?? "—"})` : ""}`,
     `- Expert confirmation: ${final ? `**confirmed** in ${final.confirmation_id}, response ${final.expert_response_exchange_id}, ${final.at_utc}` : "**not confirmed**"}`,
+    ...(isSuperseded(snap, rev.revision_id) ? [`- **Superseded:** ${rev.revision_id} relied on words the expert struck; a new revision is needed. Its affected steps are redacted.`] : []),
     `- Session phase: ${snap.phase}`,
     `- Events: ${snap.events.length}${fixtures ? ` (${fixtures} FIXTURE — simulated pointing, not live capture)` : ""}`,
     "",
@@ -79,11 +83,14 @@ export function renderKnowledgeDraftMd(snap: SessionSnapshot, options: Knowledge
       ? snap.confirmations
           .map(c => {
             const words = exchanges.get(c.expert_response_exchange_id)?.answer_lines.map(l => l.text).join(" ") ?? "";
-            return `- ${c.confirmation_id} · ${c.revision_id} · **${c.status}** · steps ${c.step_ids_reviewed.join(", ") || "—"} · ${c.expert_response_exchange_id}: "${words}"`;
+            const invalid = invalidBy.get(c.confirmation_id);
+            const said = words ? `"${words}"` : "_(words struck)_";
+            return `- ${c.confirmation_id} · ${c.revision_id} · **${c.status}**${invalid ? ` · **invalidated by ${invalid}**` : ""} · steps ${c.step_ids_reviewed.join(", ") || "—"} · ${c.expert_response_exchange_id}: ${said}`;
           })
           .join("\n")
       : "_none: nothing is confirmed (silence never confirms)_"
   );
+  out.push("", ...renderExcludedMd(snap));
   return out.join("\n") + "\n";
 }
 

@@ -92,6 +92,11 @@ export function formatTeachBackUpdate(revision: DraftRevision, toTeach: DraftSte
   );
 }
 
+/** Teach-back block when the latest revision relied on struck words. */
+export const formatStruckRevisionUpdate = (revisionId: string) =>
+  `[TEACH_BACK ${revisionId} superseded] The expert asked to strike words this revision relied on. Do not teach it back or confirm it. ` +
+  "Call propose_draft with the full step list without those words, then teach the new revision back and ask explicitly whether it is right. Never mention the struck words.";
+
 /** Gives the agent a turn after a console-triggered phase change. */
 export const controlDebriefStart = () =>
   `${CONTROL_PREFIX} The expert has finished the task. Start the debrief now with the first open agenda gap.`;

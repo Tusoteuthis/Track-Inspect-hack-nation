@@ -16,9 +16,9 @@ import {
   validateProposeDraftParams,
   validateRecordCoverageParams,
 } from "./contracts";
-import { formatDebriefUpdate, formatTeachBackUpdate } from "./context-update";
+import { formatDebriefUpdate, formatStruckRevisionUpdate, formatTeachBackUpdate } from "./context-update";
 import { DEBRIEF_MAX_GAPS, applyCoverage, openQuestionsFromTopics } from "./coverage";
-import { addRevision, stepsToTeach } from "./draft";
+import { activeConfirmations, addRevision, isSuperseded, stepsToTeach } from "./draft";
 import { SAY_IT, type SessionState } from "./session";
 import { type Stamp, closeActive, mark, updateExchange } from "./session-util";
 import { type Synthesis, defaultSynthesis } from "./synthesis";
@@ -34,12 +34,39 @@ const pad = (n: number) => String(n).padStart(3, "0");
 const nextExchangeId = (state: SessionState) => `ex-${pad(state.exchanges.length + 1)}`;
 const fail = (state: SessionState, message: string): SessionState => ({ ...state, last_tool_result: `error ${message}` });
 
-function withPhase(state: SessionState, phase: SessionPhase, trigger: PhaseTrigger, at: Stamp): SessionState {
+export function withPhase(state: SessionState, phase: SessionPhase, trigger: PhaseTrigger, at: Stamp): SessionState {
   if (state.phase === phase) return state;
   return { ...state, phase, phase_log: [...state.phase_log, { phase, at_utc: at.at_utc, trigger }] };
 }
 
 export const latestRevision = (state: Pick<SessionState, "revisions">): DraftRevision | undefined => state.revisions.at(-1);
+
+/**
+ * The parent whose unchanged steps need no re-teaching. After a strike superseded the parent,
+ * the whole procedure is taught again (null), because its confirmation no longer holds.
+ */
+export function teachParentOf(state: Pick<SessionState, "revisions" | "strikes">, rev: DraftRevision): DraftRevision | null {
+  const parent = rev.parent_revision_id ? (state.revisions.find(r => r.revision_id === rev.parent_revision_id) ?? null) : null;
+  return parent && isSuperseded(state, parent.revision_id) ? null : parent;
+}
+
+/** Opens the exchange that will hold the agent's spoken teach-back of `revisionId` and the expert's reply. */
+export function openTeachBackExchange(state: SessionState, revisionId: string, at: Stamp): SessionState {
+  const closed = closeActive(state);
+  const exchange_id = nextExchangeId(closed);
+  const teachBack = newExchange(closed, exchange_id, at, {
+    event_id: null,
+    topic_id: null,
+    related_event_ids: [],
+    phase: "teach_back",
+    kind: "teach_back",
+    question_planned: null,
+    revision_id: revisionId,
+    record_state: "on_record",
+    source: "live",
+  });
+  return { ...closed, exchanges: [...closed.exchanges, teachBack], active_exchange_id: exchange_id, awaiting_question_exchange_id: exchange_id };
+}
 
 const openGapIds = (agenda: DebriefItem[]) => agenda.filter(i => i.state === "open").map(i => i.gap_id);
 
@@ -268,8 +295,11 @@ export function proposeDraft(
     if (trigger === "agent_tool" && asked < needed) {
       return fail(state, `ask at least ${needed} debrief questions first (${asked} answered); open gaps: ${openGapIds(state.debrief_agenda).join(", ")}`);
     }
+  } else if (state.phase === "teach_back" && parent && isSuperseded(state, parent.revision_id)) {
+    const strike = [...state.strikes].reverse().find(st => st.superseded_revision_ids.includes(parent.revision_id))!;
+    change_reason = `Strike ${strike.strike_id}: the expert asked to remove the words in ${strike.exchange_id}. ${proposal?.change_reason ?? ""}`.trim();
   } else if (state.phase === "teach_back" && parent) {
-    const last = [...state.confirmations].reverse().find(c => c.revision_id === parent.revision_id);
+    const last = [...activeConfirmations(state)].reverse().find(c => c.revision_id === parent.revision_id);
     if (!last || last.status !== "corrected") {
       return fail(state, `the expert has not corrected ${parent.revision_id}; only a correction creates a new revision`);
     }
@@ -291,7 +321,6 @@ export function proposeDraft(
   });
   if (!built.ok) return fail(state, `draft rejected: ${built.errors.join("; ")}`);
   const revision = built.revision;
-  const teachParent = revision.parent_revision_id ? (state.revisions.find(r => r.revision_id === revision.parent_revision_id) ?? null) : null;
 
   const open_questions = [...state.open_questions];
   for (const s of built.unsupported) {
@@ -305,33 +334,9 @@ export function proposeDraft(
     });
   }
 
-  const closed = closeActive(state);
-  const exchange_id = nextExchangeId(closed);
-  const teachBack = newExchange(closed, exchange_id, at, {
-    event_id: null,
-    topic_id: null,
-    related_event_ids: [],
-    phase: "teach_back",
-    kind: "teach_back",
-    question_planned: null,
-    revision_id: revision.revision_id,
-    record_state: "on_record",
-    source: "live",
-  });
-  const next = withPhase(
-    {
-      ...closed,
-      revisions: addRevision(closed.revisions, revision),
-      open_questions,
-      exchanges: [...closed.exchanges, teachBack],
-      active_exchange_id: exchange_id,
-      awaiting_question_exchange_id: exchange_id,
-    },
-    "teach_back",
-    trigger,
-    at
-  );
-  return { ...next, last_tool_result: `ok revision_id=${revision.revision_id}. ${formatTeachBackUpdate(revision, stepsToTeach(revision, teachParent))}` };
+  const withRevision = { ...state, revisions: addRevision(state.revisions, revision), open_questions };
+  const next = withPhase(openTeachBackExchange(withRevision, revision.revision_id, at), "teach_back", trigger, at);
+  return { ...next, last_tool_result: `ok revision_id=${revision.revision_id}. ${formatTeachBackUpdate(revision, stepsToTeach(revision, teachParentOf(next, revision)))}` };
 }
 
 /** Exchange holding the expert's explicit words about the current teach-back, if any. */
@@ -354,12 +359,14 @@ export function confirmRevision(state: SessionState, params: unknown, at: Stamp)
   if (revision_id !== rev.revision_id) {
     return fail(state, `stale revision_id ${revision_id}: the current revision is ${rev.revision_id}; teach it back and confirm that one`);
   }
+  if (isSuperseded(state, rev.revision_id)) {
+    return fail(state, `${rev.revision_id} relied on words the expert struck; call propose_draft without them and teach the new revision back first`);
+  }
   const response = responseExchange(state, rev.revision_id);
   if (!response) {
     return fail(state, `no explicit expert response to the teach-back of ${rev.revision_id} yet; silence is not confirmation, nothing was recorded`);
   }
-  const parent = rev.parent_revision_id ? (state.revisions.find(r => r.revision_id === rev.parent_revision_id) ?? null) : null;
-  const ids = step_ids_reviewed ?? stepsToTeach(rev, parent).map(s => s.step_id);
+  const ids = step_ids_reviewed ?? stepsToTeach(rev, teachParentOf(state, rev)).map(s => s.step_id);
   const unknown = ids.filter(id => !rev.steps.some(s => s.step_id === id));
   if (unknown.length) return fail(state, `step ids not in ${rev.revision_id}: ${unknown.join(", ")}`);
 
@@ -398,8 +405,8 @@ export function phaseBlock(state: SessionState): string | null {
   if (state.phase === "debrief") return formatDebriefUpdate(state.debrief_agenda);
   const rev = latestRevision(state);
   if (state.phase === "teach_back" && rev) {
-    const parent = rev.parent_revision_id ? (state.revisions.find(r => r.revision_id === rev.parent_revision_id) ?? null) : null;
-    return formatTeachBackUpdate(rev, stepsToTeach(rev, parent));
+    if (isSuperseded(state, rev.revision_id)) return formatStruckRevisionUpdate(rev.revision_id);
+    return formatTeachBackUpdate(rev, stepsToTeach(rev, teachParentOf(state, rev)));
   }
   return null;
 }
