@@ -2,7 +2,7 @@
 
 Native iPhone/iPad prototype for Meta Ray-Ban video, Mentra-compatible Bluetooth glasses, local visual analysis, and an ElevenLabs voice assistant.
 
-**iOS bundle identifier: `ai.track-inspect.app`**. This is the app identity, not an assumed backend URL. Meta callback remains `trackinspect://`.
+**iOS bundle identifier: `ai.trackinspect.app`**. This is the app identity, not an assumed backend URL. Meta callback remains `trackinspect://`.
 
 **Stack:** Swift 6 strict concurrency, SwiftUI + Observation, protocol-based services, async/await, XcodeGen, Swift Package Manager. Follows the native architecture of `stoz3n-ios-chat` and the DAT 0.7 session/camera pattern from `savevision-ios`. No Matrix/chat server is needed for this workflow; no unrelated template credentials or code were copied.
 
@@ -84,7 +84,7 @@ Choose the `TrackInspect` scheme. The app builds without credentials for photo/l
 cp TrackInspect/Config/Secrets.example.xcconfig TrackInspect/Config/Secrets.xcconfig
 ```
 
-Fill in your signing team, Meta app ID and client token. These are intentionally blank; do not reuse the templates' identities. Register **`ai.track-inspect.app`** with Meta and Apple. The bundle identifier is set in `project.yml`; regenerate the project after changing it.
+Fill in your signing team, Meta app ID and client token. These are intentionally blank; do not reuse the templates' identities. Register **`ai.trackinspect.app`** with Meta and Apple. The bundle identifier is set in `project.yml`; regenerate the project after changing it.
 
 ```sh
 xcodebuild -project TrackInspect.xcodeproj -scheme TrackInspect \
@@ -99,7 +99,7 @@ The generated Xcode project and SPM lockfile are included. `project.yml` is cano
 
 ## Meta setup / real glasses
 
-1. Create a Meta Wearables DAT app for bundle **`ai.track-inspect.app`** and your Apple team.
+1. Create a Meta Wearables DAT app for bundle **`ai.trackinspect.app`** and your Apple team.
 2. Configure the app link/redirect `trackinspect://` and camera capability, and enable the required developer/testing access in Meta's tooling.
 3. Enter the Meta configuration in the gitignored xcconfig, then build to a physical iPhone.
 4. Pair supported glasses in Meta AI. In TrackInspect → Settings → **Pair glasses in Meta AI**, approve access and return.

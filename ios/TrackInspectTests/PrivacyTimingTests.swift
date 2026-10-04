@@ -180,7 +180,7 @@ import XCTest
     }
 
     func testBundleIdentityAndCallbackConfiguration() {
-        XCTAssertEqual(Bundle.main.bundleIdentifier, "ai.track-inspect.app")
+        XCTAssertEqual(Bundle.main.bundleIdentifier, "ai.trackinspect.app")
         let dat = Bundle.main.object(forInfoDictionaryKey: "MWDAT") as? [String: Any]
         XCTAssertEqual(dat?["AppLinkURLScheme"] as? String, "trackinspect://")
         // The glasses link needs the accessory modes; capture modes must stay absent.
