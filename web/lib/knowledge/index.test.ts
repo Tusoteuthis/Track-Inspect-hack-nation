@@ -32,4 +32,11 @@ describe("public API", () => {
     expect(typeof knowledge.ws3Synthesis.buildDraft).toBe("function");
     expect(knowledge.SYNTHESIS_MODULE.module).toBe("ws5-synthesis");
   });
+
+  it("exports the sprint-3 functions", () => {
+    for (const name of ["evaluate", "guardVerdict", "assertLearnerCaseView", "createAnthropicJudge", "buildTimeline", "createWs6TutorEvaluator"] as const) {
+      expect(typeof knowledge[name]).toBe("function");
+    }
+    expect(knowledge.TUTOR_EVALUATOR.id).toBe("ws5-tutor");
+  });
 });
