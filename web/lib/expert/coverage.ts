@@ -147,7 +147,8 @@ type GapSnap = Pick<SessionSnapshot, "topics" | "coverage" | "exchanges" | "open
 /**
  * Ordered debrief gaps. Excludes covered cells and dimensions already asked and answered on
  * the same region. Order: open questions, then guardrails / alternatives / missing reasons,
- * then the rest; within a tier missing before partial, then dimension, then topic order.
+ * then the rest; within a tier topic rows before the session row, missing before partial,
+ * then dimension, then topic order.
  */
 export function selectGaps(snap: GapSnap): Gap[] {
   const topics = discussedTopics(snap.topics, snap.coverage);
@@ -175,7 +176,7 @@ export function selectGaps(snap: GapSnap): Gap[] {
           description: q.missing_fact,
           status_at_start: "missing",
         },
-        key: [0, 0, -1, i],
+        key: [0, 0, 0, -1, i],
       });
     });
 
@@ -195,7 +196,8 @@ export function selectGaps(snap: GapSnap): Gap[] {
         description: gapDescription(cell.dimension, topic),
         status_at_start: cell.status === "partial" ? "partial" : "missing",
       },
-      key: [high ? 1 : 2, STATUS_RANK[cell.status], DIM_RANK[cell.dimension], row],
+      // session-row answers have no screen moment of their own, so topic gaps come first
+      key: [high ? 1 : 2, topic ? 0 : 1, STATUS_RANK[cell.status], DIM_RANK[cell.dimension], row],
     });
   }
 

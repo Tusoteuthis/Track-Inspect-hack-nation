@@ -21,8 +21,8 @@ TDD: each logic task writes its vitest file first.
 
 ## Phase 5: US3 Correction & confirmation
 - [X] T010 [US3] confirm_revision (stale, explicit response, corrected → rev-n+1 with change_exchange_ids), session_ended → incomplete in web/lib/expert/debrief.ts
-- [ ] T011 [US3] Persistence: revisions/rev-n.json|md (immutable), confirmations.json, knowledge-draft.md, exchanges.md in web/lib/expert/store.ts, knowledge-render.ts, render.ts
-- [ ] T012 [US3] End-to-end fixture session in web/lib/expert/debrief-run.test.ts
+- [X] T011 [US3] Persistence: revisions/rev-n.json|md (immutable), confirmations.json, knowledge-draft.md, exchanges.md in web/lib/expert/store.ts, knowledge-render.ts, render.ts
+- [X] T012 [US3] End-to-end fixture session in web/lib/expert/debrief-run.test.ts
 
 ## Phase 6: US4 Console + agent
 - [ ] T013 [US4] Client tools + phase controls in web/components/expert/useExpertSession.ts; console panels in web/components/expert/ExpertConsole.tsx
