@@ -2,7 +2,6 @@
  * Learner-visible cases (WS4) from `CASES_DIR/<case_id>/case.json` + trace image. Only the learner
  * view is ever returned or handed to a module; a case file carrying anything else is unusable.
  */
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { CaseFileSchema, type CaseFile, type LearnerCase } from "@/lib/contracts";
 import { assertNoEvaluatorMaterial } from "@/lib/knowledge";
@@ -10,20 +9,23 @@ import { ApiError } from "./errors";
 import { assertSafeId, isValidId } from "./ids";
 import { sniffImage } from "./image-info";
 import { caseDir, casesRoot } from "./paths";
+import { getBlobStore } from "./blobstore";
 
 const unavailable = (caseId: string, reason: string) =>
   new ApiError("not_found", "Case not available.", { case_id: caseId, reason });
 
-const realpathOrNull = (p: string) => fs.realpath(p).catch(() => null);
+const realpathOrNull = (p: string) => getBlobStore().realpath(p).catch(() => null);
 
 export async function loadCaseFile(caseId: string): Promise<CaseFile> {
   assertSafeId(caseId, "case_id");
   let raw: unknown;
   try {
-    raw = JSON.parse(await fs.readFile(path.join(caseDir(caseId), "case.json"), "utf8"));
+    const text = await getBlobStore().getText(path.join(caseDir(caseId), "case.json"));
+    if (text === null) throw unavailable(caseId, "missing");
+    raw = JSON.parse(text);
   } catch (err) {
     if (err instanceof ApiError) throw err;
-    throw unavailable(caseId, (err as NodeJS.ErrnoException).code === "ENOENT" ? "missing" : "unreadable");
+    throw unavailable(caseId, "unreadable");
   }
   try {
     assertNoEvaluatorMaterial(raw);
@@ -39,7 +41,8 @@ async function readTrace(file: CaseFile): Promise<{ bytes: Buffer; mime: "image/
   const root = await realpathOrNull(casesRoot());
   const real = await realpathOrNull(path.join(caseDir(file.case_id), file.trace_asset));
   if (!root || !real || !real.startsWith(root + path.sep)) throw unavailable(file.case_id, "trace_missing");
-  const bytes = await fs.readFile(real).catch(() => null);
+  const read = await getBlobStore().getBytes(real).catch(() => null);
+  const bytes = read && Buffer.from(read.buffer, read.byteOffset, read.byteLength);
   const info = bytes && sniffImage(bytes);
   if (!bytes || !info) throw unavailable(file.case_id, "trace_unreadable");
   return { bytes, mime: info.mime, width_px: info.width_px, height_px: info.height_px };
@@ -72,8 +75,8 @@ export async function caseTraceResponse(caseId: string): Promise<Response> {
 }
 
 export async function listCaseIds(): Promise<string[]> {
-  const entries = await fs.readdir(casesRoot(), { withFileTypes: true }).catch(() => []);
-  return entries.filter(e => e.isDirectory() && isValidId(e.name)).map(e => e.name).sort();
+  const entries = await getBlobStore().list(casesRoot()).catch(() => []);
+  return entries.filter(e => e.isDir && isValidId(e.name)).map(e => e.name).sort();
 }
 
 /** `GET /api/cases` (integration G7): every usable case as its learner view; unusable files are skipped. */
