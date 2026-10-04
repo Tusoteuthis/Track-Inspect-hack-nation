@@ -1,35 +1,14 @@
-// Imported as the `promises` object (not the fs/promises namespace) so tests can vi.spyOn it.
-import { promises as fs } from "node:fs";
-import { randomBytes } from "node:crypto";
 import path from "node:path";
 import type { z } from "zod";
+import { getBlobStore } from "./blobstore";
 import { ApiError } from "./errors";
 import { withLock } from "./locks";
 
 export type PutResult<T> = { status: 200 | 201; record: T };
 
-function isErrno(err: unknown, code: string): boolean {
-  return err instanceof Error && (err as NodeJS.ErrnoException).code === code;
-}
-
-/** Temp file in the same directory + fsync + rename, so readers never see a partial file. */
-export async function writeFileAtomic(target: string, data: string | Uint8Array): Promise<void> {
-  const dir = path.dirname(target);
-  await fs.mkdir(dir, { recursive: true });
-  const temp = path.join(dir, `.${path.basename(target)}.${randomBytes(6).toString("hex")}.tmp`);
-  try {
-    const fh = await fs.open(temp, "wx");
-    try {
-      await fh.writeFile(data);
-      await fh.sync();
-    } finally {
-      await fh.close();
-    }
-    await fs.rename(temp, target);
-  } catch (err) {
-    await fs.unlink(temp).catch(() => undefined);
-    throw err;
-  }
+/** Temp file in the same directory + fsync + rename (fs), or one object put (r2): readers never see a partial file. */
+export function writeFileAtomic(target: string, data: string | Uint8Array): Promise<void> {
+  return getBlobStore().put(target, data);
 }
 
 export function writeJsonAtomic(target: string, value: unknown): Promise<void> {
@@ -37,13 +16,8 @@ export function writeJsonAtomic(target: string, value: unknown): Promise<void> {
 }
 
 async function readJsonRaw(target: string): Promise<unknown | null> {
-  let text: string;
-  try {
-    text = await fs.readFile(target, "utf8");
-  } catch (err) {
-    if (isErrno(err, "ENOENT")) return null;
-    throw err;
-  }
+  const text = await getBlobStore().getText(target);
+  if (text === null) return null;
   try {
     return JSON.parse(text) as unknown;
   } catch {
