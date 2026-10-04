@@ -1,0 +1,11 @@
+node_modules
+.next
+.env*
+test-results
+e2e
+.runtime
+coverage
+.wrangler
+cf
+wrangler.jsonc
+tsconfig.tsbuildinfo

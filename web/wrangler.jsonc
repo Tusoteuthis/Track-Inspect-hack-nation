@@ -1,0 +1,20 @@
+{
+  // Deploy: `npx wrangler deploy` from web/ (see README "Deploy (Cloudflare Containers)").
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "track-inspect",
+  "main": "cf/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "containers": [
+    {
+      "class_name": "App",
+      "image": "./Dockerfile",
+      "max_instances": 1,
+      "instance_type": "standard-1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "APP", "class_name": "App" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["App"] }]
+}
