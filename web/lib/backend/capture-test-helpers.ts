@@ -95,6 +95,7 @@ export function makeExchange(sid: string, xid: string, eventId: string | null, r
     phase: "live",
     kind: "explain",
     question: "FIXTURE question",
+    question_planned: null,
     answer_lines: Array.from({ length: lines }, (_, i) => ({
       text: `FIXTURE answer line ${i + 1}`,
       at_utc: `2026-10-03T10:00:1${i}.000Z`,

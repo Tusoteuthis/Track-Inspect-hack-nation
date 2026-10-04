@@ -16,6 +16,7 @@ const answer = (over: Partial<ExpertExchange> & { exchange_id: string; text: str
   phase: "debrief",
   kind: "gap",
   question: "FIXTURE debrief question",
+  question_planned: null,
   asked_at_utc: "2026-10-03T10:20:00.000Z",
   answer_started_at_utc: "2026-10-03T10:20:02.000Z",
   answer_ended_at_utc: "2026-10-03T10:20:04.000Z",

@@ -100,6 +100,8 @@ export const ExpertExchangeSchema = z.object({
   phase: z.enum(["live", "debrief", "teach_back"]),
   kind: z.enum(["explain", "reasoning", "distinction", "context", "guardrail", "exception", "clarify_reference", "gap"]),
   question: z.string(),
+  /** WS3 S1. Older producers omit it; it is then stored as null. */
+  question_planned: z.string().nullable().default(null),
   answer_lines: z.array(AnswerLineSchema),
   asked_at_utc: UtcSchema,
   answer_started_at_utc: UtcSchema.nullable(),
