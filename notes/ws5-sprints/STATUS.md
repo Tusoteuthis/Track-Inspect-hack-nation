@@ -51,10 +51,11 @@ Raw outputs: `docs/tutor-probes-sprint-4.txt`, `docs/e2e-ws5-sprint-4.txt`.
      - "wrong decision caught before save" is shown with real citations and guards but a scripted outcome.
    - **Fix:** put the key in the worktree's `web/.env` (gitignored), run `npm run eval:ws5`, paste the counts into `handoff-sprint-3.md`, then re-run the e2e (the judge becomes LIVE automatically). If counts are < 4/5, tune only `JUDGE_SYSTEM_PROMPT`.
    - **Without Anthropic:** write another `Judge` adapter (interface in `evaluation-types.ts`, about one file), record the change to D1 in `sprint-plan.md`, and run the harness.
-2. **WS6 Sprints 3/4 are not merged.** WS6 is on branch `004-ws6-knowledge-confirmation`, at S2.
-   - No server commit guard, no revoke route, no assessment route.
-   - The e2e mirrors them as labelled stand-ins (`commitStandIn`, `revokeRevision`, `confirmRevision` in `dev/scenario.ts`).
-   - Our adapters mirror WS6's documented signatures: `createWs6TutorEvaluator`, `createWs6AssessmentModule`, `checkPinnedKnowledge`.
+2. **WS6 Sprints 3/4 exist but are not merged anywhere.** WS6 stacks them as `004-ws6-knowledge-confirmation` (S2) → `005-ws6-newcomer-presave` (S3) → `006-ws6-trust-demo` (S4), in the `ws06-backend` worktree. That worktree has its own pick-up guide: `notes/ws6-sprints/STATUS.md` on 006.
+   - **Already wired on 006** (`web/lib/backend/modules.ts`): our synthesis module (real by default) and our tutor evaluator (`createWs6TutorEvaluator`, used only with `WS5_MODULES=real`, which needs the Anthropic key; the stub is the default).
+   - **Not wired yet:** our new `createWs6AssessmentModule`. WS6 still uses `STUB_ASSESSMENT` "until WS5 ships an assessment module". It is shipped now, on `worktree-ws05-sprint-4`. Request to WS6: swap it in.
+   - **WS6's naming differs** from its earlier API doc (D9/D10): SSE `evaluation.updated` / `commit.stored`, and error codes in `details.policy_code`. Our adapters use only the data shapes, not the event or error names, so they are unaffected.
+   - **The e2e still uses stand-ins** for the commit guard and the revoke route (`commitStandIn`, `revokeRevision`, `confirmRevision` in `dev/scenario.ts`), because 006 is not in `voice`. Once WS6 and WS5 are both merged, replace them with route calls; WS6's own `npm run e2e` (45 checks) is its integration gate.
 3. **WS7 `/practice` uses WS7's own fixture evaluator,** not ours. The tutor there receives WS7's `[PRACTICE evaluation …]` lines, which the prompt also understands. We have asked WS7 to send `buildEvaluationContextBlock` instead.
 
 ## 4. Environment facts (easy to get wrong)
@@ -94,8 +95,8 @@ Raw outputs: `docs/tutor-probes-sprint-4.txt`, `docs/e2e-ws5-sprint-4.txt`.
 4. **Open decisions with partners:**
    - WS6 outcome policy: `ok` allow / `intervene` block / `uncertain` allow only with escalation.
    - WS7: whether `uncertain` permits an escalated save (WS7 currently blocks it).
-5. **When WS6 S3/S4 land:**
-   - wire our adapters into `web/lib/backend/modules.ts` (WS6 does this);
+5. **When WS6 S3/S4 land in `voice`** (stacked on `006-ws6-trust-demo` now):
+   - WS6 swaps `createWs6AssessmentModule` in for `STUB_ASSESSMENT` in `web/lib/backend/modules.ts`; the tutor evaluator is already wired (`WS5_MODULES=real`);
    - replace the stand-ins in `dev/e2e-ws5.mts` with route calls;
    - re-run the trust tests against WS6's deletion cascade.
 6. **When WS7 sends our context blocks:** re-run the live voice gate. Also send `buildKnowledgeChangedBlock` on revocation and record guidance delivery times for the timeline.

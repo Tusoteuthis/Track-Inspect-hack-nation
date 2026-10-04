@@ -162,7 +162,7 @@ The does-not-interrupt case passes because the agent calls `skip_turn` 5/5 and s
 | Partner piece | Status |
 |---|---|
 | WS7 `/practice` + `TutorPanel` | **Real, merged.** Voice uses the synced tutor agent. Its evaluator is still WS7's scripted fixture evaluator. The tutor receives WS7's `[PRACTICE evaluation …]` lines, which the prompt understands |
-| WS6 Sprints 2–4 | **Not in `voice`.** Our adapters (`createWs6TutorEvaluator`, `createWs6AssessmentModule`, `checkPinnedKnowledge`) mirror the documented signatures. WS6 swaps them into `modules.ts` when its S3/S4 land |
+| WS6 Sprints 2–4 | **Not in `voice`.** They are done on stacked branches `004 → 005 → 006-ws6-trust-demo` (found at session end). On 006, `modules.ts` already hosts our tutor evaluator (`WS5_MODULES=real`, needs the key). Assessment is still WS6's stub, waiting for `createWs6AssessmentModule` from this branch. `checkPinnedKnowledge` / `buildKnowledgeChangedBlock` are for WS6's revoke path |
 | LLM judge | `createAnthropicJudge` (Sprint 3) is unverified live: no key |
 
 ## Known limitations / open issues
