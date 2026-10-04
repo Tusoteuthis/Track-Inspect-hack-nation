@@ -601,7 +601,11 @@
             "anomal",
             "\\bimpact",
             "what do you recogni[sz]e in (this|that) (region|spike)",
-            "when would you stop and ask someone else about (that|the) spike"
+            "when would you stop and ask someone else about (that|the) spike",
+            "let me (record|handle|check|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
+            "the system"
           ]
         }
       },
@@ -709,7 +713,11 @@
             "any idea",
             "roughly",
             "best estimate",
-            "what do you think it (could|might) be"
+            "what do you think it (could|might) be",
+            "let me (record|handle|check|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
+            "the system"
           ]
         }
       },
@@ -806,7 +814,11 @@
             "^\\W*(so,? )?you (said|mentioned|told me)",
             "s-\\d",
             "rev-\\d",
-            "\\[TEACH"
+            "\\[TEACH",
+            "let me (record|handle|check|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
+            "the system"
           ]
         }
       },
@@ -886,6 +898,12 @@
               "name": "confirm_revision",
               "paramsPattern": "\"status\"\\s*:\\s*\"confirmed\""
             }
+          ],
+          "forbidPatterns": [
+            "let me (record|handle|check|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
+            "the system"
           ]
         }
       },
@@ -959,6 +977,12 @@
               "name": "confirm_revision",
               "paramsPattern": "\"status\"\\s*:\\s*\"confirmed\""
             }
+          ],
+          "forbidPatterns": [
+            "let me (record|handle|check|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
+            "the system"
           ]
         }
       },
@@ -1032,6 +1056,12 @@
               "name": "confirm_revision",
               "paramsPattern": "\"status\"\\s*:\\s*\"confirmed\""
             }
+          ],
+          "forbidPatterns": [
+            "let me (record|handle|check|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft)\\b",
+            "the system"
           ]
         }
       }

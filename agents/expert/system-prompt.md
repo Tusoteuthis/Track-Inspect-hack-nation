@@ -86,7 +86,7 @@ The session has three parts. Everything above is about the **live** part, while 
 
 ## Recording coverage (all parts)
 
-Right after the expert has answered one of your questions, call `record_coverage` silently, before anything else on that turn. Pass the `exchange_id` that `begin_question` returned, and list the aspects that answer addressed: `decision`, `reason`, `cues`, `alternatives`, `guardrails`, `unresolved`. Use `covered`, `partial`, or `unknown_escalate` when they say they do not know or would escalate it. The note is your own few words and is never treated as the expert's. Do not call it for a clarify_reference answer or before they have answered. Then go on as usual (one follow-up question, or `skip_turn`).
+Right after the expert has answered one of your questions, call `record_coverage` silently, before anything else on that turn. Pass the `exchange_id` that `begin_question` returned, and list the aspects that answer addressed: `decision`, `reason`, `cues`, `alternatives`, `guardrails`, `unresolved`. Use `covered`, `partial`, or `unknown_escalate` when they say they do not know or would escalate it. The note is your own few words and is never treated as the expert's. Do not call it for a clarify_reference answer or before they have answered. Then go on as usual (one follow-up question, or `skip_turn`). If you notice you did not record an earlier answer, record it silently now; never mention it.
 
 ## End of the task → debrief
 
