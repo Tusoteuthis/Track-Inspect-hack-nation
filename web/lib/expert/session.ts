@@ -10,17 +10,30 @@ import {
   type InterviewConfig,
   type PhaseTrigger,
   type PointingEvent,
+  type RecordState,
+  type RecordStateTrigger,
   SCHEMA_VERSION,
   type SessionSnapshot,
   type TimingMark,
   type TimingMarkName,
   type Topic,
   validateBeginQuestionParams,
+  validateSetRecordStateParams,
 } from "./contracts";
 import { beginPhaseQuestion, confirmRevision, endPhase, proposeDraft, recordCoverage, startDebrief } from "./debrief";
 import { DEFAULT_INTERVIEW_CONFIG, withConfig } from "./interview-config";
 import { type Stamp, closeActive, mark, updateExchange, updateTopic } from "./session-util";
 import { ingestEvent, releaseText } from "./topics";
+import {
+  OFF_RECORD_REFUSAL,
+  RECORD_STATE_RESULT,
+  countExcluded,
+  currentSegment,
+  detectRecordPhrase,
+  excludedAt,
+  isOffRecord,
+  switchRecordState,
+} from "./record-state";
 
 /** Appended to every successful begin_question result (the probes' tool mock uses the same words). */
 export const SAY_IT = "Now say the question out loud, word for word.";
@@ -50,7 +63,18 @@ export type SessionAction =
   | ({ type: "coverage_recorded"; params: unknown } & Stamp)
   | ({ type: "draft_proposed"; params: unknown | null; trigger: PhaseTrigger } & Stamp)
   | ({ type: "revision_confirmed"; params: unknown } & Stamp)
+  | ({ type: "record_state_tool"; params: unknown } & Stamp)
+  | ({ type: "record_state_changed"; to: RecordState; trigger: RecordStateTrigger } & Stamp)
   | ({ type: "session_ended" } & Stamp);
+
+/** Actions that record content: refused while off the record (agent tools get OFF_RECORD_REFUSAL). */
+const RECORDING_ACTIONS = new Set<SessionAction["type"]>([
+  "question_begun",
+  "coverage_recorded",
+  "task_completed",
+  "draft_proposed",
+  "revision_confirmed",
+]);
 
 export function initialSession(
   session_id: string,
@@ -93,7 +117,20 @@ export function initialSession(
 }
 
 export function reduceSession(state: SessionState, action: SessionAction): SessionState {
+  if (RECORDING_ACTIONS.has(action.type) && isOffRecord(state)) {
+    return countExcluded({ ...state, last_tool_result: OFF_RECORD_REFUSAL }, "refused_tool_calls");
+  }
   switch (action.type) {
+    case "record_state_tool": {
+      const parsed = validateSetRecordStateParams(action.params);
+      if (!parsed.ok) return { ...state, last_tool_result: `error ${parsed.errors.join("; ")}` };
+      const next = switchRecordState(state, parsed.value.state, "agent_tool", action);
+      return { ...next, last_tool_result: RECORD_STATE_RESULT[parsed.value.state] };
+    }
+
+    case "record_state_changed":
+      return switchRecordState(state, action.to, action.trigger, action);
+
     case "connected":
       return {
         ...state,
@@ -104,6 +141,14 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
       };
 
     case "event_received": {
+      // Capture says off the record: the session goes off record and the event is never stored.
+      if (action.event.record_state === "off_record") {
+        return countExcluded(switchRecordState(state, "off_record", "capture_event", action), "events");
+      }
+      if (isOffRecord(state) && currentSegment(state).trigger === "capture_event") {
+        state = switchRecordState(state, "on_record", "capture_event", action);
+      }
+      if (excludedAt(state, action.at_utc)) return countExcluded(state, "events");
       // Arrivals never touch exchanges: an answer in progress keeps its event.
       const id = action.event.event_id;
       const received = [...state.timing, mark(state, "event_received", id, null, action)];
@@ -116,6 +161,7 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     }
 
     case "topic_released": {
+      if (isOffRecord(state)) return state;
       const topic = state.topics.find(t => t.topic_id === action.topic_id);
       if (!topic || topic.state !== "queued") return state;
       const text = releaseText(topic, state.events, state.exchanges, action.stale);
@@ -134,6 +180,7 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     }
 
     case "topic_nudged": {
+      if (isOffRecord(state)) return state;
       const topic = state.topics.find(t => t.topic_id === action.topic_id);
       if (!topic || topic.nudged_at_perf_ms !== null) return state;
       return {
@@ -156,6 +203,7 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     }
 
     case "user_speech_changed": {
+      if (excludedAt(state, action.at_utc)) return countExcluded(state, "timing_marks");
       const name = action.speaking ? "user_speech_started" : "user_speech_ended";
       return { ...state, timing: [...state.timing, mark(state, name, null, null, action)] };
     }
@@ -179,6 +227,7 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
       return confirmRevision(state, action.params, action);
 
     case "agent_final_line": {
+      if (excludedAt(state, action.at_utc)) return countExcluded(state, "transcript_lines");
       const text = action.text.trim();
       const awaiting = state.awaiting_question_exchange_id;
       const entry = {
@@ -207,6 +256,13 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     }
 
     case "user_final_line": {
+      const phrase = detectRecordPhrase(action.text);
+      if (!isOffRecord(state) && phrase.off) state = switchRecordState(state, "off_record", "expert_phrase", action);
+      else if (isOffRecord(state) && phrase.on && !phrase.off) {
+        // the "back on the record" line itself is dropped: it may still carry off-record words
+        return countExcluded(switchRecordState(state, "on_record", "expert_phrase", action), "transcript_lines");
+      }
+      if (excludedAt(state, action.at_utc)) return countExcluded(state, "transcript_lines");
       const text = action.text.trim();
       const active = state.active_exchange_id;
       const entry = { line_id: action.line_id, role: "user" as const, text, at_utc: action.at_utc, exchange_id: active };
@@ -238,6 +294,7 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     case "agent_speaking_changed": {
       if (action.speaking === state.agent_speaking) return state;
       if (!action.speaking) return { ...state, agent_speaking: false };
+      if (excludedAt(state, action.at_utc)) return countExcluded({ ...state, agent_speaking: true }, "timing_marks");
       const exchangeId = state.awaiting_question_exchange_id ?? state.active_exchange_id;
       const eventId = state.exchanges.find(x => x.exchange_id === exchangeId)?.event_id ?? null;
       return {

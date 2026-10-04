@@ -88,9 +88,11 @@ describe("question ↔ event linkage", () => {
     expect(s.exchanges[0]).toMatchObject({ event_id: null, kind: "gap", source: "live", record_state: "on_record" });
   });
 
-  it("copies record_state from the linked event", () => {
+  it("never stores an off-record event, so no question can link to it (Sprint 4)", () => {
     const s = run([event(evt5), ask("evt-005")]);
-    expect(s.exchanges[0].record_state).toBe("off_record");
+    expect(s.events).toEqual([]);
+    expect(s.exchanges).toEqual([]);
+    expect(s.recording_segments.at(-1)?.state).toBe("off_record");
   });
 });
 
@@ -314,10 +316,11 @@ describe("topics from events", () => {
     expect(marks(s).slice(-1)).toEqual([["topic_queued", "evt-003"]]);
   });
 
-  it("drops off-record events from the queue (never released) without a topic_queued mark", () => {
+  it("drops off-record events entirely: no event, topic or timing mark (Sprint 4)", () => {
     const s = run([event(evt5)]);
-    expect(s.topics[0].state).toBe("dropped_off_record");
-    expect(s.timing.map(m => m.mark)).toEqual(["event_received"]);
+    expect(s.topics).toEqual([]);
+    expect(s.timing).toEqual([]);
+    expect(s.off_record_excluded.events).toBe(1);
   });
 
   it("a repeated arrival of the same event id does not create a topic twice", () => {

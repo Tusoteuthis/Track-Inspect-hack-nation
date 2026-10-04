@@ -24,6 +24,11 @@ export function driver(session_id: string, t0 = Date.UTC(2026, 9, 4, 5)) {
       s = reduceSession(s, { ...action, ...stamp() } as SessionAction);
       return s.last_tool_result;
     },
+    /** Dispatches with an explicit stamp (for back-dated marks). */
+    reduce(action: SessionAction): SessionState {
+      s = reduceSession(s, action);
+      return s;
+    },
     event(id: string) {
       const fixture = FIXTURE_EVENTS.find(f => f.event_id === id)!;
       api.act({ type: "event_received", event: injectFixture(fixture, session_id) });
