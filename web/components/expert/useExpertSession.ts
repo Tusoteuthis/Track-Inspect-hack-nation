@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ClientToolHandler } from "@/components/voice/VoiceSession";
 import { type InterviewConfig, type PointingEvent, validatePointingEvent } from "@/lib/expert/contracts";
-import { budgetStateLine, controlNudge, isControlText } from "@/lib/expert/context-update";
+import {
+  PHASE_CONTEXT_ID,
+  budgetStateLine,
+  controlDebriefStart,
+  controlNudge,
+  controlTeachBack,
+  isControlText,
+} from "@/lib/expert/context-update";
+import { latestRevision, phaseBlock } from "@/lib/expert/debrief";
 import { FIXTURE_EVENTS } from "@/lib/expert/fixtures";
 import { DEFAULT_INTERVIEW_CONFIG, withConfig } from "@/lib/expert/interview-config";
 import type { ScenarioStep } from "@/lib/expert/scenario";
@@ -70,6 +78,8 @@ export function useExpertSession() {
   const configRef = useRef<InterviewConfig>(DEFAULT_INTERVIEW_CONFIG);
   const speechRef = useRef(initialSpeech());
   const budgetUsedUp = useRef(false);
+  /** Last phase block sent as a `ws3-phase` contextual update. */
+  const phaseSent = useRef<string | null>(null);
   const scenarioTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saving = useRef(false);
@@ -129,6 +139,7 @@ export function useExpertSession() {
     stateRef.current = next;
     speechRef.current = initialSpeech();
     budgetUsedUp.current = false;
+    phaseSent.current = null;
     setState(next);
     setSave({ status: "idle" });
     return next;
@@ -201,6 +212,22 @@ export function useExpertSession() {
         dispatch({ type: "question_begun", params, ...stamp() });
         return stateRef.current?.last_tool_result ?? "error no active session";
       },
+      record_coverage: params => {
+        dispatch({ type: "coverage_recorded", params, ...stamp() });
+        return stateRef.current?.last_tool_result ?? "error no active session";
+      },
+      signal_task_complete: () => {
+        dispatch({ type: "task_completed", trigger: "agent_tool", ...stamp() });
+        return stateRef.current?.last_tool_result ?? "error no active session";
+      },
+      propose_draft: params => {
+        dispatch({ type: "draft_proposed", params, trigger: "agent_tool", ...stamp() });
+        return stateRef.current?.last_tool_result ?? "error no active session";
+      },
+      confirm_revision: params => {
+        dispatch({ type: "revision_confirmed", params, ...stamp() });
+        return stateRef.current?.last_tool_result ?? "error no active session";
+      },
     }),
     [dispatch]
   );
@@ -218,6 +245,40 @@ export function useExpertSession() {
       dispatch({ type: "event_received", event, ...stamp() });
     },
     [dispatch, startNewSession]
+  );
+
+  /** Sends the current phase block (`ws3-phase`) whenever it changed, whichever path changed it. */
+  const syncPhase = useCallback((io: ConversationIo) => {
+    const current = stateRef.current;
+    if (!current) return;
+    const text = phaseBlock(current);
+    if (text && text !== phaseSent.current) {
+      phaseSent.current = text;
+      io.sendContextualUpdate(text, { contextId: PHASE_CONTEXT_ID });
+    }
+  }, []);
+
+  /** Console: the expert is done (dev path; normally the agent calls signal_task_complete). */
+  const endTask = useCallback(
+    (io: ConversationIo) => {
+      dispatch({ type: "task_completed", trigger: "console", ...stamp() });
+      if (stateRef.current?.phase !== "debrief") return;
+      syncPhase(io);
+      io.sendUserMessage(controlDebriefStart());
+    },
+    [dispatch, syncPhase]
+  );
+
+  /** Console: build a draft without the agent (deterministic fallback text) and start the teach-back. */
+  const startTeachBack = useCallback(
+    (io: ConversationIo) => {
+      dispatch({ type: "draft_proposed", params: null, trigger: "console", ...stamp() });
+      const rev = stateRef.current && latestRevision(stateRef.current);
+      if (!rev || stateRef.current?.phase !== "teach_back") return;
+      syncPhase(io);
+      io.sendUserMessage(controlTeachBack(rev.revision_id));
+    },
+    [dispatch, syncPhase]
   );
 
   /** One step of the release controller (ExpertConsole calls this every 200 ms while connected). */
@@ -238,8 +299,14 @@ export function useExpertSession() {
         dispatch({ type: "user_speech_changed", speaking: false, ...stampAt(settled.transition.at_perf) });
       }
 
+      syncPhase(io);
       const s = stateRef.current!;
       const speech = speechRef.current;
+      if (s.phase !== "live") {
+        // After the live part nothing is released any more; debrief questions come from the agenda.
+        setGate({ decision: "wait", reasons: [`phase ${s.phase}`], expert_speaking: speech.speaking, quiet_ms: -1, budget: { used: 0, max: cfg.budget_max_questions } });
+        return;
+      }
       const signals = { agent_speaking: s.agent_speaking, user_speaking: speech.speaking, quiet_ms: quietForMs(speech, now) };
       const decision = planRelease(s, signals, now, cfg);
       const topicOf = (id: string) => stateRef.current!.topics.find(t => t.topic_id === id)!;
@@ -269,7 +336,7 @@ export function useExpertSession() {
         budget: { used: budget.used, max: budget.max },
       });
     },
-    [dispatch, observe]
+    [dispatch, observe, syncPhase]
   );
 
   /** Tunables (pause_ms in the human gate); applied to the running session and the next one. */
@@ -314,6 +381,8 @@ export function useExpertSession() {
     setConfig,
     runScenario,
     cancelScenario,
+    endTask,
+    startTeachBack,
     voiceProps: { clientTools, onFinalLine, onConnected, onDisconnected, onAgentModeChange, onVadScore, onUserTentative },
   };
 }

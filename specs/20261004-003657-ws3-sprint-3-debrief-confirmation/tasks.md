@@ -25,9 +25,9 @@ TDD: each logic task writes its vitest file first.
 - [X] T012 [US3] End-to-end fixture session in web/lib/expert/debrief-run.test.ts
 
 ## Phase 6: US4 Console + agent
-- [ ] T013 [US4] Client tools + phase controls in web/components/expert/useExpertSession.ts; console panels in web/components/expert/ExpertConsole.tsx
-- [ ] T014 [US4] Agent prompt + tools in agents/expert/system-prompt.md, agents/expert/tools.json
-- [ ] T015 [US4] Probe harness (requireTools, forbidTools, allowedGapIds, endsWithQuestion, mocks) in web/scripts/probe-agents.mts; 5+ cases in agents/probes(.example).json; wording test in web/lib/expert/probes.test.ts
+- [X] T013 [US4] Client tools + phase controls in web/components/expert/useExpertSession.ts; console panels in web/components/expert/ExpertConsole.tsx
+- [X] T014 [US4] Agent prompt + tools in agents/expert/system-prompt.md, agents/expert/tools.json
+- [X] T015 [US4] Probe harness (requireTools, forbidTools, allowedGapIds, endsWithQuestion, mocks) in web/scripts/probe-agents.mts; 5+ cases in agents/probes(.example).json; wording test in web/lib/expert/probes.test.ts
 
 ## Phase 7: Polish
 - [ ] T016 sync-agents + probes ×5; contracts doc notes/ws3-sprints/docs/contracts-v0.md; dev smoke on 3103; handoff notes/ws3-sprints/handoff-sprint-3.md

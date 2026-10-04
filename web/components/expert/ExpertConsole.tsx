@@ -2,7 +2,9 @@
 
 import { useConversationControls, useConversationStatus } from "@elevenlabs/react";
 import { type ReactNode, useEffect, useState } from "react";
-import type { ExpertExchange, InterviewConfig, TimingMark, Topic } from "@/lib/expert/contracts";
+import { COVERAGE_DIMENSIONS, type ExpertExchange, type InterviewConfig, type TimingMark, type Topic } from "@/lib/expert/contracts";
+import { coverageGrid } from "@/lib/expert/coverage";
+import { diffRevisions, stepVerification } from "@/lib/expert/draft";
 import { FIXTURE_EVENTS } from "@/lib/expert/fixtures";
 import { DEFAULT_SCENARIO, formatScenarioOffsets, parseScenarioOffsets } from "@/lib/expert/scenario";
 import type { SessionState } from "@/lib/expert/session";
@@ -60,6 +62,14 @@ export function ExpertConsole({ session, raw }: Props) {
       </header>
 
       {state ? <Counters state={state} /> : null}
+      {state ? (
+        <PhaseBar
+          state={state}
+          connected={connected}
+          onEndTask={() => session.endTask({ sendContextualUpdate, sendUserMessage, getInputVolume })}
+          onTeachBack={() => session.startTeachBack({ sendContextualUpdate, sendUserMessage, getInputVolume })}
+        />
+      ) : null}
       <GateLine gate={connected ? session.gate : null} />
 
       <div className="ec-controls">
@@ -177,6 +187,8 @@ export function ExpertConsole({ session, raw }: Props) {
             ) : null}
           </div>
 
+          {state.phase !== "live" || state.coverage.length ? <DebriefPanels state={state} /> : null}
+
           <div>
             <h2 className="ec-h">Timing per question</h2>
             <ExchangeTimingTable state={state} />
@@ -205,6 +217,9 @@ function ExchangeCard({ exchange: x, active }: { exchange: ExpertExchange; activ
       <div className="ec-small">
         <code>{x.exchange_id}</code> ↔ <code>{x.event_id ?? "no event"}</code>
         {x.related_event_ids.length ? <span className="ec-muted"> (+{x.related_event_ids.join(", ")})</span> : null} · {x.kind}
+        {x.phase !== "live" ? <span className="ec-badge">{x.phase.replace("_", "-")}</span> : null}
+        {x.gap_id ? <span className="ec-muted"> · {x.gap_id}</span> : null}
+        {x.revision_id ? <span className="ec-muted"> · {x.revision_id}</span> : null}
         {x.source === "fixture" ? <span className="ec-badge fixture">FIXTURE</span> : null}
         {active ? <span className="ec-badge live">ACTIVE</span> : null}
       </div>
@@ -233,6 +248,7 @@ function Counters({ state }: { state: SessionState }) {
     ["unlinked", c.unlinked_agent_questions, c.unlinked_agent_questions > 0],
     ["interruptions", c.interruptions, c.interruptions > 0],
     ["duplicates", c.duplicate_questions, c.duplicate_questions > 0],
+    ["debrief questions", c.debrief_questions, false],
   ];
   return (
     <div className="ec-counters" aria-label="Live counters">
@@ -374,4 +390,166 @@ function SaveBadge({ save, onRetry }: { save: SaveStatus; onRetry: () => void })
         </span>
       );
   }
+}
+
+const PHASES = ["live", "debrief", "teach_back", "confirmed"] as const;
+
+function PhaseBar({
+  state,
+  connected,
+  onEndTask,
+  onTeachBack,
+}: {
+  state: SessionState;
+  connected: boolean;
+  onEndTask: () => void;
+  onTeachBack: () => void;
+}) {
+  const latest = state.revisions.at(-1);
+  const final = latest && state.confirmations.find(c => c.revision_id === latest.revision_id && c.status === "confirmed");
+  return (
+    <div className="ec-controls" aria-label="Phase">
+      <span className="ec-small">
+        Phase:{" "}
+        {state.phase === "incomplete" ? (
+          <strong className="ec-err">incomplete (ended without confirmation)</strong>
+        ) : (
+          PHASES.map(p => (
+            <span key={p} className={p === state.phase ? "ec-badge live" : "ec-muted"}>
+              {" "}
+              {p.replace("_", "-")}{" "}
+            </span>
+          ))
+        )}
+      </span>
+      <span className="ec-small">
+        Confirmation:{" "}
+        {final ? (
+          <strong className="ec-ok">
+            {final.revision_id} confirmed ({final.confirmation_id}, {final.expert_response_exchange_id})
+          </strong>
+        ) : latest ? (
+          <strong>{latest.revision_id} not confirmed</strong>
+        ) : (
+          "—"
+        )}
+      </span>
+      <button type="button" disabled={!connected || state.phase !== "live"} onClick={onEndTask}>
+        Expert is done → debrief
+      </button>
+      <button type="button" disabled={!connected || state.phase !== "debrief"} onClick={onTeachBack} title="Builds a deterministic draft from verbatim answers; normally the agent proposes it">
+        Start teach-back (fallback draft)
+      </button>
+    </div>
+  );
+}
+
+const STATUS_MARK: Record<string, string> = { missing: "·", partial: "½", covered: "✓" };
+
+function DebriefPanels({ state }: { state: SessionState }) {
+  const grid = coverageGrid(state);
+  const rows = [...new Set(grid.map(c => c.event_id))];
+  const verification = stepVerification(state.revisions, state.confirmations);
+  const done = state.debrief_agenda.filter(i => i.state !== "open").length;
+  return (
+    <>
+      <div>
+        <h2 className="ec-h">Coverage (event × dimension)</h2>
+        <table className="ec-table">
+          <thead>
+            <tr>
+              <th>event</th>
+              {COVERAGE_DIMENSIONS.map(d => (
+                <th key={d}>{d}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row ?? "session"}>
+                <td>{row ?? "session"}</td>
+                {COVERAGE_DIMENSIONS.map(d => {
+                  const c = grid.find(g => g.event_id === row && g.dimension === d)!;
+                  const title = [c.status, c.resolution, c.supporting_exchange_ids.join(", "), c.note && `AI note: ${c.note}`].filter(Boolean).join(" · ");
+                  return (
+                    <td key={d} title={title} className={c.status === "covered" ? "ec-ok" : undefined}>
+                      {STATUS_MARK[c.status]}
+                      {c.resolution === "unknown_escalate" ? " ⚠" : ""}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="ec-muted ec-small">· missing · ½ partial · ✓ covered · ⚠ expert: unknown / escalate. Hover for exchanges and the AI note.</p>
+      </div>
+
+      {state.debrief_agenda.length ? (
+        <div>
+          <h2 className="ec-h">
+            Debrief agenda ({done}/{state.debrief_agenda.length} done)
+          </h2>
+          <ul className="ec-list">
+            {state.debrief_agenda.map(i => (
+              <li key={i.gap_id}>
+                <span className={`ec-state ${i.state}`}>{i.state}</span> <code>{i.gap_id}</code> {i.description}
+                {i.exchange_ids.length ? <span className="ec-muted"> · {i.exchange_ids.join(", ")}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {state.revisions.length ? (
+        <div>
+          <h2 className="ec-h">Revisions ({state.revisions.length})</h2>
+          {state.revisions.map(rev => {
+            const parent = state.revisions.find(r => r.revision_id === rev.parent_revision_id) ?? null;
+            const diff = diffRevisions(parent, rev);
+            const isLatest = rev === state.revisions.at(-1);
+            return (
+              <div key={rev.revision_id} className="ec-card">
+                <div className="ec-small">
+                  <strong>{rev.revision_id}</strong>
+                  {parent ? ` ← ${parent.revision_id} · ${rev.change_reason ?? ""}` : ""}
+                  {parent ? (
+                    <span className="ec-muted">
+                      {" "}
+                      · changed {diff.added.join(", ") || "—"} · removed {diff.removed.join(", ") || "—"}
+                    </span>
+                  ) : null}
+                </div>
+                <ol className="ec-small">
+                  {rev.steps.map(st => (
+                    <li key={st.step_id} className={diff.added.includes(st.step_id) && parent ? "ec-ok" : undefined}>
+                      <code>{st.step_id}</code> ({st.kind}){!st.supported ? <span className="ec-err"> UNSUPPORTED</span> : null}{" "}
+                      {isLatest ? <span className="ec-muted">[{verification[st.step_id]}]</span> : null} {st.text}{" "}
+                      <span className="ec-muted">
+                        · {st.supporting_event_ids.join(", ") || "no event"} · {st.supporting_exchange_ids.join(", ") || "no exchange"}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {state.confirmations.length ? (
+        <div>
+          <h2 className="ec-h">Confirmations</h2>
+          <ul className="ec-list">
+            {state.confirmations.map(c => (
+              <li key={c.confirmation_id}>
+                <code>{c.confirmation_id}</code> {c.revision_id} · <strong>{c.status}</strong> · response {c.expert_response_exchange_id} · steps{" "}
+                {c.step_ids_reviewed.join(", ") || "—"}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </>
+  );
 }
