@@ -3,3 +3,6 @@
 # Claude Code agent worktrees: nested git worktrees, never commit (see notes/WORKTREES.md)
 .claude/worktrees/
 .DS_Store
+
+# WS3 captured expert sessions are data, not source
+knowledge/sessions/

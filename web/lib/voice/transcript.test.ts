@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendFinal, appendTentative, type TranscriptLine } from "./transcript";
+import { appendFinal, appendTentative, tentativeTextFrom, type TranscriptLine } from "./transcript";
 
 function idGen() {
   let n = 0;
@@ -30,5 +30,24 @@ describe("appendFinal", () => {
     const next = appendFinal(prev, { role: "user", text: "A dip." }, nextId);
 
     expect(next.map(l => l.role)).toEqual(["agent", "user"]);
+  });
+});
+
+describe("tentativeTextFrom", () => {
+  it("reads the SDK's onDebug shape", () => {
+    expect(tentativeTextFrom({ type: "tentative_agent_response", response: " Which part " })).toBe("Which part");
+  });
+
+  it("still reads the raw internal event shape", () => {
+    const raw = {
+      type: "internal_tentative_agent_response",
+      tentative_agent_response_internal_event: { tentative_agent_response: "Which" },
+    };
+    expect(tentativeTextFrom(raw)).toBe("Which");
+  });
+
+  it("ignores other debug events and empty text", () => {
+    expect(tentativeTextFrom({ type: "tentative_user_transcript", response: "x" })).toBeNull();
+    expect(tentativeTextFrom({ type: "tentative_agent_response", response: "  " })).toBeNull();
   });
 });

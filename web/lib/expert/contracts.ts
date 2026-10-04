@@ -78,8 +78,10 @@ export type ExpertExchange = {
   event_id: string | null;
   phase: Phase;
   kind: ExchangeKind;
-  /** The agent's spoken question, verbatim. */
+  /** The agent's spoken question, verbatim. "" until the agent's next final line arrives. */
   question: string;
+  /** What the agent passed to `begin_question` before speaking. AI plan, not evidence. */
+  question_planned: string | null;
   /** The expert's words, verbatim. Never edited or summarized. */
   answer_lines: AnswerLine[];
   asked_at_utc: string;
@@ -163,6 +165,40 @@ export type RecordingSegment = {
   state: RecordState;
   started_at_utc: string;
   ended_at_utc: string | null;
+};
+
+/** Parameters of the `begin_question` client tool, after normalization ("none" → null). */
+export type BeginQuestionParams = { event_id: string | null; kind: ExchangeKind; question: string };
+
+/** One final transcript line, tagged with the exchange that was active when it arrived. */
+export type TranscriptEntry = {
+  line_id: string;
+  role: "user" | "agent";
+  text: string;
+  at_utc: string;
+  exchange_id: string | null;
+};
+
+/** Agent speech ending in "?" without a preceding `begin_question`: a prompt-tuning defect signal. */
+export type UnlinkedQuestion = { line_id: string; text: string; at_utc: string };
+
+/** Full state of one expert session; the client PUTs it whole, so saves are idempotent. */
+export type SessionSnapshot = {
+  schema_version: typeof SCHEMA_VERSION;
+  session_id: string;
+  conversation_id: string | null;
+  started_at_utc: string;
+  ended_at_utc: string | null;
+  events: PointingEvent[];
+  exchanges: ExpertExchange[];
+  active_exchange_id: string | null;
+  /** Exchange whose `question` still waits for the agent's next spoken line. */
+  awaiting_question_exchange_id: string | null;
+  /** Expert lines spoken before any question; kept, never dropped. */
+  preamble: AnswerLine[];
+  transcript: TranscriptEntry[];
+  timing: TimingMark[];
+  unlinked_agent_questions: UnlinkedQuestion[];
 };
 
 // --- validation of external input ------------------------------------------
@@ -256,4 +292,203 @@ export function validatePointingEvent(input: unknown): ValidationResult<Pointing
   if (input.label !== undefined && typeof input.label !== "string") errors.push("label must be a string if present");
 
   return errors.length ? { ok: false, errors } : { ok: true, value: input as PointingEvent };
+}
+
+const EXCHANGE_KINDS: readonly ExchangeKind[] = [
+  "explain",
+  "reasoning",
+  "distinction",
+  "context",
+  "guardrail",
+  "exception",
+  "clarify_reference",
+  "gap",
+];
+const PHASES: readonly Phase[] = ["live", "debrief", "teach_back"];
+const TIMING_MARKS: readonly TimingMarkName[] = [
+  "event_received",
+  "topic_queued",
+  "topic_released",
+  "question_tool_called",
+  "agent_speech_started",
+  "answer_started",
+  "answer_ended",
+];
+const ROLES = ["user", "agent"] as const;
+
+/** Value the agent passes as `event_id` when a question is not about a pointing event. */
+export const NO_EVENT = "none";
+
+const SESSION_ID = /^[a-z0-9-]{1,64}$/;
+
+/** Session ids become directory names, so only a safe, flat alphabet is allowed. */
+export function isValidSessionId(value: unknown): value is string {
+  return typeof value === "string" && SESSION_ID.test(value);
+}
+
+const isTimestamp = (v: unknown): v is string => isNonEmptyString(v) && !Number.isNaN(Date.parse(v));
+const isNullableString = (v: unknown): boolean => v === null || isNonEmptyString(v);
+
+/** Checks `begin_question` tool params from the LLM; does not check that the event is known. */
+export function validateBeginQuestionParams(input: unknown): ValidationResult<BeginQuestionParams> {
+  if (!isRecord(input)) return { ok: false, errors: ["params must be an object"] };
+  const errors: string[] = [];
+  const raw = input.event_id;
+  const noEvent = raw === null || (typeof raw === "string" && raw.trim().toLowerCase() === NO_EVENT);
+  if (!noEvent && !isNonEmptyString(raw)) errors.push(`event_id must be an event id or "${NO_EVENT}"`);
+  if (!oneOf(EXCHANGE_KINDS, input.kind)) errors.push(`kind must be one of ${EXCHANGE_KINDS.join(", ")}`);
+  if (!isNonEmptyString(input.question)) errors.push("question must be a non-empty string");
+  if (errors.length) return { ok: false, errors };
+  return {
+    ok: true,
+    value: {
+      event_id: noEvent ? null : (raw as string).trim(),
+      kind: input.kind as ExchangeKind,
+      question: (input.question as string).trim(),
+    },
+  };
+}
+
+function checkAnswerLine(line: unknown, path: string, errors: string[]): void {
+  if (!isRecord(line)) {
+    errors.push(`${path} must be an object`);
+    return;
+  }
+  if (!isNonEmptyString(line.text)) errors.push(`${path}.text must be a non-empty string`);
+  if (!isTimestamp(line.at_utc)) errors.push(`${path}.at_utc must be an ISO-8601 timestamp`);
+  if (!isNonEmptyString(line.transcript_line_id)) errors.push(`${path}.transcript_line_id must be a non-empty string`);
+}
+
+function checkAnswerLines(lines: unknown, path: string, errors: string[]): void {
+  if (!Array.isArray(lines)) errors.push(`${path} must be an array`);
+  else lines.forEach((l, i) => checkAnswerLine(l, `${path}[${i}]`, errors));
+}
+
+/** Validates one exchange. `question` may be "" while the spoken question is still pending. */
+export function validateExpertExchange(input: unknown): ValidationResult<ExpertExchange> {
+  if (!isRecord(input)) return { ok: false, errors: ["exchange must be an object"] };
+  const errors: string[] = [];
+  for (const key of ["exchange_id", "session_id"] as const) {
+    if (!isNonEmptyString(input[key])) errors.push(`${key} must be a non-empty string`);
+  }
+  if (!isNullableString(input.event_id)) errors.push("event_id must be a non-empty string or null");
+  if (!oneOf(PHASES, input.phase)) errors.push(`phase must be one of ${PHASES.join(", ")}`);
+  if (!oneOf(EXCHANGE_KINDS, input.kind)) errors.push(`kind must be one of ${EXCHANGE_KINDS.join(", ")}`);
+  if (typeof input.question !== "string") errors.push("question must be a string");
+  if (!isNullableString(input.question_planned)) errors.push("question_planned must be a non-empty string or null");
+  checkAnswerLines(input.answer_lines, "answer_lines", errors);
+  if (!isTimestamp(input.asked_at_utc)) errors.push("asked_at_utc must be an ISO-8601 timestamp");
+  for (const key of ["answer_started_at_utc", "answer_ended_at_utc"] as const) {
+    if (input[key] !== null && !isTimestamp(input[key])) errors.push(`${key} must be an ISO-8601 timestamp or null`);
+  }
+  if (input.audio_offset_secs !== null && !isFiniteNumber(input.audio_offset_secs)) {
+    errors.push("audio_offset_secs must be a number or null");
+  }
+  if (!oneOf(RECORD_STATES, input.record_state)) errors.push(`record_state must be one of ${RECORD_STATES.join(", ")}`);
+  if (!oneOf(SOURCES, input.source)) errors.push(`source must be one of ${SOURCES.join(", ")}`);
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as ExpertExchange };
+}
+
+export function validateTimingMark(input: unknown): ValidationResult<TimingMark> {
+  if (!isRecord(input)) return { ok: false, errors: ["timing mark must be an object"] };
+  const errors: string[] = [];
+  if (!isNonEmptyString(input.session_id)) errors.push("session_id must be a non-empty string");
+  for (const key of ["event_id", "exchange_id"] as const) {
+    if (!isNullableString(input[key])) errors.push(`${key} must be a non-empty string or null`);
+  }
+  if (!oneOf(TIMING_MARKS, input.mark)) errors.push(`mark must be one of ${TIMING_MARKS.join(", ")}`);
+  if (!isTimestamp(input.at_utc)) errors.push("at_utc must be an ISO-8601 timestamp");
+  if (!isFiniteNumber(input.at_perf_ms)) errors.push("at_perf_ms must be a number");
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as TimingMark };
+}
+
+function checkTranscriptEntry(entry: unknown, path: string, errors: string[]): void {
+  if (!isRecord(entry)) {
+    errors.push(`${path} must be an object`);
+    return;
+  }
+  if (!isNonEmptyString(entry.line_id)) errors.push(`${path}.line_id must be a non-empty string`);
+  if (!oneOf(ROLES, entry.role)) errors.push(`${path}.role must be one of ${ROLES.join(", ")}`);
+  if (!isNonEmptyString(entry.text)) errors.push(`${path}.text must be a non-empty string`);
+  if (!isTimestamp(entry.at_utc)) errors.push(`${path}.at_utc must be an ISO-8601 timestamp`);
+  if (!isNullableString(entry.exchange_id)) errors.push(`${path}.exchange_id must be a non-empty string or null`);
+}
+
+/** Prefixes each nested error with its array path and collects the valid values. */
+function checkList<T>(
+  list: unknown,
+  path: string,
+  validate: (item: unknown) => ValidationResult<T>,
+  errors: string[]
+): T[] {
+  if (!Array.isArray(list)) {
+    errors.push(`${path} must be an array`);
+    return [];
+  }
+  const valid: T[] = [];
+  list.forEach((item, i) => {
+    const r = validate(item);
+    if (r.ok) valid.push(r.value);
+    else errors.push(...r.errors.map(e => `${path}[${i}].${e}`));
+  });
+  return valid;
+}
+
+/**
+ * Validates a whole session before it is written to disk: every record, that all
+ * records belong to this session, and that exchanges link only to known events.
+ */
+export function validateSessionSnapshot(input: unknown): ValidationResult<SessionSnapshot> {
+  if (!isRecord(input)) return { ok: false, errors: ["snapshot must be an object"] };
+  const errors: string[] = [];
+  if (input.schema_version !== SCHEMA_VERSION) errors.push(`schema_version must be "${SCHEMA_VERSION}"`);
+  if (!isValidSessionId(input.session_id)) errors.push("session_id must match ^[a-z0-9-]{1,64}$");
+  if (!isNullableString(input.conversation_id)) errors.push("conversation_id must be a non-empty string or null");
+  if (!isTimestamp(input.started_at_utc)) errors.push("started_at_utc must be an ISO-8601 timestamp");
+  if (input.ended_at_utc !== null && !isTimestamp(input.ended_at_utc)) {
+    errors.push("ended_at_utc must be an ISO-8601 timestamp or null");
+  }
+
+  const events = checkList(input.events, "events", validatePointingEvent, errors);
+  const exchanges = checkList(input.exchanges, "exchanges", validateExpertExchange, errors);
+  const timing = checkList(input.timing, "timing", validateTimingMark, errors);
+  checkAnswerLines(input.preamble, "preamble", errors);
+  if (!Array.isArray(input.transcript)) errors.push("transcript must be an array");
+  else input.transcript.forEach((t, i) => checkTranscriptEntry(t, `transcript[${i}]`, errors));
+  if (!Array.isArray(input.unlinked_agent_questions)) errors.push("unlinked_agent_questions must be an array");
+  else {
+    input.unlinked_agent_questions.forEach((q, i) => {
+      if (!isRecord(q) || !isNonEmptyString(q.line_id) || !isNonEmptyString(q.text) || !isTimestamp(q.at_utc)) {
+        errors.push(`unlinked_agent_questions[${i}] must have line_id, text and at_utc`);
+      }
+    });
+  }
+
+  const sid = input.session_id;
+  const records: [string, { session_id: string }[]][] = [["events", events], ["exchanges", exchanges], ["timing", timing]];
+  for (const [path, list] of records) {
+    list.forEach((r, i) => {
+      if (r.session_id !== sid) errors.push(`${path}[${i}].session_id must equal the snapshot session_id`);
+    });
+  }
+
+  const eventIds = new Set<string>();
+  for (const e of events) {
+    if (eventIds.has(e.event_id)) errors.push(`duplicate event_id ${e.event_id}`);
+    eventIds.add(e.event_id);
+  }
+  const exchangeIds = new Set<string>();
+  exchanges.forEach((x, i) => {
+    if (exchangeIds.has(x.exchange_id)) errors.push(`duplicate exchange_id ${x.exchange_id}`);
+    exchangeIds.add(x.exchange_id);
+    if (x.event_id !== null && !eventIds.has(x.event_id)) {
+      errors.push(`exchanges[${i}].event_id ${x.event_id} is not a known event`);
+    }
+  });
+  for (const key of ["active_exchange_id", "awaiting_question_exchange_id"] as const) {
+    const v = input[key];
+    if (v !== null && !(typeof v === "string" && exchangeIds.has(v))) errors.push(`${key} must be a known exchange id or null`);
+  }
+
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as SessionSnapshot };
 }

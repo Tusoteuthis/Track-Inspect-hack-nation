@@ -37,7 +37,9 @@ test("/dev keeps the voice prototype", async ({ page }) => {
   await page.goto("/dev");
   await expect(page.getByRole("radiogroup", { name: "Flow" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Start conversation" })).toBeVisible();
-  await expect(page.getByLabel("Contextual update (dev)")).toBeDisabled();
+  // WS3's expert console hides the raw sender behind a toggle; it stays disabled until connected.
+  await page.getByLabel(/raw contextual/).check();
+  await expect(page.getByLabel("Contextual update (dev)", { exact: true })).toBeDisabled();
 });
 
 test("evidence showcase draws outlines only where allowed", async ({ page }) => {
