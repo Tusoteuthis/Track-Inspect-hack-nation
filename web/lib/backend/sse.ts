@@ -9,6 +9,7 @@
  */
 import type { BusEvent } from "@/lib/contracts";
 import { readBusAfter, subscribe } from "./bus";
+import { diag } from "./diag";
 
 export type SessionStreamOptions = {
   /** Last seq the client has; `null` = start live (no replay). */
@@ -25,6 +26,7 @@ export function formatSseMessage(event: BusEvent): string {
 }
 
 export function sessionStream(sid: string, opts: SessionStreamOptions): ReadableStream<Uint8Array> {
+  const openedAt = performance.now();
   let closed = false;
   let cleanup: (closeController: boolean) => void = () => undefined;
 
@@ -82,6 +84,8 @@ export function sessionStream(sid: string, opts: SessionStreamOptions): Readable
       cleanup = (closeController: boolean): void => {
         if (closed) return;
         closed = true;
+        // Lets diagnostics show when a client went away (a killed tab, a dropped LAN connection).
+        void diag({ component: "stream", op: "close", ids: { session_id: sid }, outcome: "ok", duration_ms: performance.now() - openedAt });
         unsubscribe();
         clearInterval(heartbeat);
         opts.signal?.removeEventListener("abort", onAbort);

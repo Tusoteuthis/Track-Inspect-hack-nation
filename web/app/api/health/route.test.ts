@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resetConfig, setConfigForTests } from "@/lib/backend/config";
+import { diag } from "@/lib/backend/diag";
 import { GET } from "./route";
 
 let dir: string;
@@ -27,13 +28,17 @@ describe("GET /api/health", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Object.keys(body).sort()).toEqual([
+      "access_token_required",
+      "components",
+      "elevenlabs",
+      "failing_components",
       "knowledge_dir_writable",
       "modules",
       "ok",
       "runtime_dir_writable",
       "schema_version",
     ]);
-    expect(body).toEqual({
+    expect(body).toMatchObject({
       ok: true,
       schema_version: "ws6.v0",
       knowledge_dir_writable: true,
@@ -43,7 +48,21 @@ describe("GET /api/health", () => {
         tutor: { id: "ws6-stub-tutor", version: "0.1.0", source: "stub" },
         assessment: { id: "ws6-stub-assessment", version: "0.1.0", source: "stub" },
       },
+      access_token_required: false,
+      failing_components: [],
     });
+    // Booleans only: the key and agent IDs are never echoed.
+    expect(Object.values(body.elevenlabs).every(v => typeof v === "boolean")).toBe(true);
+    expect(JSON.stringify(body)).not.toContain(process.env.ELEVENLABS_API_KEY || "never-set-key");
+  });
+
+  it("names a component whose last request failed on the server", async () => {
+    setConfigForTests({ knowledgeDir: path.join(dir, "knowledge"), runtimeDir: path.join(dir, "runtime") });
+    await diag({ component: "synthesis", op: "job", ids: { session_id: "ses-1" }, outcome: "error", duration_ms: 5 });
+    await diag({ component: "assets", op: "put", ids: {}, outcome: "error", duration_ms: 1, error_code: "validation_failed" });
+    const body = await (await GET()).json();
+    expect(body.failing_components).toEqual(["synthesis"]);
+    expect(body.components.assets).toMatchObject({ requests: 1, errors: 1 });
   });
 
   it("reports the stub when WS5_MODULES=stub", async () => {
