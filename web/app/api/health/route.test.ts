@@ -38,7 +38,11 @@ describe("GET /api/health", () => {
       schema_version: "ws6.v0",
       knowledge_dir_writable: true,
       runtime_dir_writable: true,
-      modules: { synthesis: { id: "ws5-synthesis", version: "0.2.0", source: "live" } },
+      modules: {
+        synthesis: { id: "ws5-synthesis", version: "0.2.0", source: "live" },
+        tutor: { id: "ws6-stub-tutor", version: "0.1.0", source: "stub" },
+        assessment: { id: "ws6-stub-assessment", version: "0.1.0", source: "stub" },
+      },
     });
   });
 
@@ -47,7 +51,20 @@ describe("GET /api/health", () => {
     process.env.WS5_MODULES = "stub";
     try {
       const body = await (await GET()).json();
-      expect(body.modules).toEqual({ synthesis: { id: "ws6-stub-synthesis", version: "0.1.0", source: "stub" } });
+      expect(body.modules.synthesis).toEqual({ id: "ws6-stub-synthesis", version: "0.1.0", source: "stub" });
+      expect(body.modules.tutor.source).toBe("stub");
+    } finally {
+      delete process.env.WS5_MODULES;
+    }
+  });
+
+  it("reports the real WS5 tutor when WS5_MODULES=real", async () => {
+    setConfigForTests({ knowledgeDir: path.join(dir, "knowledge"), runtimeDir: path.join(dir, "runtime") });
+    process.env.WS5_MODULES = "real";
+    try {
+      const body = await (await GET()).json();
+      expect(body.modules.synthesis).toEqual({ id: "ws5-synthesis", version: "0.2.0", source: "live" });
+      expect(body.modules.tutor).toEqual({ id: "ws5-tutor", version: "0.3.0", source: "live" });
     } finally {
       delete process.env.WS5_MODULES;
     }
