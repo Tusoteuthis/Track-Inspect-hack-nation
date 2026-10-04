@@ -17,6 +17,7 @@ All additions live in `web/lib/expert/contracts.ts` (snake_case, `null` = unknow
 | queued_at_utc / queued_at_perf_ms | string / number | topic ready |
 | last_event_at_perf_ms | number | latest primary/alias receive time (dedup window, staleness) |
 | released_at_utc / released_at_perf_ms | string \| null / number \| null | |
+| asked_at_perf_ms | number \| null | latest `begin_question` on the topic (follow-ups included); "moved on" is measured from here |
 | stale_at_release | boolean \| null | |
 | release_text | string \| null | exact contextual update sent |
 | nudged_at_perf_ms | number \| null | `[CONTROL]` nudge sent |
@@ -37,7 +38,7 @@ answered  ─follow-up begin_question─►  asked
 queued | deferred_to_debrief ─agent asks anyway─► asked
 ```
 
-A topic is **open** (blocks the next release) when `state = released`, or `state = asked` and no newer topic was queued after its release/ask.
+A topic is **open** (blocks the next release) when `state = released`, or `state = asked` and no newer topic was queued after its latest ask (`asked_at_perf_ms`).
 
 ## InterviewConfig (new, stored in snapshot)
 

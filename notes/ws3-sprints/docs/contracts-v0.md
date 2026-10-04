@@ -49,9 +49,11 @@ Validation rejects: wrong schema version, missing ids, unknown enum values, regi
 | Field | Type | Meaning | Null? |
 |---|---|---|---|
 | `exchange_id`, `session_id` | string | Identity | no |
-| `event_id` | string | The pointing event the question was about. **Fixed at creation**; it doesn't change if the expert moves on | yes, only for questions not about an event |
+| `event_id` | string | The pointing event the question was about. **Fixed at creation**; it doesn't change if the expert moves on. *(Sprint 2)* Always the topic's **primary** event, even if the agent named a merged duplicate | yes, only for questions not about an event |
+| `topic_id` | string | *(Sprint 2)* The topic the question belongs to | yes, when `event_id` is null |
+| `related_event_ids` | string[] | *(Sprint 2)* Duplicate gestures merged into the topic at ask time (excludes `event_id`). Evidence, not separate questions | no (may be empty) |
 | `phase` | `live` \| `debrief` \| `teach_back` | When it was asked (keeps challenge question counts separate) | no |
-| `kind` | `explain` \| `reasoning` \| `distinction` \| `context` \| `guardrail` \| `exception` \| `clarify_reference` \| `gap` | Question type | no |
+| `kind` | `explain` \| `reasoning` \| `distinction` \| `context` \| `guardrail` \| `exception` \| `clarify_reference` \| `gap` | Question type. A `clarify_reference` answer only says *which region*; it **never counts as an interpretation** (coverage/synthesis must ignore it as such) | no |
 | `question` | string | The agent's spoken question, verbatim: the agent's first final line after `begin_question`. `""` until spoken | no |
 | `question_planned` | string | *(Sprint 1)* The text the agent passed to `begin_question`. **AI plan, not evidence** | yes |
 | `answer_lines` | `{text, at_utc, transcript_line_id}[]` | The expert's words, **verbatim** | no (may be empty) |
@@ -87,7 +89,29 @@ Validation rejects: wrong schema version, missing ids, unknown enum values, regi
 
 `session_id`, `event_id` (nullable), `exchange_id` (nullable), `mark`, `at_utc`, `at_perf_ms`.
 
-The `mark` values are `event_received`, `topic_queued`, `topic_released`, `question_tool_called`, `agent_speech_started`, `answer_started` and `answer_ended`. They let us separate processing latency from intentional waiting for a pause.
+The `mark` values are `event_received`, `topic_queued`, `topic_released`, `question_tool_called`, `agent_speech_started`, `answer_started` and `answer_ended`, plus *(Sprint 2)* `user_speech_started`, `user_speech_ended` (expert speech intervals from VAD / tentative transcript / mic, the end stamped at the last speech signal) and `topic_nudged`. They let us separate processing latency from intentional waiting for a pause.
+
+- `topic_queued` = "topic ready". It is also written for a merged duplicate, with the duplicate's `event_id`.
+- Derived in `web/lib/expert/timing.ts`: **processing** = `topic_queued − event_received`; **intentional wait** = `topic_released − topic_queued`; **agent latency** = `topic_released → question_tool_called → agent_speech_started`; **interruptions** = `agent_speech_started` inside an expert speech interval.
+
+### Topic — Sprint 2, WS3-internal (in `session.json`)
+
+Something the expert pointed at that the apprentice may ask about.
+
+| Field | Meaning |
+|---|---|
+| `topic_id` | `top-NNN` |
+| `primary_event_id`, `alias_event_ids[]` | First gesture and merged duplicates. A duplicate = same `channel_id` (null = null) and `record_state`, region IoU ≥ 0.5 with the primary, received ≤ 20 s after the topic's newest event. All events stay in `events` |
+| `state` | `queued` → `released` → `asked` → `answered`; or `deferred_to_debrief` (budget / expert moved on / release timeout; **for Sprint 3**); `dropped_off_record` (never released) |
+| `requires_clarification` | Primary event not `resolved`: the first question must be `clarify_reference` (the tool rejects anything else) |
+| `record_state`, `channel_id` | From the primary event |
+| `queued_at_utc/_perf_ms`, `last_event_at_perf_ms`, `released_at_utc/_perf_ms`, `asked_at_perf_ms`, `nudged_at_perf_ms` | Lifecycle times (client clock) |
+| `stale_at_release`, `release_text` | Whether the release asked the agent to refer to the earlier moment; the exact text sent |
+| `exchange_ids[]`, `deferred_reason` | Questions on this topic; why it went to the debrief |
+
+### InterviewConfig — Sprint 2 (`interview_config` in `session.json`)
+
+`dedup_window_ms` 20000, `dedup_min_iou` 0.5, `stale_after_ms` 30000, `budget_max_questions` 5 per `budget_window_ms` 600000, `pause_ms` 1200, `release_timeout_ms` 30000, `nudge_after_ms` 2500 (0 = off), `speech_hold_ms` 400, `vad_threshold` 0.5, `mic_threshold` 0.04. The values used are stored with each session.
 
 ### RecordingSegment
 
@@ -97,23 +121,27 @@ The `mark` values are `event_received`, `topic_queued`, `topic_released`, `quest
 
 The full state of one expert session, validated by `validateSessionSnapshot` and saved idempotently.
 
-- **Fields:** `schema_version`, `session_id` (`^[a-z0-9-]{1,64}$`, e.g. `ses-20261004-011500-a1b2`), `conversation_id` (nullable), `started_at_utc`, `ended_at_utc` (nullable), `events[]`, `exchanges[]`, `active_exchange_id`, `awaiting_question_exchange_id`, `preamble[]` (AnswerLine: expert words before any question), `transcript[]`, `timing[]`, `unlinked_agent_questions[]`.
+- **Fields:** `schema_version`, `session_id` (`^[a-z0-9-]{1,64}$`, e.g. `ses-20261004-011500-a1b2`), `conversation_id` (nullable), `started_at_utc`, `ended_at_utc` (nullable), `events[]`, `exchanges[]`, `active_exchange_id`, `awaiting_question_exchange_id`, `preamble[]` (AnswerLine: expert words before any question), `transcript[]`, `timing[]`, `unlinked_agent_questions[]`, *(Sprint 2)* `topics[]`, `interview_config`.
 - **TranscriptEntry:** `{line_id, role: user|agent, text, at_utc, exchange_id}`. `exchange_id` is the exchange that was active when the line arrived.
 - **UnlinkedQuestion:** `{line_id, text, at_utc}`. Agent speech ending in `?` with no preceding `begin_question`. It is a prompt-tuning defect signal.
-- **Validation also checks** that every record carries the snapshot's `session_id`, that each exchange's `event_id` is a known event, and that ids are unique.
+- **Validation also checks** that every record carries the snapshot's `session_id`, that each exchange's `event_id` is a known event, and that ids are unique. *(Sprint 2)* Topic primary/alias events and exchange `related_event_ids` must be known events; exchange `topic_id` must be a known topic.
 
 ### Client tool `begin_question` — Sprint 1
 
-Params: `{event_id: string ("none" → null), kind: ExchangeKind, question: string}`. It returns `ok exchange_id=ex-NNN` or `error …` to the LLM. Validator: `validateBeginQuestionParams`.
+Params: `{event_id: string ("none" → null), kind: ExchangeKind, question: string}`. It returns `ok exchange_id=ex-NNN` or `error …` to the LLM. Validator: `validateBeginQuestionParams`. *(Sprint 2)* A duplicate's id is accepted and attributed to the primary event; a non-`clarify_reference` first question on an ambiguous topic returns `error event <id> is ambiguous: …`.
+
+### What the agent receives — Sprint 2
+
+Pointing events are **not** sent on arrival. A topic is released (contextual update, `contextId` = event id) only when the agent is silent, the expert is not speaking and has been quiet ≥ `pause_ms`, no other topic is open, and the budget allows it. If the agent stays silent for `nudge_after_ms`, one `[CONTROL]` user message gives it a turn; `[CONTROL]` lines are never stored as expert words. Budget state goes out as `[STATE] live_question_budget=…` (`contextId` `ws3-state`). Exact wording: `specs/20261004-015810-ws3-sprint-2-live-interview/contracts/release-protocol.md`.
 
 ## On-disk layout (Sprint 1+, local files, WS6 may take over)
 
-Sprint 1 writes the first six files. The root is `KNOWLEDGE_DIR`, default `<repo>/knowledge`, and `knowledge/sessions/` is git-ignored. `session.json` holds the snapshot minus events, exchanges and timing, plus `counts`.
+Sprint 1 writes the first six files; Sprint 2 adds `timing-report.md`. The root is `KNOWLEDGE_DIR`, default `<repo>/knowledge`, and `knowledge/sessions/` is git-ignored. `session.json` holds the snapshot minus events, exchanges and timing (so it includes `topics` and `interview_config`), plus `counts` (Sprint 2: `topics`, `live_questions`, `guardrail_questions`, `deferred_topics`, `unlinked_agent_questions`, `interruptions`, `duplicate_questions`, all derived from the records).
 
 ```text
 knowledge/sessions/<session_id>/
   session.json  events.json  exchanges.json  timing.json
-  transcript.md  exchanges.md
+  transcript.md  exchanges.md  timing-report.md
   revisions/rev-N.json|md  confirmations.json  completion.json|md  knowledge-draft.md
 ```
 
