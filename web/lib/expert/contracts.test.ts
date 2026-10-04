@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SCHEMA_VERSION, validatePointingEvent } from "./contracts";
+import { EVENT_SCHEMA_VERSION, validatePointingEvent } from "./contracts";
 
 const fixturesDir = join(__dirname, "..", "..", "fixtures", "pointing-events");
 const fixtureFiles = readdirSync(fixturesDir).filter(f => f.endsWith(".json")).sort();
@@ -34,7 +34,7 @@ describe("pointing-event fixtures", () => {
     if (result.ok) {
       expect(result.value.source).toBe("fixture");
       expect(result.value.session_id).toBe("fixture-session-001");
-      expect(result.value.schema_version).toBe(SCHEMA_VERSION);
+      expect(result.value.schema_version).toBe(EVENT_SCHEMA_VERSION);
     }
   });
 

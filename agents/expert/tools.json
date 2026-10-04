@@ -12,15 +12,283 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["explain", "reasoning", "distinction", "context", "guardrail", "exception", "clarify_reference", "gap"],
-          "description": "The kind of question: explain, reasoning, distinction, context, guardrail, exception, clarify_reference (which region do you mean) or gap."
+          "enum": [
+            "explain",
+            "reasoning",
+            "distinction",
+            "context",
+            "guardrail",
+            "exception",
+            "clarify_reference",
+            "gap",
+            "correction"
+          ],
+          "description": "The kind of question: explain, reasoning, distinction, context, guardrail, exception, clarify_reference (which region do you mean), gap (debrief: an agenda gap) or correction (teach-back: what should change)."
         },
         "question": {
           "type": "string",
           "description": "The exact question you are about to ask, as you will say it."
+        },
+        "phase": {
+          "type": "string",
+          "enum": [
+            "live",
+            "debrief",
+            "teach_back"
+          ],
+          "description": "The phase you are in: live (during the task, default), debrief (after [PHASE debrief]) or teach_back (after [TEACH_BACK ...])."
+        },
+        "gap_id": {
+          "type": "string",
+          "description": "Debrief only: the gap_id from the [PHASE debrief] agenda this question is about. Use \"none\" outside the debrief."
         }
       },
-      "required": ["event_id", "kind", "question"]
+      "required": [
+        "event_id",
+        "kind",
+        "question"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "record_coverage",
+    "description": "Call silently right after the expert has answered one of your questions, before you say anything else. Records which aspects their answer covered. Never call it before they answered. It is silent bookkeeping: never say that you are recording anything.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "exchange_id": {
+          "type": "string",
+          "description": "The exchange_id returned by begin_question for the question the expert just answered (for example ex-003)."
+        },
+        "dimensions": {
+          "type": "array",
+          "description": "The aspects the answer addressed. Leave out anything the answer did not address.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "dimension": {
+                "type": "string",
+                "enum": [
+                  "decision",
+                  "reason",
+                  "cues",
+                  "alternatives",
+                  "guardrails",
+                  "unresolved"
+                ],
+                "description": "decision: what they decide or do; reason: why; cues: what they look at or need to know; alternatives: what looks similar and how to tell apart; guardrails: when to stop, escalate or distrust; unresolved: cases they are unsure about."
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "partial",
+                  "covered",
+                  "unknown_escalate"
+                ],
+                "description": "covered: fully answered; partial: touched on; unknown_escalate: the expert said they do not know or would escalate it."
+              },
+              "note": {
+                "type": "string",
+                "description": "A few words of your own summary. Never presented as the expert's words."
+              }
+            },
+            "required": [
+              "dimension",
+              "status",
+              "note"
+            ]
+          }
+        }
+      },
+      "required": [
+        "exchange_id",
+        "dimensions"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "signal_task_complete",
+    "description": "Call once, silently, when the expert says they have finished the task (for example \"I'm done\", \"that's it\"). It ends the live part and returns the debrief agenda.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "The expert's words that signalled the end, briefly."
+        }
+      },
+      "required": [
+        "reason"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "propose_draft",
+    "description": "Debrief: call when no open agenda gap is left (or after a correction in the teach-back). Proposes the workflow as ordered steps. The system checks the evidence, numbers the revision and returns the [TEACH_BACK] block to deliver.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "description": "The workflow in order, written as instructions a newcomer could apply.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "step",
+                  "decision",
+                  "guardrail",
+                  "exception"
+                ],
+                "description": "step, decision, guardrail (stop/escalate/distrust) or exception."
+              },
+              "text": {
+                "type": "string",
+                "description": "The step in process terms (\"First check ..., if ... then ..., stop and escalate when ...\"). Keep the expert's qualifiers. Anything in double quotes must be copied word for word from the expert's answers."
+              },
+              "event_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "An event_id."
+                },
+                "description": "The pointing events (screen moments) this step is about."
+              },
+              "exchange_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "description": "An exchange_id."
+                },
+                "description": "The exchanges whose answers support this step."
+              }
+            },
+            "required": [
+              "kind",
+              "text",
+              "event_ids",
+              "exchange_ids"
+            ]
+          }
+        },
+        "change_reason": {
+          "type": "string",
+          "description": "After a correction: what the expert corrected, in their terms. Otherwise \"none\"."
+        }
+      },
+      "required": [
+        "steps",
+        "change_reason"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 10
+  },
+  {
+    "type": "client",
+    "name": "confirm_revision",
+    "description": "Teach-back: call only after the expert has explicitly answered your teach-back. confirmed only if they clearly agree; corrected if they change anything; unresolved if they cannot say. Never call it on silence or when they change the subject.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "revision_id": {
+          "type": "string",
+          "description": "The revision you taught back, from the [TEACH_BACK rev-n] block (for example rev-2)."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "corrected",
+            "unresolved"
+          ],
+          "description": "confirmed, corrected or unresolved."
+        },
+        "step_ids_reviewed": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "A step id."
+          },
+          "description": "The step ids you taught back (from the [TEACH_BACK] block)."
+        }
+      },
+      "required": [
+        "revision_id",
+        "status",
+        "step_ids_reviewed"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "set_record_state",
+    "description": "Call immediately, before saying anything, when the expert asks to go off the record (\"off the record\", \"don't record this\", \"stop recording\") or back on the record (\"back on the record\", \"you can record again\"). Then say only a brief acknowledgement.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "off_record",
+            "on_record"
+          ],
+          "description": "off_record when the expert goes off the record, on_record when they come back on the record."
+        }
+      },
+      "required": [
+        "state"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "strike_last_answer",
+    "description": "Call immediately, before saying anything, when the expert asks you to forget or strike what they just said (\"forget what I just said\", \"scratch that\", \"strike that\"). Removes their last answer from the record. Then acknowledge briefly and never refer to it again.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "The expert's words asking to strike, briefly."
+        }
+      },
+      "required": [
+        "reason"
+      ]
     },
     "expectsResponse": true,
     "executionMode": "immediate",

@@ -29,7 +29,7 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe("file store", () => {
-  it("writes all six files for a session", async () => {
+  it("writes all session files, including the timing report", async () => {
     const store = createFileStore(join(root, "knowledge"), { publicDir: join(root, "web", "public") });
     const res = await store.saveSnapshot(snap);
     const dir = join(root, "knowledge", "sessions", SID);
@@ -47,6 +47,10 @@ describe("file store", () => {
     // image link is relative from the session folder to web/public
     expect(md).toContain("](../../../web/public/fixtures/trace-a-evt-001-highlight.svg)");
     expect(readFileSync(join(dir, "transcript.md"), "utf8")).toContain("[ex-001] A step.");
+    expect(SESSION_FILES).toContain("timing-report.md");
+    expect(readFileSync(join(dir, "timing-report.md"), "utf8")).toContain(`# Timing report — ${SID}`);
+    expect(session.counts).toMatchObject({ live_questions: 1, guardrail_questions: 0, interruptions: 0, topics: 1 });
+    expect(session.topics).toHaveLength(1);
   });
 
   it("is idempotent: saving the same snapshot twice leaves identical files and no temp files", async () => {
@@ -75,5 +79,39 @@ describe("knowledgeRoot", () => {
   it("honours KNOWLEDGE_DIR (relative to the web dir)", () => {
     expect(knowledgeRoot({ KNOWLEDGE_DIR: "/data/k" }, "/repo/web")).toBe("/data/k");
     expect(knowledgeRoot({ KNOWLEDGE_DIR: "out/k" }, "/repo/web")).toBe("/repo/web/out/k");
+  });
+});
+
+describe("revisions on disk", () => {
+  const withRevision = (reason: string | null) => ({
+    ...snap,
+    revisions: [
+      {
+        revision_id: "rev-1",
+        session_id: SID,
+        created_at_utc: "2026-10-04T01:00:09.000Z",
+        parent_revision_id: null,
+        steps: [{ step_id: "s-1", text: "First look for the step.", kind: "step" as const, supporting_event_ids: ["evt-001"], supporting_exchange_ids: ["ex-001"], supported: true }],
+        change_reason: reason,
+        change_exchange_ids: [],
+      },
+    ],
+  });
+
+  it("writes revisions/rev-n.json|md and saves the same revision again idempotently", async () => {
+    const store = createFileStore(join(root, "knowledge"));
+    const res = await store.saveSnapshot(withRevision(null));
+    expect(res.files).toEqual(expect.arrayContaining(["revisions/rev-1.json", "revisions/rev-1.md", "confirmations.json", "knowledge-draft.md"]));
+    const dir = join(root, "knowledge", "sessions", SID);
+    expect(JSON.parse(readFileSync(join(dir, "revisions", "rev-1.json"), "utf8")).steps[0].step_id).toBe("s-1");
+    await expect(store.saveSnapshot(withRevision(null))).resolves.toBeTruthy();
+  });
+
+  it("refuses to overwrite an existing revision with different content (immutable)", async () => {
+    const store = createFileStore(join(root, "knowledge"));
+    await store.saveSnapshot(withRevision(null));
+    await expect(store.saveSnapshot(withRevision("edited later"))).rejects.toThrow(/immutable/);
+    const dir = join(root, "knowledge", "sessions", SID);
+    expect(JSON.parse(readFileSync(join(dir, "revisions", "rev-1.json"), "utf8")).change_reason).toBeNull();
   });
 });

@@ -55,6 +55,17 @@ export function tentativeTextFrom(event: unknown): string | null {
   return typeof text === "string" ? text.trim() || null : null;
 }
 
+/**
+ * Tentative (still streaming) expert speech from `onDebug`: `{ type: "tentative_user_transcript",
+ * tentative_user_transcription_event: { user_transcript } }`. A "the expert is talking" signal.
+ */
+export function tentativeUserTextFrom(event: unknown): string | null {
+  if (!isRecord(event) || event.type !== "tentative_user_transcript") return null;
+  const payload = event.tentative_user_transcription_event;
+  const text = isRecord(payload) ? payload.user_transcript : null;
+  return typeof text === "string" ? text.trim() || null : null;
+}
+
 /** Appends a final line, replacing a pending tentative line of the same role and skipping exact repeats. */
 export function appendFinal(
   prev: TranscriptLine[],

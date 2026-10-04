@@ -1,17 +1,47 @@
 // Pure state machine for one expert session: which question belongs to which
 // pointing event, and which expert words answer which question. No React, no I/O;
-// the hook in components/expert wraps it. Rules: data-model.md of the Sprint 1 spec.
+// the hook in components/expert wraps it. Rules: data-model.md of the Sprint 1 and
+// Sprint 2 specs (topics: specs/20261004-015810-ws3-sprint-2-live-interview).
 
 import {
   type AnswerLine,
+  type DeferredReason,
+  type ElevenLabsDeletionReport,
+  type EndCause,
   type ExpertExchange,
+  type InterviewConfig,
+  type PhaseTrigger,
   type PointingEvent,
+  type RecordState,
+  type RecordStateTrigger,
   SCHEMA_VERSION,
   type SessionSnapshot,
   type TimingMark,
   type TimingMarkName,
+  type Topic,
   validateBeginQuestionParams,
+  validateDeletionReport,
+  validateSetRecordStateParams,
 } from "./contracts";
+import { beginPhaseQuestion, confirmRevision, endPhase, proposeDraft, recordCoverage, startDebrief } from "./debrief";
+import { DEFAULT_INTERVIEW_CONFIG, withConfig } from "./interview-config";
+import { type Stamp, closeActive, mark, updateExchange, updateTopic } from "./session-util";
+import { resumeSession } from "./resume";
+import { strikeLastAnswer } from "./strike";
+import { ingestEvent, releaseText } from "./topics";
+import {
+  OFF_RECORD_REFUSAL,
+  RECORD_STATE_RESULT,
+  countExcluded,
+  currentSegment,
+  detectRecordPhrase,
+  excludedAt,
+  isOffRecord,
+  switchRecordState,
+} from "./record-state";
+
+/** Appended to every successful begin_question result (the probes' tool mock uses the same words). */
+export const SAY_IT = "Now say the question out loud, word for word.";
 
 export type SessionState = SessionSnapshot & {
   /** String returned to the LLM by the last `begin_question` call. */
@@ -21,7 +51,6 @@ export type SessionState = SessionSnapshot & {
   last_answer_at: Stamp | null;
 };
 
-type Stamp = { at_utc: string; perf_ms: number };
 
 export type SessionAction =
   | { type: "connected"; conversation_id: string }
@@ -30,15 +59,45 @@ export type SessionAction =
   | ({ type: "agent_final_line"; line_id: string; text: string } & Stamp)
   | ({ type: "user_final_line"; line_id: string; text: string } & Stamp)
   | ({ type: "agent_speaking_changed"; speaking: boolean } & Stamp)
-  | ({ type: "session_ended" } & Stamp);
+  | ({ type: "user_speech_changed"; speaking: boolean } & Stamp)
+  | ({ type: "topic_released"; topic_id: string; stale: boolean } & Stamp)
+  | ({ type: "topic_nudged"; topic_id: string } & Stamp)
+  | ({ type: "topics_deferred"; topic_ids: string[]; reason: DeferredReason } & Stamp)
+  | { type: "config_changed"; config: Partial<InterviewConfig> }
+  | ({ type: "task_completed"; trigger: PhaseTrigger } & Stamp)
+  | ({ type: "coverage_recorded"; params: unknown } & Stamp)
+  | ({ type: "draft_proposed"; params: unknown | null; trigger: PhaseTrigger } & Stamp)
+  | ({ type: "revision_confirmed"; params: unknown } & Stamp)
+  | ({ type: "record_state_tool"; params: unknown } & Stamp)
+  | ({ type: "strike_requested"; trigger: "agent_tool" | "console" } & Stamp)
+  | ({ type: "record_state_changed"; to: RecordState; trigger: RecordStateTrigger } & Stamp)
+  | ({ type: "session_ended"; cause?: EndCause } & Stamp)
+  | ({ type: "resumed" } & Stamp)
+  | { type: "deletion_recorded"; report: ElevenLabsDeletionReport };
 
-export function initialSession(session_id: string, started_at_utc: string): SessionState {
+/** Actions that record content: refused while off the record (agent tools get OFF_RECORD_REFUSAL). */
+const RECORDING_ACTIONS = new Set<SessionAction["type"]>([
+  "question_begun",
+  "coverage_recorded",
+  "task_completed",
+  "draft_proposed",
+  "revision_confirmed",
+  "strike_requested",
+]);
+
+export function initialSession(
+  session_id: string,
+  started_at_utc: string,
+  config: InterviewConfig = DEFAULT_INTERVIEW_CONFIG
+): SessionState {
   return {
     schema_version: SCHEMA_VERSION,
     session_id,
     conversation_id: null,
+    conversation_ids: [],
     started_at_utc,
     ended_at_utc: null,
+    end_cause: null,
     events: [],
     exchanges: [],
     active_exchange_id: null,
@@ -47,6 +106,19 @@ export function initialSession(session_id: string, started_at_utc: string): Sess
     transcript: [],
     timing: [],
     unlinked_agent_questions: [],
+    topics: [],
+    interview_config: { ...config },
+    phase: "live",
+    phase_log: [],
+    coverage: [],
+    open_questions: [],
+    debrief_agenda: [],
+    revisions: [],
+    confirmations: [],
+    recording_segments: [{ segment_id: "seg-001", state: "on_record", started_at_utc, ended_at_utc: null, trigger: "session_start" }],
+    off_record_excluded: { transcript_lines: 0, events: 0, timing_marks: 0, refused_tool_calls: 0 },
+    strikes: [],
+    elevenlabs_deletions: [],
     last_tool_result: null,
     agent_speaking: false,
     last_answer_at: null,
@@ -54,24 +126,120 @@ export function initialSession(session_id: string, started_at_utc: string): Sess
 }
 
 export function reduceSession(state: SessionState, action: SessionAction): SessionState {
+  if (RECORDING_ACTIONS.has(action.type) && isOffRecord(state)) {
+    return countExcluded({ ...state, last_tool_result: OFF_RECORD_REFUSAL }, "refused_tool_calls");
+  }
   switch (action.type) {
-    case "connected":
-      return { ...state, conversation_id: action.conversation_id };
+    case "record_state_tool": {
+      const parsed = validateSetRecordStateParams(action.params);
+      if (!parsed.ok) return { ...state, last_tool_result: `error ${parsed.errors.join("; ")}` };
+      const next = switchRecordState(state, parsed.value.state, "agent_tool", action);
+      return { ...next, last_tool_result: RECORD_STATE_RESULT[parsed.value.state] };
+    }
 
-    case "event_received": {
-      // Arrivals never touch exchanges: an answer in progress keeps its event.
-      const known = state.events.some(e => e.event_id === action.event.event_id);
+    case "record_state_changed":
+      return switchRecordState(state, action.to, action.trigger, action);
+
+    case "strike_requested":
+      return strikeLastAnswer(state, action.trigger, action);
+
+    case "connected":
       return {
         ...state,
-        events: known ? state.events : [...state.events, action.event],
-        timing: [...state.timing, mark(state, "event_received", action.event.event_id, null, action)],
+        conversation_id: action.conversation_id,
+        conversation_ids: state.conversation_ids.includes(action.conversation_id)
+          ? state.conversation_ids
+          : [...state.conversation_ids, action.conversation_id],
+      };
+
+    case "event_received": {
+      // Capture says off the record: the session goes off record and the event is never stored.
+      if (action.event.record_state === "off_record") {
+        return countExcluded(switchRecordState(state, "off_record", "capture_event", action), "events");
+      }
+      if (isOffRecord(state) && currentSegment(state).trigger === "capture_event") {
+        state = switchRecordState(state, "on_record", "capture_event", action);
+      }
+      if (excludedAt(state, action.at_utc)) return countExcluded(state, "events");
+      // Arrivals never touch exchanges: an answer in progress keeps its event.
+      const id = action.event.event_id;
+      const received = [...state.timing, mark(state, "event_received", id, null, action)];
+      if (state.events.some(e => e.event_id === id)) return { ...state, timing: received };
+      const events = [...state.events, action.event];
+      const { topics, topic } = ingestEvent(state.topics, events, action.event, action, state.interview_config, state.session_id);
+      // Off-record gestures never become askable topics, so they get no "topic ready" mark.
+      const ready = topic.state === "dropped_off_record" ? [] : [mark(state, "topic_queued", id, null, action)];
+      return { ...state, events, topics, timing: [...received, ...ready] };
+    }
+
+    case "topic_released": {
+      if (isOffRecord(state)) return state;
+      const topic = state.topics.find(t => t.topic_id === action.topic_id);
+      if (!topic || topic.state !== "queued") return state;
+      const text = releaseText(topic, state.events, state.exchanges, action.stale);
+      return {
+        ...state,
+        topics: updateTopic(state.topics, topic.topic_id, t => ({
+          ...t,
+          state: "released",
+          released_at_utc: action.at_utc,
+          released_at_perf_ms: action.perf_ms,
+          stale_at_release: action.stale,
+          release_text: text,
+        })),
+        timing: [...state.timing, mark(state, "topic_released", topic.primary_event_id, null, action)],
       };
     }
+
+    case "topic_nudged": {
+      if (isOffRecord(state)) return state;
+      const topic = state.topics.find(t => t.topic_id === action.topic_id);
+      if (!topic || topic.nudged_at_perf_ms !== null) return state;
+      return {
+        ...state,
+        topics: updateTopic(state.topics, topic.topic_id, t => ({ ...t, nudged_at_perf_ms: action.perf_ms })),
+        timing: [...state.timing, mark(state, "topic_nudged", topic.primary_event_id, null, action)],
+      };
+    }
+
+    case "topics_deferred": {
+      const ids = new Set(action.topic_ids);
+      const deferrable = (t: Topic) => ids.has(t.topic_id) && (t.state === "queued" || t.state === "released");
+      if (!state.topics.some(deferrable)) return state;
+      return {
+        ...state,
+        topics: state.topics.map(t =>
+          deferrable(t) ? { ...t, state: "deferred_to_debrief", deferred_reason: action.reason } : t
+        ),
+      };
+    }
+
+    case "user_speech_changed": {
+      if (excludedAt(state, action.at_utc)) return countExcluded(state, "timing_marks");
+      const name = action.speaking ? "user_speech_started" : "user_speech_ended";
+      return { ...state, timing: [...state.timing, mark(state, name, null, null, action)] };
+    }
+
+    case "config_changed":
+      return { ...state, interview_config: withConfig(action.config, state.interview_config) };
 
     case "question_begun":
       return beginQuestion(state, action);
 
+    case "task_completed":
+      return startDebrief(state, action.trigger, action);
+
+    case "coverage_recorded":
+      return recordCoverage(state, action.params);
+
+    case "draft_proposed":
+      return proposeDraft(state, action.params, action.trigger, action);
+
+    case "revision_confirmed":
+      return confirmRevision(state, action.params, action);
+
     case "agent_final_line": {
+      if (excludedAt(state, action.at_utc)) return countExcluded(state, "transcript_lines");
       const text = action.text.trim();
       const awaiting = state.awaiting_question_exchange_id;
       const entry = {
@@ -100,6 +268,13 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     }
 
     case "user_final_line": {
+      const phrase = detectRecordPhrase(action.text);
+      if (!isOffRecord(state) && phrase.off) state = switchRecordState(state, "off_record", "expert_phrase", action);
+      else if (isOffRecord(state) && phrase.on && !phrase.off) {
+        // the "back on the record" line itself is dropped: it may still carry off-record words
+        return countExcluded(switchRecordState(state, "on_record", "expert_phrase", action), "transcript_lines");
+      }
+      if (excludedAt(state, action.at_utc)) return countExcluded(state, "transcript_lines");
       const text = action.text.trim();
       const active = state.active_exchange_id;
       const entry = { line_id: action.line_id, role: "user" as const, text, at_utc: action.at_utc, exchange_id: active };
@@ -111,6 +286,10 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
       const first = exchange.answer_lines.length === 0;
       return {
         ...next,
+        topics:
+          first && exchange.topic_id
+            ? updateTopic(state.topics, exchange.topic_id, t => (t.state === "asked" ? { ...t, state: "answered" } : t))
+            : state.topics,
         last_answer_at: { at_utc: action.at_utc, perf_ms: action.perf_ms },
         exchanges: updateExchange(state.exchanges, active, x => ({
           ...x,
@@ -127,6 +306,7 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     case "agent_speaking_changed": {
       if (action.speaking === state.agent_speaking) return state;
       if (!action.speaking) return { ...state, agent_speaking: false };
+      if (excludedAt(state, action.at_utc)) return countExcluded({ ...state, agent_speaking: true }, "timing_marks");
       const exchangeId = state.awaiting_question_exchange_id ?? state.active_exchange_id;
       const eventId = state.exchanges.find(x => x.exchange_id === exchangeId)?.event_id ?? null;
       return {
@@ -137,9 +317,17 @@ export function reduceSession(state: SessionState, action: SessionAction): Sessi
     }
 
     case "session_ended": {
-      const closed = closeActive(state);
-      return { ...closed, ended_at_utc: action.at_utc, agent_speaking: false };
+      const closed = endPhase(closeActive(state), action);
+      return { ...closed, ended_at_utc: action.at_utc, end_cause: action.cause ?? "stop", agent_speaking: false };
     }
+
+    case "resumed": {
+      return resumeSession(state, action);
+    }
+
+    case "deletion_recorded":
+      if (action.report.session_id !== state.session_id || !validateDeletionReport(action.report).ok) return state;
+      return { ...state, elevenlabs_deletions: [...state.elevenlabs_deletions, action.report] };
   }
 }
 
@@ -147,11 +335,31 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
   const parsed = validateBeginQuestionParams(action.params);
   if (!parsed.ok) return { ...state, last_tool_result: `error ${parsed.errors.join("; ")}` };
 
-  const { event_id, kind, question } = parsed.value;
-  const event = event_id === null ? null : state.events.find(e => e.event_id === event_id);
-  if (event === undefined) {
+  const phased = beginPhaseQuestion(state, parsed.value, action);
+  if (phased) return phased;
+
+  const { kind, question } = parsed.value;
+  const asked = parsed.value.event_id;
+  if (asked !== null && !state.events.some(e => e.event_id === asked)) {
     const known = state.events.map(e => e.event_id).join(", ") || "none";
-    return { ...state, last_tool_result: `error unknown event_id ${event_id}, known: ${known}` };
+    return { ...state, last_tool_result: `error unknown event_id ${asked}, known: ${known}` };
+  }
+  // A question about a repeat gesture belongs to the topic's primary event.
+  const topic =
+    asked === null
+      ? undefined
+      : state.topics.find(t => t.primary_event_id === asked || t.alias_event_ids.includes(asked));
+  const event_id = topic?.primary_event_id ?? asked;
+  const event = event_id === null ? null : state.events.find(e => e.event_id === event_id)!;
+
+  if (topic?.requires_clarification && kind !== "clarify_reference") {
+    const clarified = state.exchanges.some(x => x.topic_id === topic.topic_id && x.kind === "clarify_reference");
+    if (!clarified) {
+      return {
+        ...state,
+        last_tool_result: `error event ${event_id} is ambiguous: your first question about it must have kind clarify_reference (which region do they mean)`,
+      };
+    }
   }
 
   const exchange_id = `ex-${String(state.exchanges.length + 1).padStart(3, "0")}`;
@@ -159,11 +367,15 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
     exchange_id,
     session_id: state.session_id,
     event_id,
+    topic_id: topic?.topic_id ?? null,
+    related_event_ids: topic ? [...topic.alias_event_ids] : [],
     phase: "live",
     kind,
     question: "",
     question_planned: question,
     answer_lines: [],
+    gap_id: null,
+    revision_id: null,
     asked_at_utc: action.at_utc,
     answer_started_at_utc: null,
     answer_ended_at_utc: null,
@@ -172,43 +384,24 @@ function beginQuestion(state: SessionState, action: { params: unknown } & Stamp)
     source: event?.source ?? "live",
   };
   const closed = closeActive(state);
+  const topics = topic
+    ? updateTopic(closed.topics, topic.topic_id, t => ({
+        ...t,
+        // off-record topics stay dropped; Sprint 4 handles exclusion
+        state: t.state === "dropped_off_record" ? t.state : "asked",
+        asked_at_perf_ms: action.perf_ms,
+        exchange_ids: [...t.exchange_ids, exchange_id],
+      }))
+    : closed.topics;
   return {
     ...closed,
+    topics,
     exchanges: [...closed.exchanges, exchange],
     active_exchange_id: exchange_id,
     awaiting_question_exchange_id: exchange_id,
-    last_tool_result: `ok exchange_id=${exchange_id}`,
+    last_tool_result: `ok exchange_id=${exchange_id}. ${SAY_IT}`,
     timing: [...closed.timing, mark(state, "question_tool_called", event_id, exchange_id, action)],
   };
-}
-
-/** Ends the active exchange's answer window, logging `answer_ended` at the last answer line. */
-function closeActive(state: SessionState): SessionState {
-  const active = state.exchanges.find(x => x.exchange_id === state.active_exchange_id);
-  const base = { ...state, active_exchange_id: null, awaiting_question_exchange_id: null, last_answer_at: null };
-  if (!active || active.answer_lines.length === 0 || !state.last_answer_at) return base;
-  return {
-    ...base,
-    timing: [...state.timing, mark(state, "answer_ended", active.event_id, active.exchange_id, state.last_answer_at)],
-  };
-}
-
-function updateExchange(
-  exchanges: ExpertExchange[],
-  id: string,
-  update: (x: ExpertExchange) => ExpertExchange
-): ExpertExchange[] {
-  return exchanges.map(x => (x.exchange_id === id ? update(x) : x));
-}
-
-function mark(
-  state: SessionState,
-  name: TimingMarkName,
-  event_id: string | null,
-  exchange_id: string | null,
-  at: Stamp
-): TimingMark {
-  return { session_id: state.session_id, event_id, exchange_id, mark: name, at_utc: at.at_utc, at_perf_ms: at.perf_ms };
 }
 
 /** The persisted part of the state (drops client-only bookkeeping). */

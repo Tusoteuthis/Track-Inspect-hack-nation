@@ -66,19 +66,22 @@ Each sprint = one spec-kit feature (`/speckit-specify → plan → tasks → imp
 - Lane C: replace dev `ContextSender` with fixture event injector; wire client tools into `VoiceSession` on the expert flow.
 - **Done when:** unit tests pass, probe pass-rate ≥ 4/5 per case, and a human completes one live point→question→answer with a saved, correctly linked record.
 
-### Sprint 2 — Live interview quality (agent ~2–3h, human ~30 min)
+### Sprint 2 — Live interview quality (agent ~2–3h, human ~30 min) — 🟡 AGENT DONE, human gate pending
+- **Status:** merged into `voice` on 2026-10-04 (via the Sprint 4 branch, which stacks 2→3→4). Human voice gate still open; see `notes/ws3-sprints/handoff-sprint-2.md`.
 - Topic queue: dedup repeated gestures (same region/time window), ambiguity → clarification question, stale reference → refer to the preserved moment (V1).
 - Pause-aware asking per Sprint 0 findings: queue events while expert speaks, release as contextual update at pause; tag questions `live` vs `debrief`, `guardrail` flag (V1 + V2).
 - Timing report separating processing latency from intentional wait (V1).
 - **Done when:** fixture script yields ≥3 live questions incl. 1 guardrail, zero duplicates; human live session confirms no interruptions mid-speech.
 
-### Sprint 3 — Debrief, teach-back, confirmation (agent ~3–4h, human ~45 min)
+### Sprint 3 — Debrief, teach-back, confirmation (agent ~3–4h, human ~45 min) — 🟡 AGENT DONE, human gate pending
+- **Status:** merged into `voice` on 2026-10-04 (via the Sprint 4 branch, which stacks 2→3→4). Human voice gate still open; see `notes/ws3-sprints/handoff-sprint-3.md`.
 - Coverage record (decision, reason, cues, alternatives, guardrails, unresolved) filled via agent tool `record_coverage` (V1 + V2); in-memory stand-in for WS5 behind an interface WS5 can replace.
 - Completion signal → debrief phase → ≥3 gap questions not already answered (V2).
 - Draft revisions (`rev-n`), teach-back delivered from the current revision, correction → new revision → re-check, `confirm_revision(rev, status)` tool; silence ≠ confirmation (V1 + V2).
 - **Done when:** probes show debrief questions only target gaps; a correction in a live session produces a new confirmed revision that reflects it.
 
-### Sprint 4 — Trust, completion, handoff (agent ~1.5–2h, human ~20 min)
+### Sprint 4 — Trust, completion, handoff (agent ~1.5–2h, human ~20 min) — 🟡 AGENT DONE, human gate pending
+- **Status:** merged into `voice` on 2026-10-04 (via the Sprint 4 branch, which stacks 2→3→4). Human voice gate still open; see `notes/ws3-sprints/handoff-sprint-4.md`.
 - Off-record: voice command + UI toggle; exclude lines/exchanges locally; apply retention setting found in Sprint 0 or document the limit explicitly (V1 + EXT).
 - Incomplete session handling + SessionCompletion record; demo transcript + timing export (V1).
 - `notes/ws3-sprints/docs/voice-interface.md` for WS5 tutor reuse.

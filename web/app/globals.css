@@ -333,3 +333,16 @@ a { color: inherit; }
 .ec-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 .ec-table th, .ec-table td { text-align: left; padding: 0.15rem 0.4rem; border-bottom: 1px solid var(--line); }
 .ec-raw { border-top: 1px solid var(--line); padding-top: 0.75rem; }
+.ec-counters { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.85rem; }
+.ec-gate { margin: 0; font-variant-numeric: tabular-nums; }
+.ec-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+.ec-controls input[type="number"] { width: 5.5rem; }
+.ec-state.deferred_to_debrief, .ec-state.dropped_off_record { color: var(--muted); }
+.ec-state.released, .ec-state.asked { color: var(--accent); }
+
+.expert-console .ec-pre {
+  max-height: 24rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 0.75rem;
+}

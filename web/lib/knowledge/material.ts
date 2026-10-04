@@ -87,6 +87,8 @@ function baseUses(x: ExpertExchange, gapKind: GapKind | null): { role: Role; use
       if (gapKind === "unqualified_exception") return [{ role: "exception", use: "rule" }];
       return [];
     case "clarify_reference":
+    case "teach_back":
+    case "correction":
       return [];
   }
 }
