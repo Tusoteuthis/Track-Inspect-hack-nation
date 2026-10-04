@@ -5,7 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { FixtureControls } from "@/components/practice/FixtureControls";
 import { PracticeScreen } from "@/components/practice/PracticeScreen";
 import { TutorPanel } from "@/components/practice/TutorPanel";
-import { useDataSource } from "@/lib/data/DataSourceProvider";
+import { useScreenSource } from "@/components/shell/useScreenSource";
 import { createFixtureSource, FIXTURE_IDS } from "@/lib/data/fixtureSource";
 import type { DataSource } from "@/lib/data/source";
 import { parseFixtureSettings, type FixtureSettings } from "@/lib/practice/fixtureSettings";
@@ -20,7 +20,7 @@ export default function PracticePage() {
 }
 
 function Practice() {
-  const base = useDataSource();
+  const base = useScreenSource("practice");
   const params = useSearchParams();
   const query = params.toString();
   // Fixture mode only: latency/failure come from the URL so the human gate can force them.

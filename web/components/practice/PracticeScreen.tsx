@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { EvidenceViewer } from "@/components/evidence/EvidenceViewer";
+import { SessionConnectionStatus } from "@/components/shell/ConnectionStatus";
 import { FixtureBanner } from "@/components/shell/FixtureBanner";
 import type { DataSource } from "@/lib/data/source";
 import { createPracticeEventBus, type PracticeEventBus } from "@/lib/practice/practiceEvents";
@@ -63,6 +65,7 @@ export function PracticeScreen({ source, caseView, sessionId, renderTutor, rende
         </p>
       </header>
       <FixtureBanner source={caseView.source} />
+      <SessionConnectionStatus source={source} sessionId={sessionId} />
       {renderFixtureControls?.({
         simulateKnowledgeChange: () => loop.knowledgeChanged(`${review.knowledge_revision_id}-next`),
       })}
@@ -115,7 +118,21 @@ export function PracticeScreen({ source, caseView, sessionId, renderTutor, rende
             onRequestReview={requestReview}
             onSave={() => void loop.save()}
           />
+          {loop.revokedNotice ? (
+            <p className={styles.hint} role="status" data-testid="revoked-notice">
+              <span aria-hidden="true">⊘ </span>
+              Expert knowledge cited for this case was removed from teaching. It is no longer shown; ask for a new
+              review before saving.
+            </p>
+          ) : null}
           <GuidancePanel guidance={loop.guidance} currentRevision={review.draft_revision} />
+          {review.status === "saved" ? (
+            <p className={styles.hint}>
+              <Link href={sessionId ? `/summary?${new URLSearchParams({ session: sessionId })}` : "/summary"}>
+                See the learning summary
+              </Link>
+            </p>
+          ) : null}
           <PracticeTimeline entries={loop.timeline} />
           {renderTutor?.(bus)}
           <ScreenSharePanel state={screen.state} onStart={() => void screen.start()} onStop={screen.stop} />

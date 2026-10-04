@@ -1,0 +1,103 @@
+.screen {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-4);
+}
+
+.group {
+  padding: var(--space-4);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.group h2 {
+  margin: 0;
+  font-size: var(--font-lg);
+}
+
+/* Each group has its own border style as well as its icon, so it never relies on colour. */
+.group[data-group="independent"] { border-style: solid; }
+.group[data-group="assisted"] { border-style: double; border-width: 4px; }
+.group[data-group="unresolved"] { border-style: dashed; }
+
+.icon {
+  display: inline-block;
+  min-width: 1.4em;
+  font-weight: 800;
+}
+
+.count {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.hint {
+  margin: var(--space-1) 0 var(--space-3);
+  color: var(--muted);
+  font-size: var(--font-sm);
+}
+
+.none {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.items {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-left: var(--space-6);
+}
+
+.item {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.description {
+  margin: 0;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.help h3,
+.citations h3 {
+  margin: 0;
+  font-size: var(--font-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.help ul,
+.citations ul {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+}
+
+.quote {
+  margin: 0 0 var(--space-1);
+  font-style: italic;
+}
+
+.limitations {
+  padding: var(--space-4);
+  border-left: 4px solid var(--muted);
+}
+
+.limitations h2 {
+  margin: 0;
+  font-size: var(--font-lg);
+}

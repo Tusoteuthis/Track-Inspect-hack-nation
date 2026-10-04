@@ -23,6 +23,8 @@ export type ReviewEvent =
   | { type: "EVALUATION_RECEIVED"; evaluation: LearnerEvaluation }
   | { type: "REVIEW_FAILED"; error: string }
   | { type: "KNOWLEDGE_REVISION_CHANGED"; knowledge_revision_id: string }
+  /** An expert entry was removed from teaching (WS6 `entry.revoked`). */
+  | { type: "KNOWLEDGE_REVOKED"; entry_id: string }
   | { type: "SAVE_REQUESTED"; idempotency_key: string }
   | { type: "SAVE_ACKED" }
   | { type: "SAVE_FAILED"; error: string }
@@ -84,6 +86,13 @@ export function reviewMachine(state: ReviewMachineState, event: ReviewEvent): Re
     case "KNOWLEDGE_REVISION_CHANGED":
       if (status === "saved" || event.knowledge_revision_id === state.knowledge_revision_id) return state;
       return unreviewed(state, { knowledge_revision_id: event.knowledge_revision_id });
+
+    case "KNOWLEDGE_REVOKED": {
+      // WS6 marks evaluations that relied on a revoked entry stale; a pending one may rely on it too.
+      const cited = state.evaluation?.citations.some(c => c.entry_id === event.entry_id) ?? false;
+      if (status === "saved" || (status !== "review_pending" && !cited)) return state;
+      return unreviewed(state, {});
+    }
 
     case "SAVE_REQUESTED":
       // save_failed keeps the still-current evaluation, so Retry is a save of the same reviewed revision.

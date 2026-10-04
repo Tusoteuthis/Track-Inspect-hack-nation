@@ -52,7 +52,7 @@ test("setup → companion with event replay → off-record → stop → debrief 
   await expect(page.getByTestId("session-ended")).toBeVisible();
   await shot(page, "06-ended");
   await page.getByRole("link", { name: "Open debrief review" }).click();
-  await expect(page).toHaveURL(/\/review$/);
+  await expect(page).toHaveURL(/\/review\?session=fixture-session-001$/);
   await expect(page.getByRole("heading", { level: 1, name: "Review" })).toBeVisible();
 });
 

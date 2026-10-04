@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { EvidenceViewer } from "@/components/evidence/EvidenceViewer";
+import { ConnectionStatus } from "@/components/shell/ConnectionStatus";
 import { displayRecording } from "@/lib/companion/companionMachine";
 import {
   AGENT_COPY,
@@ -121,7 +122,7 @@ export function ExpertCompanion({ source, sessionId, caseAsset, agent, voice, fi
           words and evidence.
         </p>
         <div className={styles.actions}>
-          <Link className={styles.primary} href="/review">
+          <Link className={styles.primary} href={`/review?${new URLSearchParams({ session: sessionId })}`}>
             Open debrief review
           </Link>
         </div>
@@ -171,9 +172,7 @@ export function ExpertCompanion({ source, sessionId, caseAsset, agent, voice, fi
       </div>
 
       {state.connection === "reconnecting" || state.connection === "disconnected" ? (
-        <p className={styles.banner} role="status" data-testid="reconnecting">
-          <span aria-hidden="true">⏳ </span>Reconnecting… live updates are paused; showing the last confirmed state.
-        </p>
+        <ConnectionStatus state={state.connection} />
       ) : syncing ? (
         <p className={styles.hint} role="status">
           Updating to the latest state…

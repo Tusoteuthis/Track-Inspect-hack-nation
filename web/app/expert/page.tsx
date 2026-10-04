@@ -11,7 +11,8 @@ import styles from "@/components/companion/companion.module.css";
 import { useExpertSession } from "@/components/expert/useExpertSession";
 import { FixtureBanner } from "@/components/shell/FixtureBanner";
 import { VoiceSession } from "@/components/voice/VoiceSession";
-import { DataSourceProvider, useDataSource } from "@/lib/data/DataSourceProvider";
+import { useScreenSource } from "@/components/shell/useScreenSource";
+import { DataSourceProvider } from "@/lib/data/DataSourceProvider";
 import { createFixtureSource, type FixtureDataSource } from "@/lib/data/fixtureSource";
 import type { DataSource } from "@/lib/data/source";
 import { parseFixtureSettings } from "@/lib/practice/fixtureSettings";
@@ -29,7 +30,7 @@ export default function ExpertPage() {
 type Phase = { kind: "setup" } | { kind: "session"; sessionId: string; chosen: CaseSummary };
 
 function Expert() {
-  const base = useDataSource();
+  const base = useScreenSource("expert");
   const query = useSearchParams().toString();
   // Fixture mode only: latency, failures and replay speed come from the URL so the human gate can force them.
   const fixture: FixtureDataSource | null = useMemo(

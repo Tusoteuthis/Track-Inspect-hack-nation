@@ -106,7 +106,7 @@ describe("ExpertCompanion: pause and stop", () => {
 
     await act(async () => stub.requests[0].result.resolve(acknowledged(session({ rev: 2, lifecycle: "ended" }))));
     expect(await screen.findByTestId("session-ended")).toHaveTextContent("Session ended");
-    expect(screen.getByRole("link", { name: "Open debrief review" })).toHaveAttribute("href", "/review");
+    expect(screen.getByRole("link", { name: "Open debrief review" })).toHaveAttribute("href", `/review?session=${SID}`);
   });
 
   it("Escape cancels an armed stop", async () => {

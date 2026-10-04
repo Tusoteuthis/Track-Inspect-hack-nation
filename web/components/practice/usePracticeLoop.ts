@@ -29,7 +29,17 @@ type LoopView = {
   timeline: PracticeTimelineEntry[];
   /** Latest guidance, kept visible while the learner corrects the draft. */
   guidance: LearnerEvaluation | null;
+  /** Entries removed from teaching during this attempt; never shown as citations. */
+  revoked: string[];
+  /** Cited expert knowledge was removed from teaching; the learner should ask for a new review. */
+  revokedNotice: boolean;
 };
+
+/** Teaching views never show a citation of revoked knowledge. */
+function withoutRevoked(guidance: LearnerEvaluation | null, revoked: string[]): LearnerEvaluation | null {
+  if (!guidance || !guidance.citations.some(c => revoked.includes(c.entry_id))) return guidance;
+  return { ...guidance, citations: guidance.citations.filter(c => !revoked.includes(c.entry_id)) };
+}
 
 const newKey = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -49,6 +59,8 @@ export function usePracticeLoop(
     review: initialReviewState(caseView.knowledge_revision_id),
     timeline: [],
     guidance: null,
+    revoked: [],
+    revokedNotice: false,
   });
   const [view, setView] = useState<LoopView>(viewRef.current);
 
@@ -59,17 +71,20 @@ export function usePracticeLoop(
     if (review === prev.review) return false;
     const entry = nextTimelineEntry(prev.review, review, prev.timeline, new Date().toISOString());
     const evaluation = event.type === "EVALUATION_RECEIVED" ? review.evaluation : null;
+    const guidance =
+      evaluation && review.status === "guidance_needed"
+        ? evaluation
+        : review.status === "review_complete" ||
+            event.type === "RESET" ||
+            event.type === "KNOWLEDGE_REVISION_CHANGED"
+          ? null
+          : prev.guidance;
     viewRef.current = {
+      ...prev,
       review,
       timeline: entry ? [...prev.timeline, entry] : prev.timeline,
-      guidance:
-        evaluation && review.status === "guidance_needed"
-          ? evaluation
-          : review.status === "review_complete" ||
-              event.type === "RESET" ||
-              event.type === "KNOWLEDGE_REVISION_CHANGED"
-            ? null
-            : prev.guidance,
+      guidance: withoutRevoked(guidance, prev.revoked),
+      revokedNotice: event.type === "EDIT" || event.type === "RESET" ? false : prev.revokedNotice,
     };
     setView(viewRef.current);
     return true;
@@ -140,6 +155,22 @@ export function usePracticeLoop(
     [apply]
   );
 
+  const knowledgeRevoked = useCallback(
+    (entryId: string) => {
+      const prev = viewRef.current;
+      if (prev.revoked.includes(entryId)) return;
+      const cited = prev.guidance?.citations.some(c => c.entry_id === entryId) ?? false;
+      const revoked = [...prev.revoked, entryId];
+      viewRef.current = { ...prev, revoked, guidance: withoutRevoked(prev.guidance, revoked) };
+      const invalidated = apply({ type: "KNOWLEDGE_REVOKED", entry_id: entryId });
+      if (cited || invalidated) {
+        viewRef.current = { ...viewRef.current, revokedNotice: true };
+      }
+      setView(viewRef.current);
+    },
+    [apply]
+  );
+
   const reset = useCallback(() => {
     if (!apply({ type: "RESET" })) return;
     fieldsRef.current = { decision: "", reason: "", region: null };
@@ -147,12 +178,14 @@ export function usePracticeLoop(
   }, [apply]);
 
   // Knowledge revisions arrive as Work Map updates; a new revision invalidates any review.
+  // A revoked entry disappears from the guidance and invalidates a review that cited it.
   useEffect(() => {
     if (!sessionId) return;
     return source.subscribe(sessionId, update => {
       if (update.type === "workmap") knowledgeChanged(update.workmap.revision_id);
+      if (update.type === "knowledge" && update.status === "revoked") knowledgeRevoked(update.entry_id);
     });
-  }, [knowledgeChanged, sessionId, source]);
+  }, [knowledgeChanged, knowledgeRevoked, sessionId, source]);
 
   return {
     ...view,

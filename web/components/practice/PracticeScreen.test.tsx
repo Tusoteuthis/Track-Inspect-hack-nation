@@ -46,7 +46,7 @@ function evaluationFor(draft: LearnerDraft, outcome: string, over: Partial<Learn
 function fakeSource() {
   const reviews: { draft: LearnerDraft; d: Deferred<Ack<LearnerEvaluation>> }[] = [];
   const commits: { draft: LearnerDraft; key?: string; d: Deferred<Ack<{ committed_at_utc: string }>> }[] = [];
-  let listener: ((u: SourceUpdate) => void) | null = null;
+  const listeners = new Set<(u: SourceUpdate) => void>();
   const source: DataSource = {
     kind: "api",
     getSession: vi.fn(),
@@ -75,15 +75,17 @@ function fakeSource() {
     revokeEntry: vi.fn(),
     deleteEvidence: vi.fn(),
     subscribe: vi.fn((_id: string, fn: (u: SourceUpdate) => void) => {
-      listener = fn;
-      return () => (listener = null);
+      listeners.add(fn);
+      return () => {
+        listeners.delete(fn);
+      };
     }),
   };
   return {
     source,
     reviews,
     commits,
-    emit: (u: SourceUpdate) => act(() => listener?.(u)),
+    emit: (u: SourceUpdate) => act(() => listeners.forEach(l => l(u))),
   };
 }
 
@@ -271,5 +273,34 @@ describe("PracticeScreen pre-save review loop", () => {
     const dialog = screen.getByRole("dialog", { name: "Expert example" });
     expect(within(dialog).getByText("Expert verbatim words.")).toBeInTheDocument();
     expect(within(dialog).getByText("Expert's words (verbatim)")).toBeInTheDocument();
+  });
+
+  it("a revoked expert entry disappears from the cited examples and the review must be repeated", async () => {
+    const t = setup();
+    await t.fill();
+    await t.user.click(screen.getByRole("button", { name: "Request review" }));
+    await t.resolveReview(0, "intervene", {
+      citations: [
+        { entry_id: "e1", revision_id: "r1", quote: { exchange_id: "x1", text: "Revoked expert words." }, evidence: null },
+        { entry_id: "e2", revision_id: "r1", quote: { exchange_id: "x2", text: "Still valid words." }, evidence: null },
+      ],
+    });
+    expect(screen.getByText(/Revoked expert words/)).toBeInTheDocument();
+
+    t.fake.emit({ type: "knowledge", entry_id: "e1", revision_id: "r1", status: "revoked" });
+
+    expect(screen.queryByText(/Revoked expert words/)).toBeNull();
+    expect(screen.getByText(/Still valid words/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Open expert example/ })).toHaveLength(1);
+    expect(screen.getByTestId("revoked-notice")).toHaveTextContent(/removed from teaching/);
+    expect(t.status()).toHaveTextContent("Draft changed / not yet reviewed");
+  });
+
+  it("a revocation of an entry the review did not cite leaves the review alone", async () => {
+    const t = setup();
+    await t.reachReviewComplete();
+    t.fake.emit({ type: "knowledge", entry_id: "unrelated", revision_id: "r1", status: "revoked" });
+    expect(t.saveButton()).toBeEnabled();
+    expect(screen.queryByTestId("revoked-notice")).toBeNull();
   });
 });

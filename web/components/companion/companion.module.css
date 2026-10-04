@@ -118,14 +118,6 @@
   letter-spacing: 0.06em;
 }
 
-.banner {
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border: 3px dashed var(--warn);
-  border-radius: var(--radius);
-  font-weight: 700;
-}
-
 .empty {
   display: grid;
   place-items: center;

@@ -136,6 +136,15 @@ a { color: inherit; }
 }
 .fixture-banner strong { letter-spacing: 0.06em; }
 
+/* Shared by every screen (ConnectionStatus): dashed border + icon + text, not colour alone. */
+.connection-banner {
+  margin: var(--space-2) 0;
+  padding: var(--space-3) var(--space-4);
+  border: 3px dashed var(--warn);
+  border-radius: var(--radius);
+  font-weight: 700;
+}
+
 .entry { display: grid; gap: var(--space-6); }
 .entry h1 { font-size: var(--font-xxl); margin: 0; }
 .entry-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--space-4); }
