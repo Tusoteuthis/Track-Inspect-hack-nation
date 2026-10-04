@@ -247,5 +247,53 @@
     "preToolSpeech": "off",
     "interruptionMode": "allow",
     "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "set_record_state",
+    "description": "Call immediately, before saying anything, when the expert asks to go off the record (\"off the record\", \"don't record this\", \"stop recording\") or back on the record (\"back on the record\", \"you can record again\"). Then say only a brief acknowledgement.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "off_record",
+            "on_record"
+          ],
+          "description": "off_record when the expert goes off the record, on_record when they come back on the record."
+        }
+      },
+      "required": [
+        "state"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
+  },
+  {
+    "type": "client",
+    "name": "strike_last_answer",
+    "description": "Call immediately, before saying anything, when the expert asks you to forget or strike what they just said (\"forget what I just said\", \"scratch that\", \"strike that\"). Removes their last answer from the record. Then acknowledge briefly and never refer to it again.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "description": "The expert's words asking to strike, briefly."
+        }
+      },
+      "required": [
+        "reason"
+      ]
+    },
+    "expectsResponse": true,
+    "executionMode": "immediate",
+    "preToolSpeech": "off",
+    "interruptionMode": "allow",
+    "responseTimeoutSecs": 5
   }
 ]

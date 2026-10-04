@@ -1584,6 +1584,446 @@
             "the system"
           ]
         }
+      },
+      {
+        "name": "off-record",
+        "toolMocks": {
+          "set_record_state": "ok record_state=off_record. Say only a brief acknowledgement such as \"Okay, off the record.\" Then ask nothing and call skip_turn on every turn until the expert goes back on the record. Never mention or ask about anything said while off the record."
+        },
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you recognise in this region?"
+          },
+          {
+            "role": "user",
+            "text": "That spike is usually from the wheel set passing a gap."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "When would you stop and ask someone else about that spike?"
+          },
+          {
+            "role": "user",
+            "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "user",
+            "text": "Off the record: honestly, the pineapple calibration crew never signed this section off."
+          }
+        ],
+        "expect": {
+          "requireTools": [
+            {
+              "name": "set_record_state",
+              "paramsPattern": "off_record"
+            }
+          ],
+          "forbidTools": [
+            {
+              "name": "begin_question"
+            },
+            {
+              "name": "record_coverage"
+            },
+            {
+              "name": "set_record_state",
+              "paramsPattern": "\"on_record\""
+            }
+          ],
+          "maxQuestions": 0,
+          "maxWords": 12,
+          "requireReply": "off the record|okay|ok\\b|sure|understood|got it|of course|alright|no problem",
+          "forbidPatterns": [
+            "pineapple",
+            "calibration",
+            "signed",
+            "crew",
+            "let me (record|handle|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft|set_record_state|strike_last_answer)\\b",
+            "the system"
+          ]
+        }
+      },
+      {
+        "name": "back-on-record",
+        "toolMocks": {
+          "set_record_state": "ok record_state=on_record. Acknowledge briefly (\"Okay, back on the record.\") and continue where you left off. Never mention or ask about anything said while off the record."
+        },
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you recognise in this region?"
+          },
+          {
+            "role": "user",
+            "text": "That spike is usually from the wheel set passing a gap."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "When would you stop and ask someone else about that spike?"
+          },
+          {
+            "role": "user",
+            "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "user",
+            "text": "Off the record: honestly, the pineapple calibration crew never signed this section off."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "set_record_state",
+              "params": {
+                "state": "off_record"
+              },
+              "result": "ok record_state=off_record. Say only a brief acknowledgement such as \"Okay, off the record.\" Then ask nothing and call skip_turn on every turn until the expert goes back on the record. Never mention or ask about anything said while off the record."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "Okay, off the record."
+          },
+          {
+            "role": "user",
+            "text": "Between us, the pineapple calibration was a mess that whole year."
+          },
+          {
+            "role": "user",
+            "text": "Okay, back on the record."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "toolOptional": true,
+          "maxQuestions": 1,
+          "requireTools": [
+            {
+              "name": "set_record_state",
+              "paramsPattern": "on_record"
+            }
+          ],
+          "forbidTools": [
+            {
+              "name": "set_record_state",
+              "paramsPattern": "off_record"
+            },
+            {
+              "name": "record_coverage"
+            }
+          ],
+          "requireReply": "back on the record|on the record|okay|ok\\b|sure|alright|got it|great",
+          "forbidPatterns": [
+            "pineapple",
+            "calibration",
+            "signed",
+            "crew",
+            "\\bmess\\b",
+            "that whole year",
+            "let me (record|handle|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft|set_record_state|strike_last_answer)\\b",
+            "the system",
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact"
+          ]
+        }
+      },
+      {
+        "name": "strike-last",
+        "toolMocks": {
+          "strike_last_answer": "ok struck ex-002 (str-001): the expert's words are removed. Acknowledge briefly (for example \"Okay, I've dropped that.\") and never refer to it again."
+        },
+        "history": [
+          {
+            "role": "user",
+            "text": "[POINTING_EVENT] event_id=evt-001 mapping_status=resolved channel=SYS1 trace=trace-A record_state=on_record source=fixture. The expert is pointing at this region. Do not interpret it. When there is a natural pause, ask about it."
+          },
+          {
+            "role": "user",
+            "text": "Hmm."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "explain",
+                "question": "What do you recognise in this region?"
+              },
+              "result": "ok exchange_id=ex-001. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "What do you recognise in this region?"
+          },
+          {
+            "role": "user",
+            "text": "That spike is usually from the wheel set passing a gap."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-001",
+                "dimensions": [
+                  {
+                    "dimension": "decision",
+                    "status": "partial",
+                    "note": "flags the spike"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: decision=partial. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "begin_question",
+              "params": {
+                "event_id": "evt-001",
+                "kind": "guardrail",
+                "question": "When would you stop and ask someone else about that spike?"
+              },
+              "result": "ok exchange_id=ex-002. Now say the question out loud, word for word."
+            }
+          },
+          {
+            "role": "agent",
+            "text": "When would you stop and ask someone else about that spike?"
+          },
+          {
+            "role": "user",
+            "text": "If both channels show it at the same moment I stop and call the measurement team."
+          },
+          {
+            "role": "agent",
+            "tool": {
+              "name": "record_coverage",
+              "params": {
+                "exchange_id": "ex-002",
+                "dimensions": [
+                  {
+                    "dimension": "guardrails",
+                    "status": "covered",
+                    "note": "both channels: call the team"
+                  }
+                ]
+              },
+              "result": "ok coverage evt-001: guardrails=covered. Next: either call begin_question and then say that question out loud, or call skip_turn."
+            }
+          },
+          {
+            "role": "user",
+            "text": "Sorry, forget what I just said."
+          }
+        ],
+        "expect": {
+          "toolCalled": "begin_question",
+          "toolOptional": true,
+          "maxQuestions": 1,
+          "requireTools": [
+            {
+              "name": "strike_last_answer"
+            }
+          ],
+          "forbidTools": [
+            {
+              "name": "record_coverage"
+            },
+            {
+              "name": "set_record_state"
+            }
+          ],
+          "requireReply": "okay|ok\\b|sure|dropped|forget|forgotten|no problem|of course|got it|understood|alright|noted",
+          "forbidPatterns": [
+            "both channels",
+            "measurement team",
+            "same moment",
+            "let me (record|handle|go through|do that)",
+            "\\bI (missed|forgot|need to|should) (record|call|ask|check)",
+            "\\b(agenda|tool|record_coverage|begin_question|confirm_revision|propose_draft|set_record_state|strike_last_answer)\\b",
+            "the system",
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bjoint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "\\bloose",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bworn",
+            "squat",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "fastening",
+            "anomal",
+            "\\bimpact"
+          ]
+        }
       }
     ]
   },

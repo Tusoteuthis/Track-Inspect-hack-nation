@@ -39,13 +39,16 @@ type Expect = {
   forbidTools?: ToolMatch[]; // none may be called (with params JSON matching paramsPattern, if given)
   allowedGapIds?: string[]; // every begin_question gap_id must be one of these
   endsWithQuestion?: boolean; // the spoken reply must end with "?"
+  requireReply?: string; // case-insensitive regex the spoken reply must match (always checked, so silence fails)
+  maxWords?: number; // the spoken reply has at most this many words
 };
 type ToolMatch = { name: string; paramsPattern?: string };
 type LegacyCase = { name: string; user: string[] };
 /** A replayed client tool call (agent turn with toolCalls + toolResults), so histories match what the app produced. */
 type ToolTurn = { role: "agent"; tool: { name: string; params: Record<string, unknown>; result: string } };
 type TextTurn = { role: "user" | "agent"; text: string };
-type HistoryCase = { name: string; history: (TextTurn | ToolTurn)[]; expect?: Expect };
+// toolMocks on a case override the agent-level ones (e.g. the app's set_record_state result for that state)
+type HistoryCase = { name: string; history: (TextTurn | ToolTurn)[]; expect?: Expect; toolMocks?: Record<string, string> };
 type Case = LegacyCase | HistoryCase;
 // { "<agent>": { "envVar": "...", "language": "en", "cases": [...] } }
 // toolMocks: per-agent mock results (override TOOL_MOCKS), e.g. the app's real propose_draft result
@@ -60,6 +63,8 @@ const TOOL_MOCKS = {
   signal_task_complete: { defaultReturnValue: "ok phase=debrief." },
   propose_draft: { defaultReturnValue: "ok revision_id=rev-sim." },
   confirm_revision: { defaultReturnValue: "ok confirmation recorded." },
+  set_record_state: { defaultReturnValue: "ok record_state recorded." },
+  strike_last_answer: { defaultReturnValue: "ok struck." },
 };
 
 const webDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -100,7 +105,10 @@ for (const [agent, spec] of Object.entries(PROBES)) {
     // runs of one case go in parallel
     const results = await Promise.all(
       Array.from({ length: runs }, () =>
-        simulate(agentId, history, spec.language ?? "en", "expect" in c ? c.expect : undefined, spec.toolMocks),
+        simulate(agentId, history, spec.language ?? "en", "expect" in c ? c.expect : undefined, {
+          ...spec.toolMocks,
+          ...("toolMocks" in c ? c.toolMocks : {}),
+        }),
       ),
     );
     console.log(`\n▸ ${c.name}\n  👤 ${results[0].lastUser}`);
@@ -274,6 +282,11 @@ function check(
     }
   }
   if (expect.endsWithQuestion && !/\?["'”’)]*\s*$/.test(reply)) failures.push("reply does not end with a question");
+  if (expect.requireReply && !new RegExp(expect.requireReply, "i").test(reply)) failures.push(`reply does not match /${expect.requireReply}/`);
+  if (expect.maxWords !== undefined) {
+    const words = reply.split(/\s+/).filter(Boolean).length;
+    if (words > expect.maxWords) failures.push(`${words} words spoken > ${expect.maxWords}`);
+  }
 
   if (expect.maxQuestions !== undefined) {
     if (questionCount > expect.maxQuestions) failures.push(`${questionCount} questions spoken > ${expect.maxQuestions}`);

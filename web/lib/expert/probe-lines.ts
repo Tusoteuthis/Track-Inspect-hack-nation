@@ -3,6 +3,7 @@
 // checks that agents/probes.json still contains exactly these strings.
 import { controlDebriefStart, controlTeachBack } from "./context-update";
 import { phaseBlock } from "./debrief";
+import { RECORD_STATE_RESULT } from "./record-state";
 import { driver } from "./test-driver";
 
 export const PROBE_SESSION_ID = "ses-20261004-070000-prb1";
@@ -12,6 +13,8 @@ export const PROBE_TOOL_PARAMS = {
   covLive1: { exchange_id: "ex-001", dimensions: [{ dimension: "decision", status: "partial", note: "flags the spike" }] },
   bqLive2: { event_id: "evt-001", kind: "guardrail", question: "When would you stop and ask someone else about that spike?" },
   covLive2: { exchange_id: "ex-002", dimensions: [{ dimension: "guardrails", status: "covered", note: "both channels: call the team" }] },
+  setOff: { state: "off_record" },
+  setOn: { state: "on_record" },
   bqDebrief1: { event_id: "evt-002", kind: "gap", phase: "debrief", gap_id: "gap-oq-001", question: "What do you see and decide at the region you pointed at on SYS2?" },
   covDebrief1: { exchange_id: "ex-003", dimensions: [{ dimension: "decision", status: "covered", note: "ignores early drift" }] },
   bqDebrief2: {
@@ -28,6 +31,10 @@ export const PROBE_ANSWERS = {
   live2: "If both channels show it at the same moment I stop and call the measurement team.",
   debrief1: "That drift is the sensor warming up, I ignore it in the first ten minutes.",
   correction: "No, that's wrong, it's only when both channels show it at the same moment and it repeats on the next sleeper.",
+  offRecord: "Off the record: honestly, the pineapple calibration crew never signed this section off.",
+  offRecordMore: "Between us, the pineapple calibration was a mess that whole year.",
+  backOn: "Okay, back on the record.",
+  strike: "Sorry, forget what I just said.",
 };
 
 export const PROBE_TEACH_BACK_SPOKEN =
@@ -50,6 +57,18 @@ export function probeSystemLines() {
   tool("bqLive2", () => d.ask({ ...P.bqLive2 }));
   d.expert(PROBE_ANSWERS.live2);
   tool("covLive2", () => d.act({ type: "coverage_recorded", params: P.covLive2 }));
+  // off-record branch: the tool results the app returns for set_record_state, then the strike branch
+  const live = d.state;
+  d.expert(PROBE_ANSWERS.offRecord);
+  results.setOff = d.act({ type: "record_state_tool", params: P.setOff }) ?? "";
+  d.expert(PROBE_ANSWERS.offRecordMore);
+  d.expert(PROBE_ANSWERS.backOn);
+  results.setOn = d.act({ type: "record_state_tool", params: P.setOn }) ?? "";
+  d.state = live;
+  d.expert(PROBE_ANSWERS.strike);
+  const strike = d.act({ type: "strike_requested", trigger: "agent_tool" }) ?? "";
+  d.state = live;
+
   d.event("evt-002");
   d.act({ type: "task_completed", trigger: "console" });
   const debrief = phaseBlock(d.state)!;
@@ -95,6 +114,7 @@ export function probeSystemLines() {
   })!;
 
   return {
+    strike,
     proposeRev2,
     debrief,
     agenda,
