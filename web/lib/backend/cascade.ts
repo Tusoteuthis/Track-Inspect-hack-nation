@@ -360,8 +360,27 @@ async function applyPlan(plan: CascadePlan, opts: ApplyOptions): Promise<Cascade
   return summary;
 }
 
+/** Sessions whose stored records are roots (a job reading them must not persist after this). */
+async function ownerSessions(roots: readonly CascadeRoot[]): Promise<string[]> {
+  const out = new Set<string>();
+  for (const r of roots) {
+    if (r.kind === "session") out.add(r.id);
+    else if (r.kind === "event" || r.kind === "exchange" || r.kind === "trimmed_exchange") out.add(r.session_id);
+    else if (r.kind === "asset") {
+      const meta = await loadAssetMeta(r.id).catch(() => null);
+      if (meta) out.add(meta.session_id);
+    }
+  }
+  return [...out].sort();
+}
+
 export function runCascade(roots: readonly CascadeRoot[], opts: ApplyOptions): Promise<CascadeSummary> {
-  return withCascadeLock(async () => applyPlan(computeCascade(await loadCascadeGraph(), roots), opts));
+  return withCascadeLock(async () => {
+    // Bump first: a job that has not persisted yet will be discarded; one that already persisted
+    // wrote its revisions before the graph below is loaded, so the plan includes them.
+    for (const sid of await ownerSessions(roots)) await withSessionLock(sid, () => bumpGenerationLocked(sid, opts.now ?? new Date()));
+    return applyPlan(computeCascade(await loadCascadeGraph(), roots), opts);
+  });
 }
 
 // --- entry points -----------------------------------------------------------------
@@ -431,6 +450,7 @@ export async function setRecordState(sid: string, req: RecordStateRequest, now: 
     const s = await getSession(sid);
     const inside = (utc: string | null | undefined) => isOffRecordAt(s, utc);
     await withSessionLock(sid, async () => {
+      await bumpGenerationLocked(sid, now); // see runCascade: before the graph is loaded
       for (const e of await listEvents(sid)) if (inside(e.captured_at_utc)) roots.push({ kind: "event", id: e.event_id, session_id: sid });
       for (const x of await listExchanges(sid)) {
         if (inside(x.asked_at_utc)) {
