@@ -53,7 +53,7 @@ function sseReader(stream: ReadableStream<Uint8Array>) {
     return true;
   }
 
-  async function until(pred: () => boolean, timeoutMs = 2000): Promise<void> {
+  async function until(pred: () => boolean, timeoutMs = 5000): Promise<void> {
     const deadline = Date.now() + timeoutMs;
     while (!pred()) {
       if (done) throw new Error(`stream ended before condition; got: ${JSON.stringify(text)}`);

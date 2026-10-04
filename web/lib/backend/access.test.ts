@@ -1,10 +1,18 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET as accessRoute } from "@/app/api/access/route";
 import { proxy } from "@/proxy";
 import { accessCookieValue, isAllowed, safeEqual } from "./access";
+import { useTempDirs } from "./capture-test-helpers";
 
-afterEach(() => vi.unstubAllEnvs());
+let cleanup: () => Promise<void>;
+beforeEach(async () => {
+  ({ cleanup } = await useTempDirs("ws6-access-")); // route diag lines go to a temp RUNTIME_DIR
+});
+afterEach(async () => {
+  vi.unstubAllEnvs();
+  await cleanup();
+});
 
 const req = (url: string, headers: Record<string, string> = {}) => new NextRequest(new URL(url, "http://lan.test"), { headers });
 
