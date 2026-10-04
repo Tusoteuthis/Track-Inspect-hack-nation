@@ -1,11 +1,11 @@
 # Tasks: WS5 Sprint 3
-- [ ] T1 types (`evaluation-types.ts`)
-- [ ] T2 case-view guard + tests
-- [ ] T3 output guard + tests (downgrade, non-verbatim, uncited quote in feedback, escalation)
-- [ ] T4 evaluate pipeline + judge input + tests (input guard, mocked judge)
-- [ ] T5 draft fixtures + class tests (mocked judge)
-- [ ] T6 anti-cheating tests (grep, rename, guardrail removal, ineligible text never reaches judge)
-- [ ] T7 timeline + tests
-- [ ] T8 Anthropic judge + harness script
-- [ ] T9 WS6 adapter + tests
-- [ ] T10 public API, schema doc section, handoff
+- [x] T1 types (`evaluation-types.ts`)
+- [x] T2 case-view guard + tests
+- [x] T3 output guard + tests (downgrade, non-verbatim, uncited quote in feedback, escalation)
+- [x] T4 evaluate pipeline + judge input + tests (input guard, mocked judge)
+- [x] T5 draft fixtures + class tests (mocked judge)
+- [x] T6 anti-cheating tests (grep, rename, guardrail removal, ineligible text never reaches judge)
+- [x] T7 timeline + tests
+- [x] T8 Anthropic judge + harness script
+- [x] T9 WS6 adapter + tests
+- [x] T10 public API, schema doc section, handoff
