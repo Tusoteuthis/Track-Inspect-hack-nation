@@ -134,23 +134,8 @@ export function renderTimingReportMd(snap: SessionSnapshot): string {
     "- **intentional wait ms**: topic ready → released to the agent (deliberately waiting for a pause or for the previous topic).",
     "- **release→tool / tool→speech / release→speech**: agent latency.",
     "",
-    "| exchange | event | kind | processing ms | intentional wait ms | release→tool ms | tool→speech ms | release→speech ms | notes |",
-    "|---|---|---|---|---|---|---|---|---|",
+    ...renderTimingTable(rows),
   ];
-  for (const r of rows) {
-    const notes = [
-      r.follow_up && "follow-up",
-      !r.follow_up && !r.released && "not released",
-      r.stale && "stale",
-      r.nudged && "nudged",
-      r.fixture && "FIXTURE",
-    ].filter(Boolean);
-    out.push(
-      `| ${r.exchange_id} | ${r.event_id ?? "—"} | ${r.kind} | ${cell(r.processing_ms)} | ${cell(r.intentional_wait_ms)} | ` +
-        `${cell(r.release_to_tool_ms)} | ${cell(r.tool_to_speech_ms)} | ${cell(r.release_to_speech_ms)} | ${notes.join(", ")} |`
-    );
-  }
-  if (!rows.length) out.push("| — | — | — | — | — | — | — | — | no questions |");
 
   out.push("", `Interruptions (agent speech started while the expert was speaking): ${interruptions.count}`);
   for (const t of interruptions.at_utc) out.push(`- at ${t}`);
@@ -183,4 +168,27 @@ export function renderTimingReportMd(snap: SessionSnapshot): string {
       "Silence is not proof that the expert has finished thinking._"
   );
   return out.join("\n") + "\n";
+}
+
+/** The per-question timing table (Markdown rows), shared by timing-report.md and demo-evidence.md. */
+export function renderTimingTable(rows: ExchangeTiming[]): string[] {
+  const out = [
+    "| exchange | event | kind | processing ms | intentional wait ms | release→tool ms | tool→speech ms | release→speech ms | notes |",
+    "|---|---|---|---|---|---|---|---|---|",
+  ];
+  for (const r of rows) {
+    const notes = [
+      r.follow_up && "follow-up",
+      !r.follow_up && !r.released && "not released",
+      r.stale && "stale",
+      r.nudged && "nudged",
+      r.fixture && "FIXTURE",
+    ].filter(Boolean);
+    out.push(
+      `| ${r.exchange_id} | ${r.event_id ?? "—"} | ${r.kind} | ${cell(r.processing_ms)} | ${cell(r.intentional_wait_ms)} | ` +
+        `${cell(r.release_to_tool_ms)} | ${cell(r.tool_to_speech_ms)} | ${cell(r.release_to_speech_ms)} | ${notes.join(", ")} |`
+    );
+  }
+  if (!rows.length) out.push("| — | — | — | — | — | — | — | — | no questions |");
+  return out;
 }
