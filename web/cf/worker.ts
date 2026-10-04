@@ -32,11 +32,28 @@ export class App extends Container<Env> {
     }
     this.envVars = vars;
   }
+
+  /** Kill the container and evict this Durable Object, so both come back with the current secrets. */
+  async reset(): Promise<void> {
+    await this.destroy();
+    this.ctx.abort("reset");
+  }
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const container = getContainer(env.APP, "main");
+    // POST /__restart (bearer BACKEND_ACCESS_TOKEN): kill the container so the next request boots a fresh one
+    // with current secrets and empty data.
+    if (new URL(request.url).pathname === "/__restart") {
+      const token = env.BACKEND_ACCESS_TOKEN;
+      if (request.method !== "POST" || !token || request.headers.get("authorization") !== `Bearer ${token}`) {
+        return new Response("forbidden", { status: 403 });
+      }
+      await container.reset().catch(() => {}); // abort() rejects the call by design
+      return new Response("restarted", { status: 200 });
+    }
     // Response is returned as-is so SSE bodies stream through unbuffered.
-    return getContainer(env.APP, "main").fetch(request);
+    return container.fetch(request);
   },
 };
