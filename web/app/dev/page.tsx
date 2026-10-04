@@ -2,11 +2,14 @@
 
 import { useConversationControls, useConversationStatus } from "@elevenlabs/react";
 import { useState } from "react";
+import { ExpertConsole } from "@/components/expert/ExpertConsole";
+import { useExpertSession } from "@/components/expert/useExpertSession";
 import { VoiceSession } from "@/components/voice/VoiceSession";
 import { FLOWS, type Flow } from "@/lib/voice/flows";
 
 export default function Home() {
   const [flow, setFlow] = useState<Flow>("expert");
+  const expert = useExpertSession();
 
   return (
     <main className="page">
@@ -31,9 +34,15 @@ export default function Home() {
       </div>
 
       {/* key: switching flow remounts the session so it never talks to the wrong agent */}
-      <VoiceSession key={flow} flow={flow}>
-        <ContextSender />
-      </VoiceSession>
+      {flow === "expert" ? (
+        <VoiceSession key={flow} flow={flow} {...expert.voiceProps}>
+          <ExpertConsole session={expert} raw={<ContextSender />} />
+        </VoiceSession>
+      ) : (
+        <VoiceSession key={flow} flow={flow}>
+          <ContextSender />
+        </VoiceSession>
+      )}
     </main>
   );
 }

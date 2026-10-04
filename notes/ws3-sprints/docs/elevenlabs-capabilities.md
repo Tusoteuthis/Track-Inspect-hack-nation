@@ -1,6 +1,6 @@
 # ElevenLabs capabilities for WS3: spike results
 
-**Date:** 2026-10-03
+**Date:** 2026-10-03 (docs research). Live spike run on 2026-10-04.
 **Scope:** Sprint 0, Lane A (research only, no app code).
 **Sources used:** ElevenLabs docs (the `.md` versions of the pages listed in `https://elevenlabs.io/docs/llms.txt`), the ElevenLabs changelog (`https://elevenlabs.io/docs/changelog/...`), and the SDK typings and source installed in `web/node_modules`.
 
@@ -15,10 +15,23 @@
 
 ## Status of the empirical checks
 
-- **Live API experiments: not run.** The `ELEVENLABS_API_KEY` in `web/.env` was rejected by the API: `401 {"detail":{"code":"unauthorized","message":"Invalid API key","status":"invalid_api_key"}}` on `api.elevenlabs.io` and `api.us.elevenlabs.io`, and `400 invalid_api_key` on the EU residency host. The worktree `.env` and the main checkout's `.env` are the same file (same SHA-1). Because the key failed on the first call, **no temporary agent was created** and nothing needed cleaning up. The prepared, self-cleaning spike script is still at `web/scripts/ws3-capability-spike.mts` (outside the repo). It creates `ws3-spike-temp-DELETE-ME`, runs simulateConversation variants A–D, runs three text-only WebSocket sessions (contextual update, client tool linking, skip_turn, prompt override with and without permission), reads the history, deletes the conversations, then deletes the agent and any tools it auto-created. Re-run it with a valid key: `cd web && npm run spike:ws3`. It writes its results to `notes/ws3-sprints/docs/spike-results.json`.
+- **Live API experiments: run on 2026-10-04 (VERIFIED LIVE).** The first attempt on 2026-10-03 failed because the old key was invalid (`401 invalid_api_key`). After the key was replaced, `cd web && npm run spike:ws3` ran `web/scripts/ws3-capability-spike.mts` and wrote the raw results to `notes/ws3-sprints/docs/spike-results.json`. The script:
+  - created one temporary agent, `ws3-spike-temp-DELETE-ME` (text-only, `turn_timeout` 30);
+  - read its config back;
+  - tested `turn_timeout` bounds;
+  - ran simulateConversation variants A–D;
+  - ran three text-only WebSocket sessions: ws0 (prompt override without permission), ws1 (contextual updates, client-tool linking, a "let me think" turn), ws2 (prompt and first-message override with permission);
+  - read ws1's history and fetched its audio;
+  - deleted everything it created.
+- **Cleanup result:**
+  - `agentDeleted = true`; all 3 conversations deleted, and `get` after delete returns `404 conversation_not_found`.
+  - The auto-created tool needed `tools.delete(id, { force: true })`. The plain delete returned `409 "Tool is still in use by: Unknown / Main"`, because the deleted agent's orphaned branch still counts as a dependent. It was force-deleted by hand (`204`, then `404` on `get`), and the script now passes `force: true`.
+  - Nothing from the spike remains in the account.
+- Caveat: the sessions were **text-only** (`conversation.text_only: true`, `user_message` instead of speech). Voice-specific behaviour (VAD, tentative transcripts, interruptions, audio turn-taking) is still DOCUMENTED-ONLY.
 - **Offline SDK check: run (VERIFIED).** an offline script (scratch, not kept) subclasses `BaseConversation` from `@elevenlabs/client@1.26.0` with a fake connection (no network) and feeds it server events. This checks what the client SDK puts on the wire and which callback receives which event. Results are cited in Q1, Q2 and Q5.
 
 Labels used below:
+- **VERIFIED LIVE**: observed against the real API in the 2026-10-04 spike (text-only sessions); evidence in `spike-results.json`.
 - **VERIFIED (offline SDK)**: confirmed by running the installed SDK code.
 - **SDK source**: read in the installed typings or JS.
 - **DOCUMENTED-ONLY**: stated in the official docs, not tested against the live API.
@@ -30,7 +43,7 @@ Labels used below:
 **Answer.**
 - `sendContextualUpdate(text, { contextId? })` sends `{type:"contextual_update", text, context_id?}`. It adds background information to the LLM context.
 - It is documented as **not interrupting** and **not triggering a response**. No doc says it can trigger a turn.
-- But the update is part of the context the *next* agent turn sees. An agent turn still happens whenever normal turn-taking gives the agent one: the user stops speaking, or the `turn_timeout` silence timer expires. So a contextual update cannot *cause* a reply, but the agent may *use* it in a reply it was going to give anyway. Whether the LLM ever "answers" a contextual update on the next natural turn depends on the prompt. Not verified live.
+- But the update is part of the context the *next* agent turn sees. An agent turn still happens whenever normal turn-taking gives the agent one: the user stops speaking, or the `turn_timeout` silence timer expires. So a contextual update cannot *cause* a reply, but the agent may *use* it in a reply it was going to give anyway. Whether the LLM ever "answers" a contextual update on the next natural turn depends on the prompt. Live (text-only), the agent stayed silent after each update and used the content on the next turn (see "Verified empirically?" below).
 - `sendUserMessage(text)` is processed **as user input and triggers the same response flow as speech**. It shows up in history as a user turn; a `source_medium` field (`audio` | `text` | …) exists on turns.
 - `sendUserActivity()` sends `{type:"user_activity"}`. It **resets the turn-timeout timer**, and the agent pauses speaking for about 2 s. The SDK throttles it to once per second.
 - **Visibility afterwards:** yes. Each transcript item in the conversation history has `contextual_update_info { context_id, is_superseded }`. The SDK doc for `getSummary` says the full `GET /v1/convai/conversations/{id}` returns "the full transcript with tool calls and contextual updates".
@@ -59,7 +72,13 @@ Labels used below:
 
 **Verified empirically?**
 - **VERIFIED (offline SDK):** `sendContextualUpdate("POINTING EVENT evt-001", {contextId:"pointing"})` put exactly `{"type":"contextual_update","text":"POINTING EVENT evt-001","context_id":"pointing"}` on the wire. Two `sendUserActivity()` calls back-to-back produced **one** `{"type":"user_activity"}` (throttled).
-- **Not verified live** (invalid key): that a contextual update produces no agent turn, and how it appears in history (which role, and whether `message` holds the text).
+- **VERIFIED LIVE (no turn):** in session ws1, a `contextual_update` for evt-001 was sent at t=523 ms. No agent output followed during a 10 s idle window; the next agent output came only after the `user_message` at t=10 524 ms. The same held for the evt-002 update at t=15 466 ms (8 s idle, silence).
+- **VERIFIED LIVE (used on the next turn):** after "Hmm, look at this part here.", the agent referred to the update's content ("What specifically about channel SYS1 caught your attention?").
+- **VERIFIED LIVE (history shape):** a contextual update appears in `conversations.get` as **two `role:"agent"` items with no `message`**:
+  1. a `tool_calls` entry `system:contextual_update {"context_id":"pointing"}`, carrying `contextual_update_info`;
+  2. a `tool_results` entry whose `result_value` is the full update text.
+  They carry the same `time_in_call_secs` as the surrounding turn.
+- **VERIFIED LIVE (`is_superseded`):** both updates used `context_id:"pointing"`. Afterwards evt-001's item had `is_superseded: true` and evt-002's had `false`. Whether superseded text is dropped from the LLM context is still not documented, but in ws1 the agent did not refer back to evt-001. **Use a unique `contextId` per pointing event.**
 
 ---
 
@@ -117,7 +136,14 @@ Labels used below:
 - A `void` handler produced `result:"Client tool execution successful."`.
 - An unknown tool name produced `is_error:true` and `"Client tool with name unknownTool is not defined on client"`, plus `onError`.
 
-Agent-side creation through `tools.create`, and the LLM actually calling the tool, are **not verified live** (invalid key).
+**VERIFIED LIVE:**
+- **Creating the agent with an inline client tool** (`prompt.tools`) auto-created a standalone tool (`tool_…`, `type:"client"`) and stored its id in `prompt.toolIds`.
+- **Read-back** of `prompt.tools` showed `expectsResponse: true`, `executionMode: "immediate"` and `responseTimeoutSecs: 10`.
+- **Deleting such a tool** after deleting the agent needs `tools.delete(id, { force: true })`. Without `force` the API returns `409` because of the deleted agent's orphaned "Main" branch. Upserting by name via `tools.create` / `tools.update` and `toolIds` is therefore cleaner for `sync-agents.mts` than inline tools.
+- **LLM calling the tool, 3 of 3 user turns in ws1:**
+  - On the wire, `client_tool_call {tool_name:"mark_question_target", tool_call_id, parameters:{event_id:"evt-001"}, event_id:2, expects_response:true}` arrived. We replied with `client_tool_result`. Then `agent_tool_response {status:"success"}` arrived, about 160 ms later, and the question text followed about 180 ms after that.
+  - The tool always came **before** the question within the same server `event_id`, and the `event_id` argument was the **most recent pointing event**. That is evt-002 for "OK. And this one here?", which is correct, because no new event had been sent.
+- **Opaque call ids:** `tool_call_id` formats varied within one session (`chatcmpl-tool-…` and `call_…`). Treat them as opaque strings.
 
 ---
 
@@ -151,13 +177,21 @@ Agent-side creation through `tools.create`, and the LLM actually calling the too
 - https://elevenlabs.io/docs/changelog/2026/8/3
 - `elevenlabs-js/api/types/{ConversationSimulationSpecification,ToolMockConfig,ConversationHistoryTranscriptCommonModelInput}.d.ts`
 
-**Verified empirically?** **No** (API key invalid). The prepared experiments in `spike.mts`, to run once a key works:
-- A: simulation without mock. Expected: `type:"client"` call plus a `"Tool Called."` result.
-- B: `toolMockConfig: { mark_question_target: { defaultReturnValue: "MOCKED-RESULT-123" } }`. Expected: that string as `result_value`.
-- C: partial history with a replayed tool call and result.
-- D: raw REST with `contextual_update_info` on a history item, to see whether it is rejected or ignored.
-
-Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It should also print `toolResults` and pass `toolMockConfig` so the result value is deterministic.
+**Verified empirically?** **Partly (VERIFIED LIVE, 2026-10-04):**
+- **A (no mock) and B (`toolMockConfig` with `defaultReturnValue: "MOCKED-RESULT-123"`):**
+  - The partial history put the pointing event into a plain user turn.
+  - In both runs the agent **did not call the tool**. It asked "Is there anything specific you'd like to know about channel SYS1?" directly.
+  - So the mock result value was **not observed**, and `toolMockConfig` is accepted but still unexercised.
+- **C (partial history with a replayed client `toolCalls` / `toolResults` pair):** accepted without error. The agent continued normally and did not call the tool again.
+- **D (raw REST, `contextual_update_info` on a history *input* item):**
+  - `200`, the field is **silently ignored**. The item is treated as a normal user turn: the agent replied "Understood." to it, and `contextual_update_info` came back `null`.
+  - On the next turn the agent **called the client tool** (`mark_question_target {"event_id":"evt-555"}`) and then asked "What do you see?". So client tool calls *are* recorded in simulation output (`tool_calls`).
+- **Tool compliance differed:** the tool was called in 1 of 3 simulations versus 3 of 3 live turns.
+- **Practical consequences for `probe-agents.mts`:**
+  - print `toolResults` as well as `toolCalls`;
+  - always pass `toolMockConfig`;
+  - make the probe's simulated history end on a user turn that clearly references the event;
+  - judge tool compliance over ≥ 5 runs, not one.
 
 ---
 
@@ -167,12 +201,12 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
 
 | Setting | Field path | Values / default | Notes |
 |---|---|---|---|
-| Take turn after silence | `turn.turn_timeout` | Docs: 1–30 s. API default **7** | "Maximum wait time for the user's reply before re-engaging the user". Whether `-1` (disable) is allowed is not documented; the planned test was not run |
+| Take turn after silence | `turn.turn_timeout` | Docs: 1–30 s. API default **7**. **Live: `-1` or 1–300 s** | "Maximum wait time for the user's reply before re-engaging the user". VERIFIED LIVE: `-1` and `60` accepted; `0.5` rejected with `400 "Turn timeout must be -1 or between 1 and 300 seconds"` |
 | Initial wait | `turn.initial_wait_time` | seconds, unset = turn_timeout | Only when first message is empty |
 | End call after silence | `turn.silence_end_call_timeout` | default **-1** (off) | |
 | Turn eagerness | `turn.turn_eagerness` | `patient` \| `normal` (default) \| `eager` | "Patient – waits longer before taking its turn" |
 | Turn model | `turn.turn_model` | `turn_v2` \| `turn_v3` (default) | End-of-turn detection model |
-| Speculative turn | `turn.speculative_turn` | bool, default false | Starts LLM before full turn confidence |
+| Speculative turn | `turn.speculative_turn` | bool. API ref says default false; **a new agent read back `true`** (live) | Starts LLM before full turn confidence. Set explicitly in `sync-agents` |
 | Spelling patience | `turn.spelling_patience` | `auto` \| `off` | |
 | Interruption ignore terms | `turn.interruption_ignore_terms`, `interruption_ignore_term_languages`, `merge_with_default_ignore_terms` | list / bool | Backchannels like "gotcha" do not interrupt |
 | Transcribe while interruptions are disabled | `turn.transcribe_on_disabled_interruptions` | bool, default false | |
@@ -212,7 +246,14 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
 - `elevenlabs-js/api/types/{TurnConfig,TurnEagerness,SoftTimeoutConfig,TurnConfigOverrideConfig,ConversationConfigClientOverrideConfigInput,TurnConfigWorkflowOverride}.d.ts`
 - `@elevenlabs/client/dist/utils/BaseConnection.d.ts`
 
-**Verified empirically?** No. The spike was going to test `turn_timeout` = -1, 60 and 0.5 on the temp agent; it was not run.
+**Verified empirically?** **VERIFIED LIVE (config only):**
+- **`turn_timeout` bounds:** `-1` or 1–300 s (see the table).
+- **A freshly created agent read back:**
+  - `turnEagerness:"normal"`, `turnModel:"turn_v3"`, `speculativeTurn:true`
+  - `silenceEndCallTimeout:-1`, `softTimeoutConfig.timeoutSeconds:-1`
+  - `spellingPatience:"auto"`, `retranscribeOnTurnTimeout:false`
+- **Overrides default to off** (`platformSettings.overrides.conversationConfigOverride`): every field is `false` except `conversation.textOnly: true`.
+- **Not verified (voice):** how the turn-taking settings behave with real speech.
 
 ---
 
@@ -275,6 +316,11 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
 - `vad_score` arrived as `{"vadScore":0.93}`.
 - `user_transcript` arrived at `onMessage` as `{"source":"user","role":"user","message":"look here","event_id":8}`.
 
+**VERIFIED LIVE (config):**
+- A new agent's default `conversation.client_events` is `["audio","interruption","agent_response","user_transcript","agent_response_correction","agent_tool_response"]`. So **`vad_score`, `tentative_user_transcript`, `agent_chat_response_part` and `agent_response_complete` are off by default**, and Sprint 1 must add them in `sync-agents`.
+- In the text-only ws sessions, `agent_chat_response_part` (`start` / `delta` / `stop`, same `event_id` and `response_id` as the final `agent_response`) was still delivered.
+- No server event carried a wall-clock timestamp.
+
 > **Bug found in existing code:** `web/lib/voice/transcript.ts` `tentativeTextFrom()` checks `event.type === "internal_tentative_agent_response"` and reads `tentative_agent_response_internal_event`. The SDK actually calls `onDebug({ type: "tentative_agent_response", response })`, so **tentative agent lines never render today**. It also does not handle `tentative_user_transcript`. Fix in Sprint 1 or 2.
 
 ---
@@ -309,7 +355,13 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
 - `elevenlabs-js/api/types/ConversationHistoryTranscriptResponseModel.d.ts`
 - `elevenlabs-js/api/resources/conversationalAi/resources/conversations/...`
 
-**Verified empirically?** No (invalid key). `spike.mts` prints the full transcript of a text-only session, including `contextual_update_info`, `tool_calls`, `tool_results` and `time_in_call_secs`.
+**Verified empirically?** **VERIFIED LIVE** (ws1 history, via `conversations.get` polled until `status:"done"`):
+- **Metadata:** `hasAudio: true`, `metadata.startTimeUnixSecs` and `callDurationSecs: 37` are present.
+- **Turn offsets:** every transcript item carries integer `time_in_call_secs` (0, 10, 23, 24, 25, 33, 34).
+- **Text input:** user text turns carry `source_medium:"text"`.
+- **Client tool calls** appear as an agent item with `tool_calls ["client:mark_question_target {\"event_id\": \"evt-001\"}"]`, followed by an agent item with `tool_results` (`result_value` is our JSON ack, `tool_latency_secs` about 0.16). These come before the agent item that holds the question text.
+- **Contextual updates** appear as described in Q1.
+- **Audio:** `conversations.audio.get(id)` returned a stream, even for this text-only session.
 
 ---
 
@@ -359,7 +411,10 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
 - https://elevenlabs.io/docs/eleven-agents/api-reference/conversations/delete
 - Changelog 2025-05-19 ("Allowed enabling Zero Retention Mode (ZRM) per agent")
 
-**Verified empirically?** No (invalid key). The spike was going to call `conversations.delete` on its own test conversations and confirm that a following `get` fails.
+**Verified empirically?** **VERIFIED LIVE:**
+- **Deletion:** `conversations.delete(id)` succeeded for all 3 spike conversations. A following `get` returned `404 {"code":"conversation_not_found"}`.
+- **Privacy defaults on a new agent:** `recordVoice:true`, `retentionDays:-1`, `deleteTranscriptAndPii:false`, `deleteAudio:false`, `zeroRetentionMode:false`, `conversationHistoryRedaction.enabled:false`.
+- **Not tested:** whether our plan allows setting `zero_retention_mode: true` per agent, and microphone muting (needs a voice session).
 
 ---
 
@@ -391,7 +446,12 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
 - https://elevenlabs.io/docs/eleven-agents/customization/tools/system-tools/update-state
 - https://elevenlabs.io/docs/eleven-agents/customization/tools/client-tools
 
-**Verified empirically?** No (invalid key). The spike's WS session 0 (override without permission, expected to error) and session 2 (override plus a changed `{{phase}}`) are prepared.
+**Verified empirically?** **VERIFIED LIVE:**
+- **ws0, prompt override without permission:** the server sent `conversation_initiation_metadata` (a conversation id was created) and then **closed the socket with code `1008`, reason `"Override for field 'prompt' is not allowed by config."`**. In the React SDK this surfaces as a disconnect right after connect.
+- **ws2, after enabling `platformSettings.overrides.conversationConfigOverride.agent.{firstMessage, prompt.prompt}`:**
+  - the overridden first message was spoken: "Debrief starts now.";
+  - the overridden prompt was followed: it answered "debrief-override", as the override prompt instructed.
+- **Dynamic variables** (`phase`) were accepted at session start in all sessions. Whether `{{phase}}` was substituted into the override prompt was not isolated by this test.
 
 ---
 
@@ -420,7 +480,14 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
 - https://elevenlabs.io/docs/changelog/2025/5/26
 - `elevenlabs-js/api/types/{SkipTurnToolConfig,SystemToolConfigInputParams,BuiltInToolsInput}.d.ts`
 
-**Verified empirically?** No (invalid key). The spike's WS session 1 sends "Give me a second, let me think." and observes whether `skip_turn` is called and no `agent_response` follows.
+**Verified empirically?** **Not verified, and a warning sign.**
+- The temp agent was created with `prompt.builtInTools.skipTurn` exactly as in the docs' JS example.
+- The read-back of `prompt.builtInTools` showed **no enabled built-in tools**.
+- In ws1, "Give me a second, let me think." got a question back instead of silence: the agent called `mark_question_target(evt-002)`, then asked "What aspect of channel SYS2 are you considering?".
+- So either `builtInTools` passed on `agents.create` is not persisted, or the read-back shape differs from what the spike checked.
+- **Sprint 1 must:**
+  - enable `skip_turn` through `agents.update` (the same path `sync-agents.mts` already uses for `language_detection`);
+  - confirm it by reading the agent back before relying on it.
 
 ---
 
@@ -434,7 +501,7 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
   - Anthropic: Claude Opus 5.5 / 5 / 4.8 / 4.7, Sonnet 5.5 / 5 / 4.6 / 4.5, Haiku 4.5
   - Custom LLM is also supported.
 - **SDK enum lags the docs.** The installed `elevenlabs-js` 2.70 `Llm` enum has 105 values, but it **lacks some doc-listed models** (for example `claude-sonnet-5-5`, which the simulate API ref lists, and GPT-6.1 Sol). A cast may be needed. Runtime list: `client.conversationalAi.llm.list()`, which also returns `supportsParallelToolCalls` and `deprecationInfo` per model.
-- **Default:** **not documented** in the current docs or schema (`prompt.llm` is "optional" with no default). The changelog 2025-03-17 says "Changed the default agent LLM from Gemini 1.5 Flash to Gemini 2.0 Flash". The client tools page warns *against* Gemini-2.0-Flash for tools. **Always set `prompt.llm` explicitly** in `sync-agents`.
+- **Default:** observed live as `qwen35-397b-a17b` (see below). **Not documented** in the current docs or schema (`prompt.llm` is "optional" with no default). The changelog 2025-03-17 says "Changed the default agent LLM from Gemini 1.5 Flash to Gemini 2.0 Flash". The client tools page warns *against* Gemini-2.0-Flash for tools. **Always set `prompt.llm` explicitly** in `sync-agents`.
 - **Tool-call reliability (documented):**
   - "When using tools, we recommend picking high intelligence models like GPT 5.2, Gemini-2.5-Flash, or Claude Sonnet 4.5 and avoiding Gemini-2.0-Flash."
   - "Some LLMs can struggle with extracting the relevant parameters from the conversation."
@@ -462,23 +529,29 @@ Practical consequence for `probe-agents.mts`: it already prints `toolCalls`. It 
 - https://elevenlabs.io/docs/changelog/2025/3/17
 - `elevenlabs-js/api/types/{Llm,LlmInfoModel,PromptAgentApiModelInput}.d.ts`
 
-**Verified empirically?** No (invalid key). The spike was going to read the default `llm` back from a freshly created agent and print `llm.list()`.
+**Verified empirically?** **VERIFIED LIVE:**
+- **Default model:** an agent created without `prompt.llm` read back **`llm: "qwen35-397b-a17b"`** (ElevenLabs-hosted Qwen3.5-397B-A17B), `temperature: 0`. This is today's undocumented default. It handled the client tool correctly in 3 of 3 live turns, but in only 1 of 3 simulations. Still pin `prompt.llm` explicitly.
+- **`llm.list()`** returned 107 entries. Non-deprecated models with parallel-tool support include `claude-sonnet-5-5`, `claude-opus-5-5`, `claude-haiku-4-5`, `gpt-5.5`, `gpt-6.1-sol`, `gemini-3.8-flash` and `gemini-3.5-flash`. `gemini-2.0-flash` and `gemini-2.5-flash` are marked deprecated.
+- Full list: `spike-results.json` → `llms`.
 
 ---
 
 ## Recommended mechanisms
 
 Status labels:
-- **VERIFIED**: tested (offline SDK run).
-- **DOCUMENTED-ONLY**: from docs or typings, not exercised against the live API.
+- **VERIFIED LIVE**: observed against the real API (2026-10-04 spike, text-only sessions, n = 1 run per behaviour unless stated).
+- **VERIFIED (offline)**: tested by running the installed SDK code without network.
+- **DOCUMENTED-ONLY**: from docs or typings, not exercised.
 
-All agent-behaviour claims need the live check that could not run here (see "Status of the empirical checks").
+"VERIFIED LIVE" means "observed to work". It is not a pass rate: Sprint 1+ probes must still show ≥ 4 of 5 runs.
 
 ### (a) Delivering pointing events to the agent without forcing a reply
 
 - **Use:** `sendContextualUpdate(text, { contextId: event.event_id })`. Use one compact line per event, for example `POINTING_EVENT id=evt-001 status=resolved channel=SYS1 region=[…] record=on`, with no interpretation. Use a **unique `contextId` per event**, so that `contextual_update_info.context_id` in the history maps back to the event and earlier events are not marked `is_superseded`.
 - For "current state" information (current focus, released topics, phase), use a **fixed** `contextId` (for example `"ws3-state"`) so that only the newest copy is current.
-- **Status:** wire format **VERIFIED** (offline). "Does not trigger a response" is **DOCUMENTED-ONLY**.
+- **Status:**
+  - wire format **VERIFIED** (offline);
+  - "does not trigger a response", "used on the next natural turn" and "same `context_id` supersedes the earlier update" are all **VERIFIED LIVE** (2 of 2 updates silent; text-only).
 - **Fallback:** a client tool `get_pointing_events` (`expects_response: true`) that the agent calls to pull the latest events from client state. This never adds unsolicited context, but costs a tool round-trip per question. **DOCUMENTED-ONLY.** Dynamic variables are *not* a fallback: they cannot be changed from the client mid-session.
 
 ### (b) Linking a question to an event (client tool called right before asking)
@@ -494,8 +567,10 @@ All agent-behaviour claims need the live check that could not run here (see "Sta
 - The next `onMessage` with `role:"agent"` is the question. Link it to the pending tool call.
 - Post-call, the history shows the `tool_calls` entry on an agent turn immediately before the question, which gives a server-side cross-check.
 - **Manage the tool** in `sync-agents.mts` with `tools.create` / `tools.update` plus `agents.update({ conversationConfig: { agent: { prompt: { toolIds } } } })`.
-- **Test** with `simulateConversation` plus `toolMockConfig` (the call is recorded and the mock result is returned).
-- **Status:** SDK dispatch, async handler and returned JSON **VERIFIED** (offline). LLM compliance and ordering are **DOCUMENTED-ONLY**.
+- **Test** with `simulateConversation` plus `toolMockConfig`. The call is recorded in `tool_calls`, but compliance in simulation was lower (1 of 3), so probes need ≥ 5 runs.
+- **Status:**
+  - SDK dispatch, async handler and returned JSON: **VERIFIED** (offline).
+  - LLM calls the tool before the question, with the most recent event id; the ack round-trip takes about 160 ms; the call shows in history before the question: **VERIFIED LIVE** (3 of 3 turns, default LLM, text-only).
 - **Fallback:** no tool. Link on the client: the event is the one whose topic was most recently *released* (see (c)) before the agent turn started. The `event_id` decision stays entirely on our side, and only one topic is released at a time. Do not ask the agent to embed ids in its text, because everything it emits is spoken. **DOCUMENTED-ONLY.**
 
 ### (c) Pause-aware release of queued topics
@@ -508,7 +583,11 @@ All agent-behaviour claims need the live check that could not run here (see "Sta
   - the rate limit allows it (3–5 per 10 minutes).
 - **Who takes the turn.** The agent asks on its **next natural turn**: either the end of the expert's utterance (turn model `turn_v3`, `turn_eagerness: "patient"`) or the silence turn (`turn_timeout` about 8–15 s).
 - **When nothing is released,** the prompt makes the agent call **`skip_turn`** instead of speaking. Give `skip_turn` a custom description to that effect.
-- **Status:** event plumbing **VERIFIED** (offline). Behaviour **DOCUMENTED-ONLY**.
+- **Status:**
+  - event plumbing: **VERIFIED** (offline);
+  - `turn_timeout` range (`-1` or 1–300 s) and the default `client_events` lacking `vad_score` / `tentative_user_transcript`: **VERIFIED LIVE**;
+  - the gate behaviour itself: **DOCUMENTED-ONLY**.
+- **`skip_turn` is NOT verified:** it was not enabled after `agents.create` (see Q9). In the live test, a "let me think" turn was answered with a question. Until Sprint 1 confirms `skip_turn` via read-back, assume the agent *will* speak on every natural turn, and rely on prompt rules plus the fallback below.
 - **Risk:** `skip_turn` suppresses turn-timeout re-engagement, so after a skip the agent may wait for the expert to speak again before asking.
 - **Fallback:** client-forced turn. When the gate opens, call `sendUserMessage("[CONTROL] Ask about released topic evt-001 now.")`. This *does* trigger a turn (documented). It is stored as a user turn with `source_medium:"text"`, so the persistence layer must drop every text-medium user turn and anything we sent ourselves from the verbatim expert record. **DOCUMENTED-ONLY.**
 - **To suppress the agent during an ongoing expert explanation,** send `sendUserActivity()`. It resets the turn timer and pauses the agent for about 2 s.
@@ -518,8 +597,14 @@ All agent-behaviour claims need the live check that could not run here (see "Sta
 - **Use:** one ElevenLabs session for the whole interview. Keep all phases' instructions in the system prompt. Switch with a state contextual update (`contextId:"ws3-phase"`, for example `PHASE=debrief`) sent from our UI or controller.
 - **Optional server-side confirmation:** a client tool `get_phase` (`expects_response: true`) that returns phase-specific instructions and rules. Its result can be written to a `{{phase}}` dynamic variable through tool `assignments`.
 - **Why one session:** one conversation id, one audio file, one `time_in_call_secs` timeline for evidence offsets.
-- **Status:** **DOCUMENTED-ONLY.**
-- **Fallback:** end the session and start a new one per phase. Use `overrides.agent.prompt.prompt` and `overrides.agent.firstMessage` (requires enabling `platform_settings.overrides.conversation_config_override.agent.{first_message, prompt.prompt}`), and use `dynamicVariables` to inject the phase and a compact summary of open questions. Cost: separate conversation ids, audio files and timelines that must be stitched by our session id. **DOCUMENTED-ONLY.**
+- **Status:**
+  - a contextual update is silently absorbed and used on the next turn: **VERIFIED LIVE** (see (a));
+  - the agent switching behaviour on a `PHASE=` update: **DOCUMENTED-ONLY** (not tested).
+- **Fallback:** end the session and start a new one per phase.
+  - Use `overrides.agent.prompt.prompt` and `overrides.agent.firstMessage`. This requires enabling `platform_settings.overrides.conversation_config_override.agent.{first_message, prompt.prompt}`; **without that the server closes the socket with 1008**.
+  - Use `dynamicVariables` to inject the phase and a compact summary of open questions.
+  - Cost: separate conversation ids, audio files and timelines that must be stitched by our session id.
+  - **VERIFIED LIVE** (override applied and followed; 1008 without permission).
 - **Alternative:** ElevenLabs workflows, with per-node prompt and `TurnConfig` overrides, can change turn eagerness and timeout per phase. More moving parts; consider only if per-phase turn settings prove necessary. **DOCUMENTED-ONLY.**
 
 ### (e) Timing capture
@@ -533,7 +618,9 @@ All agent-behaviour claims need the live check that could not run here (see "Sta
   - our own `sendContextualUpdate` (event_received, topic_released)
 - Record `onConnect`'s `conversationId` and the connect time.
 - **Post-session,** `conversations.get(id)` gives `metadata.start_time_unix_secs` plus per-turn `time_in_call_secs` (integer seconds) and `tool_calls` and `contextual_update_info`. Use these to cross-check and to compute `audio_offset_secs` for each exchange. Audio is available from `conversations.audio.get(id)` if `record_voice` stays on.
-- **Status:** callback payloads **VERIFIED** (offline). History fields **DOCUMENTED-ONLY.**
+- **Status:**
+  - callback payloads: **VERIFIED** (offline);
+  - server events carry no wall-clock time; history has integer `time_in_call_secs`, `start_time_unix_secs`, `tool_calls` / `tool_results` / `contextual_update_info`; audio is downloadable: **VERIFIED LIVE**.
 - **Fallback:** if the history is unavailable (ZRM, deleted, or the call fails), use client timestamps relative to `onConnect` as the audio offset approximation. Mark these `audio_offset_secs` as client-derived.
 
 ### (f) Off-record: what can be excluded on ElevenLabs' side
@@ -550,22 +637,26 @@ All agent-behaviour claims need the live check that could not run here (see "Sta
   - After our local export, call `conversations.delete(conversationId)` for any session that contained off-record segments (or for every session).
   - Agent-level `platform_settings.privacy`: `record_voice: false`, a low `retention_days`.
   - Optionally `zero_retention_mode: true`. This disables `conversations.get` transcripts, so data then comes only from client events and post-call webhooks, and it restricts the LLM to Gemini, Claude or Qwen.
-  - **DOCUMENTED-ONLY.**
+  - `conversations.delete` removing the whole conversation (then `404`): **VERIFIED LIVE**.
+  - Privacy settings and ZRM: **DOCUMENTED-ONLY** (defaults read back live: `record_voice: true`, `retention_days: -1`).
 - **Caveat:** an off-record request that is spoken *before* muting is still transcribed. Prefer a UI or gesture toggle over a spoken command.
 
 ---
 
 ## Open risks
 
-1. **Invalid API key.** No live verification was possible. Every agent-behaviour statement above is DOCUMENTED-ONLY until `spike.mts` has been run with a valid key. That run should happen before Sprint 1 starts building on (a)–(c).
-2. **Contextual updates may still influence the next spoken turn.** Not documented whether the LLM tends to "answer" a contextual update at the next natural turn. Prompt discipline and `skip_turn` must handle it; verify with probes.
+1. **Text-only verification.** The live spike (2026-10-04) used text-only sessions and n = 1 per behaviour. Voice behaviour (VAD, tentative transcripts, end-of-turn detection, interruptions, muting) is still DOCUMENTED-ONLY. The Sprint 1 and 2 live gates must cover it.
+2. **Contextual updates do influence the next spoken turn** (VERIFIED LIVE). The agent used the latest event's content in its next question. That is wanted for linking, but prompt discipline must stop it from volunteering interpretations of the event.
+2b. **`skip_turn` was not active after `agents.create` with `builtInTools.skipTurn`** (read-back empty), and a "let me think" turn got a question. Enable it via `agents.update` and confirm by read-back in Sprint 1.
 3. **`skip_turn` and turn timeout interact.** After `skip_turn` the agent may not re-engage on silence (changelog: "prevents turn timeout from being triggered"). Pause-time questions could then wait until the expert speaks again. Sprint 2 must measure this live.
-4. **Turn timing cannot be changed per session.** `turn_timeout` and `turn_eagerness` are agent-level (or workflow-node) only. Whether `turn_timeout` can be disabled (-1) or set above 30 s is not documented.
+4. **Turn timing cannot be changed per session.** `turn_timeout` and `turn_eagerness` are agent-level (or workflow-node) only. The API accepts `-1` (disabled) or 1–300 s (VERIFIED LIVE), although the docs say 1–30 s.
 5. **Integer-second `time_in_call_secs`, and no timestamps on client events.** Sub-second timing must come from client stamps; server offsets are coarse.
-6. **Superseded contextual updates.** It is not documented whether `is_superseded` updates are removed from LLM context. Using one `contextId` for all pointing events could hide earlier events, so use per-event ids.
-7. **Simulation fidelity.** Contextual updates cannot be placed in `partialConversationHistory` (no input field), so text probes only approximate the live mechanism. Client tools are mocked, not executed.
+6. **Superseded contextual updates.** It is not documented whether `is_superseded` updates are removed from LLM context. Live, a shared `contextId` marked the earlier pointing event `is_superseded: true`. Use per-event ids.
+7. **Simulation fidelity.** Contextual updates cannot be placed in `partialConversationHistory`: an input `contextual_update_info` is silently ignored and the item becomes a normal user turn (VERIFIED LIVE). Text probes therefore only approximate the live mechanism. Client tools are mocked, not executed, and tool compliance in simulation was lower (1 of 3) than live (3 of 3).
+7b. **Tool cleanup.** Inline tools passed on `agents.create` become standalone tools. After the agent is deleted they still report an orphaned dependent and need `tools.delete(id, { force: true })`.
 8. **SDK lag.** elevenlabs-js 2.70 lacks `update_state`, `tool_mock_overrides` and some LLM ids that are in the docs (for example `claude-sonnet-5-5`). Raw REST or casts may be needed.
-9. **Default LLM is undocumented,** and the last documented default (Gemini 2.0 Flash) is explicitly discouraged for tools. Pin `prompt.llm` in `sync-agents`.
+9. **Default LLM is undocumented.** Live it is currently `qwen35-397b-a17b`. Defaults can change without notice, so pin `prompt.llm` in `sync-agents`.
+9b. **Defaults that differ from the docs** (VERIFIED LIVE): `speculative_turn` read back `true`; `client_events` lacks `vad_score`, `tentative_user_transcript` and `agent_chat_response_part`. Set all of these explicitly.
 10. **`max_duration_seconds` defaults to 600 s** (10 minutes). An expert session plus debrief will exceed it; raise it on the agent (range 60–7200).
 11. **Plan restrictions.** ZRM and history redaction are enterprise features (per-agent ZRM availability on our plan is not documented). Off-record cannot rely on them.
 12. **Existing bug.** `web/lib/voice/transcript.ts` `tentativeTextFrom()` never matches what the SDK emits (`{type:"tentative_agent_response", response}`), so tentative agent text is never shown. It also ignores `tentative_user_transcript`.

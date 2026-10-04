@@ -1,0 +1,1 @@
+Hi, I'm your apprentice for this session. Just look at the traces, point at whatever matters and talk me through it as you normally would. I'll stay quiet most of the time and ask the occasional short question when you pause.
