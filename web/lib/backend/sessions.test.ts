@@ -179,6 +179,20 @@ describe("guards", () => {
     expect(await codeOf(requireActiveSession("ses-nope"))).toBe("not_found");
   });
 
+  it("paused: content writes still pass, voice access does not; resume restores it (D53)", async () => {
+    const { session } = await createSession(expert);
+    const sid = session.session_id;
+    await changeLifecycle(sid, { action: "start", rev: 1 });
+    const paused = await changeLifecycle(sid, { action: "pause", rev: 2 });
+    expect(paused).toMatchObject({ lifecycle: "paused", record_state: "on_record", rev: 3 });
+    await expect(requireWritableSession(sid)).resolves.toMatchObject({ lifecycle: "paused" });
+    expect(await codeOf(requireActiveSession(sid))).toBe("invalid_transition");
+    await changeLifecycle(sid, { action: "resume", rev: 3 });
+    await expect(requireActiveSession(sid)).resolves.toMatchObject({ lifecycle: "active", rev: 4 });
+    const bus = await readBusAfter(sid, 0);
+    expect(bus.map(e => e.type)).toEqual(["session.updated", "session.updated", "session.updated"]);
+  });
+
   it("withSessionLock serializes per session", async () => {
     const order: string[] = [];
     await Promise.all([

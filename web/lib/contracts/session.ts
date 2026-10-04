@@ -6,8 +6,11 @@ import { makeParser } from "./parse";
 export const SessionRoleSchema = z.enum(["expert", "newcomer"]);
 export type SessionRole = z.output<typeof SessionRoleSchema>;
 
-/** Transitions (enforced in S1): created→active→ended; created|active→aborted. ended/aborted are terminal. */
-export const SessionLifecycleSchema = z.enum(["created", "active", "ended", "aborted"]);
+/**
+ * Transitions: created→active→ended; created|active|paused→aborted; active⇄paused (integration, D53);
+ * paused→ended. ended/aborted are terminal. Paused is not a privacy state: writes are still stored.
+ */
+export const SessionLifecycleSchema = z.enum(["created", "active", "paused", "ended", "aborted"]);
 export type SessionLifecycle = z.output<typeof SessionLifecycleSchema>;
 
 /** Mutable session record (`rev`). `pinned_knowledge` is newcomer-only and must be `null` for expert sessions. */
@@ -55,7 +58,7 @@ export const CreateSessionRequestSchema = z.discriminatedUnion("role", [
 export type CreateSessionRequest = z.output<typeof CreateSessionRequestSchema>;
 export const parseCreateSessionRequest = makeParser(CreateSessionRequestSchema);
 
-export const LifecycleActionSchema = z.enum(["start", "end", "abort"]);
+export const LifecycleActionSchema = z.enum(["start", "pause", "resume", "end", "abort"]);
 export type LifecycleAction = z.output<typeof LifecycleActionSchema>;
 
 /** `POST /api/sessions/:sid/lifecycle` body. `rev` must be the session's current rev. */

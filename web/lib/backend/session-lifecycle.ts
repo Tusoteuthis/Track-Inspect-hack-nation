@@ -1,6 +1,7 @@
 /**
- * Pure session state machine (no I/O). created → active → ended; created | active → aborted;
- * ended and aborted are terminal. Re-sending an action whose target state is already reached
+ * Pure session state machine (no I/O). created → active → ended; created | active | paused → aborted;
+ * active ⇄ paused; paused → ended. ended and aborted are terminal. Pause and resume leave the record
+ * state and recording segments alone: pausing is not going off the record. Re-sending an action whose target state is already reached
  * is an idempotent no-op, so retried lifecycle calls never fail.
  */
 import type { LifecycleAction, LifecycleRequest, RecordState, Session, SessionLifecycle } from "@/lib/contracts";
@@ -8,11 +9,18 @@ import { ApiError } from "./errors";
 
 export type Applied = { changed: boolean; session: Session };
 
-const TARGET: Record<LifecycleAction, SessionLifecycle> = { start: "active", end: "ended", abort: "aborted" };
+const TARGET: Record<LifecycleAction, SessionLifecycle> = {
+  start: "active",
+  pause: "paused",
+  resume: "active",
+  end: "ended",
+  abort: "aborted",
+};
 
 const ALLOWED: Record<SessionLifecycle, readonly LifecycleAction[]> = {
   created: ["start", "abort"],
-  active: ["end", "abort"],
+  active: ["pause", "end", "abort"],
+  paused: ["resume", "end", "abort"],
   ended: [],
   aborted: [],
 };

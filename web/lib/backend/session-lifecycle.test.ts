@@ -37,6 +37,10 @@ describe("applyLifecycle", () => {
     ["created", "abort", "aborted"],
     ["active", "end", "ended"],
     ["active", "abort", "aborted"],
+    ["active", "pause", "paused"],
+    ["paused", "resume", "active"],
+    ["paused", "end", "ended"],
+    ["paused", "abort", "aborted"],
   ];
   it.each(legal)("%s + %s → %s, rev+1", (from, action, to) => {
     const r = applyLifecycle(session(from), { action, rev: 3 }, now);
@@ -51,6 +55,12 @@ describe("applyLifecycle", () => {
     ["ended", "abort"],
     ["aborted", "start"],
     ["aborted", "end"],
+    ["created", "pause"],
+    ["created", "resume"],
+    ["paused", "start"],
+    ["ended", "pause"],
+    ["ended", "resume"],
+    ["aborted", "resume"],
   ];
   it.each(illegal)("%s + %s → invalid_transition", (from, action) => {
     expect(codeOf(() => applyLifecycle(session(from), { action, rev: 3 }, now))).toBe("invalid_transition");
@@ -60,6 +70,8 @@ describe("applyLifecycle", () => {
     ["active", "start"],
     ["ended", "end"],
     ["aborted", "abort"],
+    ["paused", "pause"],
+    ["active", "resume"],
   ];
   it.each(noop)("%s + %s (already applied) → unchanged, any rev", (from, action) => {
     const s = session(from);
@@ -86,6 +98,20 @@ describe("applyLifecycle", () => {
     }
     const started = applyLifecycle(session("created"), { action: "start", rev: 3 }, now);
     expect(started.session.recording_segments[0].ended_at_utc).toBeNull();
+  });
+
+  it("pause and resume leave recording segments and record state alone (pause is not off-record)", () => {
+    const paused = applyLifecycle(session("active"), { action: "pause", rev: 3 }, now);
+    expect(paused.session.recording_segments).toEqual(session("active").recording_segments);
+    expect(paused.session.record_state).toBe("on_record");
+    const resumed = applyLifecycle(paused.session, { action: "resume", rev: 4 }, now);
+    expect(resumed.session.recording_segments).toEqual(session("active").recording_segments);
+    expect(resumed.session.rev).toBe(5);
+  });
+
+  it("closes the open recording segment when a paused session ends", () => {
+    const r = applyLifecycle(session("paused"), { action: "end", rev: 3 }, now);
+    expect(r.session.recording_segments[0].ended_at_utc).toBe(now.toISOString());
   });
 
   it("does not mutate the input", () => {
