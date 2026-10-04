@@ -13,6 +13,7 @@ import {
   appendTentative,
   finalLineFrom,
   tentativeTextFrom,
+  tentativeUserTextFrom,
   type TranscriptLine,
 } from "@/lib/voice/transcript";
 
@@ -34,6 +35,10 @@ export type VoiceSessionProps = {
   onAgentModeChange?: (mode: "speaking" | "listening") => void;
   /** Fires when the conversation ends, from either side. */
   onDisconnected?: () => void;
+  /** Server VAD score (0–1, probability the user is speaking); needs `vad_score` in the agent's client events. */
+  onVadScore?: (score: number) => void;
+  /** Tentative user transcript text; needs `tentative_user_transcript` in the agent's client events. */
+  onUserTentative?: (text: string) => void;
   /**
    * Rendered inside the conversation provider, so children can call
    * `useConversationControls()` — e.g. `sendContextualUpdate` to tell the agent
@@ -57,6 +62,8 @@ export function VoiceSession({
   onFinalLine,
   onAgentModeChange,
   onDisconnected,
+  onVadScore,
+  onUserTentative,
   ...props
 }: VoiceSessionProps) {
   const [lines, setLinesState] = useState<TranscriptLine[]>([]);
@@ -73,6 +80,10 @@ export function VoiceSession({
   modeCb.current = onAgentModeChange;
   const disconnectedCb = useRef(onDisconnected);
   disconnectedCb.current = onDisconnected;
+  const vadCb = useRef(onVadScore);
+  vadCb.current = onVadScore;
+  const userTentativeCb = useRef(onUserTentative);
+  userTentativeCb.current = onUserTentative;
 
   const nextId = useCallback(() => `line-${++lineCounter.current}`, []);
   const setLines = useCallback((next: TranscriptLine[]) => {
@@ -97,6 +108,8 @@ export function VoiceSession({
     (event: unknown) => {
       const text = tentativeTextFrom(event);
       if (text) setLines(appendTentative(linesRef.current, text, nextId));
+      const userText = tentativeUserTextFrom(event);
+      if (userText) userTentativeCb.current?.(userText);
     },
     [nextId, setLines]
   );
@@ -119,6 +132,7 @@ export function VoiceSession({
       }
       onMessage={handleMessage}
       onDebug={handleDebug}
+      onVadScore={({ vadScore }: { vadScore: number }) => vadCb.current?.(vadScore)}
     >
       <VoicePanel
         {...props}
@@ -136,7 +150,7 @@ export function VoiceSession({
 
 type VoicePanelProps = Omit<
   VoiceSessionProps,
-  "children" | "onFinalLine" | "onAgentModeChange" | "onDisconnected"
+  "children" | "onFinalLine" | "onAgentModeChange" | "onDisconnected" | "onVadScore" | "onUserTentative"
 > & {
   lines: TranscriptLine[];
   resetTranscript: () => void;

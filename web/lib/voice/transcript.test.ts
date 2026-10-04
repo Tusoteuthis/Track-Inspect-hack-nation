@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendFinal, appendTentative, tentativeTextFrom, type TranscriptLine } from "./transcript";
+import { appendFinal, appendTentative, tentativeTextFrom, tentativeUserTextFrom, type TranscriptLine } from "./transcript";
 
 function idGen() {
   let n = 0;
@@ -49,5 +49,18 @@ describe("tentativeTextFrom", () => {
   it("ignores other debug events and empty text", () => {
     expect(tentativeTextFrom({ type: "tentative_user_transcript", response: "x" })).toBeNull();
     expect(tentativeTextFrom({ type: "tentative_agent_response", response: "  " })).toBeNull();
+  });
+});
+
+describe("tentativeUserTextFrom", () => {
+  it("reads the SDK's tentative user transcript debug event", () => {
+    const event = { type: "tentative_user_transcript", tentative_user_transcription_event: { user_transcript: " so this ", event_id: 3 } };
+    expect(tentativeUserTextFrom(event)).toBe("so this");
+  });
+
+  it("ignores other debug events and empty text", () => {
+    expect(tentativeUserTextFrom({ type: "tentative_agent_response", response: "What" })).toBeNull();
+    expect(tentativeUserTextFrom({ type: "tentative_user_transcript", tentative_user_transcription_event: { user_transcript: "  " } })).toBeNull();
+    expect(tentativeUserTextFrom(null)).toBeNull();
   });
 });

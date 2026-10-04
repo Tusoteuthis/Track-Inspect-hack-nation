@@ -1,10 +1,13 @@
 "use client";
 
 import { useConversationControls, useConversationStatus } from "@elevenlabs/react";
-import { type ReactNode, useState } from "react";
-import type { ExpertExchange, TimingMark } from "@/lib/expert/contracts";
+import { type ReactNode, useEffect, useState } from "react";
+import type { ExpertExchange, TimingMark, Topic } from "@/lib/expert/contracts";
 import { FIXTURE_EVENTS } from "@/lib/expert/fixtures";
-import type { ExpertSession, SaveStatus } from "./useExpertSession";
+import { DEFAULT_SCENARIO, formatScenarioOffsets, parseScenarioOffsets } from "@/lib/expert/scenario";
+import type { SessionState } from "@/lib/expert/session";
+import { exchangeTimings, liveCounters } from "@/lib/expert/timing";
+import type { ExpertSession, GateStatus, SaveStatus } from "./useExpertSession";
 
 type Props = {
   session: ExpertSession;
@@ -13,19 +16,30 @@ type Props = {
 };
 
 const time = (iso: string) => iso.slice(11, 23);
+const TICK_MS = 200;
 
 /**
- * Dev console for the expert flow: inject fixture pointing events and watch the
- * event ↔ question ↔ answer linkage, timing marks and save state live.
- * Must render inside VoiceSession (uses the conversation controls).
+ * Dev console for the expert flow: inject fixture pointing events, watch the topic
+ * queue and pause gate, the event ↔ question ↔ answer linkage, timing and save state.
+ * Must render inside VoiceSession (uses the conversation controls); it also drives the
+ * release controller tick.
  */
 export function ExpertConsole({ session, raw }: Props) {
-  const { sendContextualUpdate } = useConversationControls();
+  const { sendContextualUpdate, sendUserMessage, getInputVolume } = useConversationControls();
   const { status } = useConversationStatus();
   const [showRaw, setShowRaw] = useState(false);
   const [deliverError, setDeliverError] = useState<string | null>(null);
-  const { state, save } = session;
+  const [offsets, setOffsets] = useState(formatScenarioOffsets(DEFAULT_SCENARIO));
+  const { state, save, tick } = session;
   const connected = status === "connected";
+
+  useEffect(() => {
+    if (!connected) return;
+    const id = setInterval(() => tick({ sendContextualUpdate, sendUserMessage, getInputVolume }), TICK_MS);
+    return () => clearInterval(id);
+  }, [connected, tick, sendContextualUpdate, sendUserMessage, getInputVolume]);
+
+  const parsedOffsets = parseScenarioOffsets(offsets);
 
   return (
     <section className="expert-console" aria-label="Expert dev console">
@@ -39,11 +53,45 @@ export function ExpertConsole({ session, raw }: Props) {
         <SaveBadge save={save} onRetry={() => void session.retrySave()} />
       </header>
 
+      {state ? <Counters state={state} /> : null}
+      <GateLine gate={connected ? session.gate : null} />
+
+      <div className="ec-controls">
+        <label className="ec-small">
+          pause_ms{" "}
+          <input
+            type="number"
+            min={0}
+            step={100}
+            value={session.config.pause_ms}
+            onChange={e => session.setConfig({ pause_ms: Number(e.target.value) })}
+          />
+        </label>
+        <label className="ec-small">
+          scenario offsets (s) <span className="ec-muted">evt-001, evt-003, evt-002, evt-004</span>{" "}
+          <input value={offsets} onChange={e => setOffsets(e.target.value)} disabled={session.scenario.running} />
+        </label>
+        {session.scenario.running ? (
+          <button type="button" onClick={session.cancelScenario}>
+            Cancel scenario ({session.scenario.delivered.length}/{session.scenario.total})
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={!connected || !parsedOffsets.ok}
+            onClick={() => parsedOffsets.ok && session.runScenario(parsedOffsets.value)}
+          >
+            Run fixture scenario
+          </button>
+        )}
+        {!parsedOffsets.ok ? <span className="ec-small ec-err">{parsedOffsets.errors.join("; ")}</span> : null}
+      </div>
+
       <div>
         <h2 className="ec-h">Pointing events</h2>
         <p className="ec-muted ec-small">
-          Simulated gestures. Each click sends a contextual update (no forced reply) and is recorded as{" "}
-          <code>source: &quot;fixture&quot;</code>.
+          Simulated gestures, recorded as <code>source: &quot;fixture&quot;</code>. Each becomes a topic; the agent
+          hears about it only when the expert pauses.
         </p>
         <div className="ec-fixtures">
           {FIXTURE_EVENTS.map(f => (
@@ -55,7 +103,7 @@ export function ExpertConsole({ session, raw }: Props) {
               onClick={() => {
                 setDeliverError(null);
                 try {
-                  session.deliverFixture(f, sendContextualUpdate);
+                  session.deliverFixture(f);
                 } catch (e) {
                   setDeliverError(e instanceof Error ? e.message : String(e));
                 }
@@ -93,6 +141,11 @@ export function ExpertConsole({ session, raw }: Props) {
           </div>
 
           <div>
+            <h2 className="ec-h">Topics ({state.topics.length})</h2>
+            <TopicList topics={state.topics} />
+          </div>
+
+          <div>
             <h2 className="ec-h">
               Exchanges ({state.exchanges.length})
               {state.unlinked_agent_questions.length ? (
@@ -117,8 +170,12 @@ export function ExpertConsole({ session, raw }: Props) {
           </div>
 
           <div>
-            <h2 className="ec-h">Timing marks ({state.timing.length})</h2>
-            <TimingTable marks={state.timing} />
+            <h2 className="ec-h">Timing per question</h2>
+            <ExchangeTimingTable state={state} />
+            <details>
+              <summary className="ec-small">All timing marks ({state.timing.length})</summary>
+              <TimingTable marks={state.timing} />
+            </details>
           </div>
         </>
       ) : null}
@@ -138,7 +195,8 @@ function ExchangeCard({ exchange: x, active }: { exchange: ExpertExchange; activ
   return (
     <div className={`ec-card${active ? " active" : ""}`}>
       <div className="ec-small">
-        <code>{x.exchange_id}</code> ↔ <code>{x.event_id ?? "no event"}</code> · {x.kind}
+        <code>{x.exchange_id}</code> ↔ <code>{x.event_id ?? "no event"}</code>
+        {x.related_event_ids.length ? <span className="ec-muted"> (+{x.related_event_ids.join(", ")})</span> : null} · {x.kind}
         {x.source === "fixture" ? <span className="ec-badge fixture">FIXTURE</span> : null}
         {active ? <span className="ec-badge live">ACTIVE</span> : null}
       </div>
@@ -154,6 +212,110 @@ function ExchangeCard({ exchange: x, active }: { exchange: ExpertExchange; activ
         <div className="ec-muted ec-small">no answer yet</div>
       )}
     </div>
+  );
+}
+
+/** Counters derived from the stored records (the same function writes session.json). */
+function Counters({ state }: { state: SessionState }) {
+  const c = liveCounters(state);
+  const items: [string, number, boolean][] = [
+    ["live questions", c.live_questions, false],
+    ["guardrail", c.guardrail_questions, false],
+    ["deferred topics", c.deferred_topics, false],
+    ["unlinked", c.unlinked_agent_questions, c.unlinked_agent_questions > 0],
+    ["interruptions", c.interruptions, c.interruptions > 0],
+    ["duplicates", c.duplicate_questions, c.duplicate_questions > 0],
+  ];
+  return (
+    <div className="ec-counters" aria-label="Live counters">
+      {items.map(([label, n, bad]) => (
+        <span key={label} className={bad ? "ec-err" : undefined}>
+          <strong>{n}</strong> {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+const REASON_TEXT: Record<string, string> = {
+  agent_speaking: "agent speaking",
+  user_speaking: "expert speaking",
+  pause_not_reached: "pause not reached",
+  topic_open: "previous topic still open",
+  nothing_queued: "nothing queued",
+  budget: "budget used up → debrief",
+  moved_on: "expert moved on → debrief",
+  release_timeout: "not asked in time → debrief",
+};
+
+function GateLine({ gate }: { gate: GateStatus | null }) {
+  if (!gate) return <p className="ec-small ec-muted">Release gate: idle (not connected)</p>;
+  const quiet = gate.quiet_ms < 0 ? "no speech yet" : `quiet ${gate.quiet_ms} ms`;
+  return (
+    <p className="ec-small ec-gate" aria-live="off">
+      Release gate: <strong>{gate.decision}</strong>
+      {gate.reasons.length ? ` (${gate.reasons.map(r => REASON_TEXT[r] ?? r).join(", ")})` : ""} ·{" "}
+      {gate.expert_speaking ? "expert speaking" : quiet} · budget {gate.budget.used}/{gate.budget.max}
+    </p>
+  );
+}
+
+function TopicList({ topics }: { topics: Topic[] }) {
+  if (!topics.length) return <p className="ec-muted ec-small">none yet</p>;
+  return (
+    <ul className="ec-list">
+      {topics.map(t => (
+        <li key={t.topic_id}>
+          <code>{t.topic_id}</code> {t.primary_event_id}
+          {t.alias_event_ids.length ? <span className="ec-muted"> + duplicates {t.alias_event_ids.join(", ")}</span> : null} ·{" "}
+          <span className={`ec-state ${t.state}`}>{t.state.replaceAll("_", " ")}</span>
+          {t.requires_clarification ? <span className="ec-muted"> · clarify first</span> : null}
+          {t.stale_at_release ? <span className="ec-muted"> · released stale</span> : null}
+          {t.nudged_at_perf_ms !== null ? <span className="ec-muted"> · nudged</span> : null}
+          {t.deferred_reason ? <span className="ec-muted"> · {t.deferred_reason}</span> : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ExchangeTimingTable({ state }: { state: SessionState }) {
+  const rows = exchangeTimings(state);
+  if (!rows.length) return <p className="ec-muted ec-small">no questions yet</p>;
+  const ms = (v: number | null) => (v === null ? "—" : v);
+  return (
+    <table className="ec-table">
+      <thead>
+        <tr>
+          <th>exchange</th>
+          <th>kind</th>
+          <th>processing</th>
+          <th>intentional wait</th>
+          <th>release→tool</th>
+          <th>tool→speech</th>
+          <th>notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(r => (
+          <tr key={r.exchange_id}>
+            <td>
+              {r.exchange_id} · {r.event_id ?? "—"}
+            </td>
+            <td>{r.kind}</td>
+            <td>{ms(r.processing_ms)}</td>
+            <td>{ms(r.intentional_wait_ms)}</td>
+            <td>{ms(r.release_to_tool_ms)}</td>
+            <td>{ms(r.tool_to_speech_ms)}</td>
+            <td>
+              {[r.follow_up && "follow-up", !r.follow_up && !r.released && "not released", r.stale && "stale", r.nudged && "nudged"]
+                .filter(Boolean)
+                .join(", ")}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
