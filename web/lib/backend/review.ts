@@ -6,7 +6,6 @@
  * the session directory, so deleting the session deletes them.
  */
 import { createHash } from "node:crypto";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import {
@@ -27,6 +26,7 @@ import { getSession, requireLiveSession, withSessionLock } from "./sessions";
 import { canonicalJson, readJson, writeJsonAtomic } from "./store";
 import { getGaps, getSessionDraft } from "./synthesis";
 import { getRevisionSteps } from "./workmap";
+import { getBlobStore } from "./blobstore";
 
 const marksDir = (sid: string) => path.join(sessionDir(sid), "review-marks");
 const markFile = (sid: string, id: string) => safeJoin(marksDir(sid), id) + ".json";
@@ -40,13 +40,7 @@ const invalid = (reason: string, message: string, details: Record<string, unknow
 
 export async function listReviewMarks(sid: string): Promise<ReviewMark[]> {
   assertSafeId(sid, "session_id");
-  let files: string[];
-  try {
-    files = await fs.readdir(marksDir(sid));
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw err;
-  }
+  const files = (await getBlobStore().list(marksDir(sid))).map((e) => e.name);
   const out: ReviewMark[] = [];
   for (const f of files) {
     const id = f.endsWith(".json") ? f.slice(0, -5) : "";
