@@ -88,7 +88,7 @@ export function formatTeachBackUpdate(revision: DraftRevision, toTeach: DraftSte
     : "";
   return (
     `${head} When the expert answers, call confirm_revision with revision_id ${revision.revision_id}: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. ` +
-    `Steps: ${steps}.${tail}`
+    `Steps: ${steps}${/[.!?]$/.test(steps) ? "" : "."}${tail}`
   );
 }
 

@@ -34,7 +34,12 @@ type Expect = {
   toolOptional?: boolean; // staying silent (no question, no tool call) also passes
   forbidKinds?: string[]; // kind params that must not be used
   requirePatterns?: string[]; // case-insensitive regexes the spoken question must match (when one is asked)
+  requireTools?: ToolMatch[]; // each must be called (params JSON matching paramsPattern, if given)
+  forbidTools?: ToolMatch[]; // none may be called (with params JSON matching paramsPattern, if given)
+  allowedGapIds?: string[]; // every begin_question gap_id must be one of these
+  endsWithQuestion?: boolean; // the spoken reply must end with "?"
 };
+type ToolMatch = { name: string; paramsPattern?: string };
 type LegacyCase = { name: string; user: string[] };
 type HistoryCase = { name: string; history: { role: "user" | "agent"; text: string }[]; expect?: Expect };
 type Case = LegacyCase | HistoryCase;
@@ -43,7 +48,13 @@ type Probes = Record<string, { envVar: string; language?: string; cases: Case[] 
 
 type RunResult = { lastUser: string; toolCalls: { name: string; params: string }[]; reply: string; failures: string[] };
 
-const TOOL_MOCKS = { begin_question: { defaultReturnValue: "ok exchange_id=ex-sim" } };
+const TOOL_MOCKS = {
+  begin_question: { defaultReturnValue: "ok exchange_id=ex-sim" },
+  record_coverage: { defaultReturnValue: "ok coverage recorded." },
+  signal_task_complete: { defaultReturnValue: "ok phase=debrief." },
+  propose_draft: { defaultReturnValue: "ok revision_id=rev-sim." },
+  confirm_revision: { defaultReturnValue: "ok confirmation recorded." },
+};
 
 const webDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const envPath = join(webDir, ".env");
@@ -208,6 +219,28 @@ function check(
       if (hit) failures.push(`forbidden /${pat}/ matched "${hit}"`);
     }
   }
+
+  const matches = (m: ToolMatch) =>
+    toolCalls.filter(t => t.name === m.name && (!m.paramsPattern || new RegExp(m.paramsPattern, "i").test(t.params)));
+  for (const m of expect.requireTools ?? []) {
+    if (!matches(m).length) failures.push(`${m.name}${m.paramsPattern ? ` /${m.paramsPattern}/` : ""} not called`);
+  }
+  for (const m of expect.forbidTools ?? []) {
+    const hit = matches(m)[0];
+    if (hit) failures.push(`forbidden ${m.name} ${hit.params}`);
+  }
+  if (expect.allowedGapIds) {
+    for (const t of toolCalls.filter(t => t.name === "begin_question")) {
+      let gap: unknown;
+      try {
+        gap = (JSON.parse(t.params) as Record<string, unknown>).gap_id;
+      } catch {
+        gap = undefined;
+      }
+      if (!expect.allowedGapIds.includes(String(gap))) failures.push(`gap_id ${JSON.stringify(gap)} not on the agenda`);
+    }
+  }
+  if (expect.endsWithQuestion && !/\?["'”’)]*\s*$/.test(reply)) failures.push("reply does not end with a question");
 
   if (expect.maxQuestions !== undefined) {
     if (questionCount > expect.maxQuestions) failures.push(`${questionCount} questions spoken > ${expect.maxQuestions}`);

@@ -607,7 +607,8 @@ export function validateProposeDraftParams(input: unknown): ValidationResult<Pro
   const reason = input.change_reason;
   if (reason !== undefined && reason !== null && typeof reason !== "string") errors.push("change_reason must be a string");
   if (errors.length) return { ok: false, errors };
-  return { ok: true, value: { steps, change_reason: typeof reason === "string" && reason.trim() ? reason.trim() : null } };
+  const given = typeof reason === "string" ? reason.trim() : "";
+  return { ok: true, value: { steps, change_reason: given && given.toLowerCase() !== NO_EVENT ? given : null } };
 }
 
 export function validateConfirmRevisionParams(input: unknown): ValidationResult<ConfirmRevisionParams> {

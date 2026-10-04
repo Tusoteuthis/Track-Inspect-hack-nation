@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { PointingEvent } from "./contracts";
 import { controlNudge, formatPointingEventUpdate } from "./context-update";
+import { probeSystemLines } from "./probe-lines";
 
 type Probes = { expert: { cases: { name: string; history?: { role: string; text: string }[] }[] } };
 
@@ -20,11 +21,14 @@ for (const e of fixtures) {
   }
   sendable.add(controlNudge(e.event_id));
 }
+// Sprint 3 phase blocks, produced by the real reducer for the probe fixture session.
+const phase = probeSystemLines();
+for (const text of [phase.debrief, phase.controlDebrief, phase.teachBack, phase.controlTeachBack]) sendable.add(text);
 
 describe.each(["probes.json", "probes.example.json"])("%s", file => {
   const probes: Probes = JSON.parse(readFileSync(join(root, "agents", file), "utf8"));
   const lines = probes.expert.cases.flatMap(c =>
-    (c.history ?? []).filter(t => /^\[(POINTING_EVENT|CONTROL)\]/.test(t.text)).map(t => [c.name, t.text] as const)
+    (c.history ?? []).filter(t => /^\[(POINTING_EVENT|CONTROL|PHASE|TEACH_BACK)/.test(t.text)).map(t => [c.name, t.text] as const)
   );
 
   it("has system lines to check", () => expect(lines.length).toBeGreaterThan(5));

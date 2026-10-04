@@ -105,8 +105,18 @@ export function coverageGrid(snap: Pick<SessionSnapshot, "topics" | "coverage">)
 const where = (topic: Topic | undefined) =>
   topic ? `the region you pointed at on ${topic.channel_id ?? "the trace"}` : "the task as a whole";
 
+const SESSION_GAPS: Record<CoverageDimension, string> = {
+  decision: "What you decide or do at the end of the task as a whole.",
+  reason: "What, overall, makes you reach that decision.",
+  cues: "Which extra context you need before deciding on the task as a whole.",
+  alternatives: "Which situations in this task could be confused with each other, and how you tell them apart.",
+  guardrails: "When you would stop, escalate or not trust the traces in this task as a whole.",
+  unresolved: "Cases in this task that you are unsure about or would leave open.",
+};
+
 /** Plain description of a gap: a fixed template plus the channel, never an interpretation. */
 export function gapDescription(dimension: CoverageDimension, topic: Topic | undefined): string {
+  if (!topic) return SESSION_GAPS[dimension];
   const w = where(topic);
   switch (dimension) {
     case "decision":
