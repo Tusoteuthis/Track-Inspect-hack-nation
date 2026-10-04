@@ -1,13 +1,13 @@
 # WS6 API v0 — pending agreement
 
-**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented)
+**Schema version:** `ws6.v0` · **Owner:** WS6 (shared backend) · **Date:** 2026-10-04 · **Sprint:** S0 (foundation & contracts), S1 (expert capture path — implemented), S2 (knowledge revisions & confirmation — implemented)
 **Code:** contracts `web/lib/contracts/` (zod; `SCHEMA_VERSION = "ws6.v0"`), server lib `web/lib/backend/`, routes `web/app/api/`, fixtures `web/fixtures/ws6/`.
 **Record fields:** [`specs/001-ws6-foundation-contracts/data-model.md`](../specs/001-ws6-foundation-contracts/data-model.md). This doc names schemas; it does not repeat every field.
 **Dev server:** `npm run dev -- -p 3006` (add `-H 0.0.0.0` for LAN/iPhone).
 
 ## 1. Status and feedback
 
-- **v0, pending agreement.** Implemented: `GET /api/health` (S0) and every route marked **S1** in §5.2–5.5 and §5.10 (S1 implementation notes in §5.11). Every other route is a promise with its owning sprint (S1–S4).
+- **v0, pending agreement.** Implemented: `GET /api/health` (S0), every route marked **S1** in §5.2–5.5 and §5.10 (notes §5.11), and every route marked **S2** in §5.6–5.7 (notes §5.12). Every other route is a promise with its owning sprint (S1–S4).
 - Route paths below are the ones already promised in `notes/ws6-sprints/sprint-1..4-*.md`. Where this doc deviates from a sprint prompt, the deviation is listed in §9.
 - **How to object:** reply to the WS6 owner or add a note to `notes/ws6-sprints/handoff-sprint-0.md` → "Requests from partners". Objections are collected into the **next sprint's handoff** and the doc is updated there. Please answer the numbered questions in §8 by number (e.g. "WS3-Q2: …").
 - Partner names (WS3 `ws3.v0`, WS5 `ws5.v0`, WS7 `ws7.ui.v0`) are cited from their notes. WS6 does not define their APIs.
@@ -87,11 +87,11 @@ Reserved, added to `ErrorCode` when their sprint lands: `no_confirmed_knowledge`
 | `asset.stored` | `asset_id` | asset PUT (first store) | **S1** |
 | `event.stored` | `event_id`, `asset_id?` | event PUT (first store) | **S1** |
 | `exchange.updated` | `exchange_id`, `event_id?` | exchange PUT (create or higher rev) | **S1** |
-| `synthesis.started` / `.done` / `.failed` / `.discarded` | `job_id`, `revision_ids?` | synthesis job | S2 |
-| `revision.created` | `entry_id`, `revision_id` | revision store | S2 |
+| `synthesis.started` / `.done` / `.failed` / `.discarded` | `job_id`, `revision_ids?` | synthesis job | **S2** |
+| `revision.created` | `entry_id`, `revision_id` | revision store | **S2** |
 | `draft.updated` | expert: `revision_ids`; newcomer: `draft_rev` | synthesis draft (S2) / learner draft PUT (S3) | S2/S3 |
-| `gaps.updated` | — (re-fetch gaps) | synthesis | S2 |
-| `confirmation.stored` | `confirmation_ids`, `revision_ids` | confirmation POST | S2 |
+| `gaps.updated` | — (re-fetch gaps) | synthesis | **S2** |
+| `confirmation.stored` | `confirmation_ids`, `revision_ids` | confirmation POST | **S2** |
 | `evaluation.updated` | `evaluation_id` | pending → done \| failed \| stale | S3 |
 | `commit.stored` | `commit_id`, `evaluation_id` | commit POST | S3 |
 | `assessment.stored` | — (re-fetch) | assessment module | S3 |
@@ -184,7 +184,7 @@ Legend — **Idem.**: `PUT-id` = idempotency table in §2; `key` = Idempotency-K
 | GET | `/api/diagnostics?session_id=` | — | `Diagnostics` (ID chain event → exchanges → revisions → confirmation → newcomer session → evaluation → commit, timings, last error per component; no content) | safe | — | — | S4 |
 | GET | `/api/access?token=` | — | sets same-site cookie for browsers when `BACKEND_ACCESS_TOKEN` is set | safe | `unauthorized` | — | S4 |
 
-`modules` is filled from S2 (`{ synthesis: "ws5-synthesis@x" | "stub", tutor: …, … }`); S4 adds per-component status and `elevenlabs_configured: boolean`.
+`modules` is filled from S2 (`{ synthesis: { id, version, source } }`, e.g. `ws5-synthesis` 0.2.0 `live` or `ws6-stub-synthesis` 0.1.0 `stub`; §5.12); S4 adds per-component status and `elevenlabs_configured: boolean`.
 
 ### 5.2 Session lifecycle & record state
 
@@ -243,10 +243,10 @@ Asset reads resolve only under `knowledge/images/` (and S3 case assets under `CA
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| POST | `/api/sessions/:sid/synthesis` | `{}` | `202 { job_id }` (a running job's `job_id` if one exists) | one running job per session | `invalid_transition` | `synthesis.started/done/failed/discarded`, `revision.created`, `draft.updated`, `gaps.updated` | S2 |
-| GET | `/api/jobs/:job_id` | — | `Job { job_id, session_id, status: queued\|running\|done\|failed\|discarded, input_revs, … }` | safe | — | — | S2 |
-| GET | `/api/sessions/:sid/gaps` | — | `Gap[]` (WS5 shape, stored as `gaps.json`) | safe | — | — | S2 |
-| GET | `/api/sessions/:sid/draft` | — | expert session: `SessionDraftView { revision_ids, teach_back }`; newcomer session: `LearnerDraft` (5.8) | safe | — | — | S2 / S3 |
+| POST | `/api/sessions/:sid/synthesis` | `{}` | `202 { job_id }` (a running job's `job_id` if one exists) | one running job per session | `invalid_transition` | `synthesis.started/done/failed/discarded`, `revision.created`, `draft.updated`, `gaps.updated` | **S2** |
+| GET | `/api/jobs/:job_id` | — | `Job { job_id, session_id, status: queued\|running\|done\|failed\|discarded, input_revs, … }` | safe | — | — | **S2** |
+| GET | `/api/sessions/:sid/gaps` | — | `GapsView { session_id, job_id, produced_by, gaps: Gap[], updated_at_utc }` (WS5 `Gap` shape, stored as `gaps.json`; §5.12) | safe | — | — | **S2** |
+| GET | `/api/sessions/:sid/draft` | — | expert session: `SessionDraftView { revision_ids, reviewed, teach_back, … }` (§5.12); newcomer session: `LearnerDraft` (5.8) | safe | — | — | **S2** / S3 |
 
 Jobs snapshot their input revs at start and persist only if no input changed meanwhile, else `discarded` (S4 adds generation tokens).
 
@@ -254,13 +254,31 @@ Jobs snapshot their input revs at start and persist only if no input changed mea
 
 | Method | Path | Request | Response | Idem. | Errors | SSE | S |
 |---|---|---|---|---|---|---|---|
-| GET | `/api/knowledge/entries` | — | `KnowledgeEntry[]` (current revision + status per entry) | safe | — | — | S2 |
-| GET | `/api/knowledge/entries/:id` | — | `KnowledgeEntry` | safe | — | — | S2 |
-| GET | `/api/knowledge/entries/:id/revisions/:revision_id` | — | `{ revision: KnowledgeRevision, markdown: string }` | safe | — | — | S2 |
-| POST | `/api/knowledge/confirmations` | WS6 form `{ reviewed_revision_ids: Id[], result: "confirmed"\|"corrected"\|"unresolved", expert_response_exchange_id, idempotency_key }` **or** a WS3 `ExpertConfirmation` (producer-owned `confirmation_id`, mapped by `toConfirmation`) | `201 { confirmations: Confirmation[] }` — one record per reviewed revision; replay → `200` same records | key / confirmation_id | `stale_revision` (`details.current_revision_ids`; never overridable), `not_found`/`validation_failed` (exchange missing, other session, off-record) | `confirmation.stored`, `session.updated` | S2 |
-| GET | `/api/workmap[?include=draft]` | — | `WorkMapView`: steps with entry/revision/status, per evidence `{asset_id, original_url, highlighted_url, region}`, per exchange `{exchange_id, question, answer_lines}`, `broken_links[]`; default only `confirmed` | safe | — | — | S2 |
+| GET | `/api/knowledge/entries` | — | `KnowledgeEntry[]` (current revision + status per entry) | safe | — | — | **S2** |
+| GET | `/api/knowledge/entries/:id` | — | `KnowledgeEntry` | safe | — | — | **S2** |
+| GET | `/api/knowledge/entries/:id/revisions/:revision_id` | — | `{ revision: KnowledgeRevision, status, markdown: string }` | safe | — | — | **S2** |
+| POST | `/api/knowledge/confirmations` | WS6 form `{ reviewed_revision_ids: Id[], result: "confirmed"\|"corrected"\|"unresolved", expert_response_exchange_id, idempotency_key }` **or** a WS3 `ExpertConfirmation` (producer-owned `confirmation_id`, mapped by `toConfirmation`) | `201 { confirmations: Confirmation[] }` — one record per reviewed revision; replay → `200` same records | key / confirmation_id | `stale_revision` (`details.stale_revision_ids`, `details.current_revision_ids`; never overridable), `not_found` (unknown revision), `validation_failed` (`details.reason`), `invalid_transition`, `conflict_immutable` (key reused with another body) | `confirmation.stored` | **S2** |
+| GET | `/api/workmap[?include=draft]` | — | `WorkMapView`: steps with entry/revision/status, per evidence `{asset_id, original_url, highlighted_url, region}`, per exchange `{exchange_id, question, answer_lines}`, `broken_links[]`; default only `confirmed` | safe | — | — | **S2** |
 
 `result` effects (via WS5 `nextStatus`): `confirmed` → entry status `confirmed`; `corrected` → stays `draft`, a later synthesis run produces `rev-(n+1)` with `parent_revision_id` = the reviewed revision (this **is** the correction path); `unresolved` → `unresolved`.
+
+### 5.12 S2 implementation notes
+
+Spec: `specs/004-ws6-knowledge-confirmation/` (decisions D16–D28 in §9). Schemas: `Job`, `Gap`, `GapsView`, `SessionDraftView`, `ConfirmationRequest`/`ConfirmationPost`, `WorkMapView` (`web/lib/contracts/synthesis.ts`, `workmap.ts`); `KnowledgeRevision` gains optional `session_id`, `content_sha256`, `change_reason`; `Confirmation` gains optional `session_id`, `entry_id`; new `StatusTransition`.
+
+- **Module host** `web/lib/backend/modules.ts`: `WS5_MODULES=stub` → `ws6-stub-synthesis@0.1.0` (`source: "stub"`), otherwise the real `ws5-synthesis@0.2.0` (`createWs6SynthesisModule`). `GET /api/health` → `modules: { synthesis: { id, version, source } }`.
+- **POST `/api/sessions/:sid/synthesis`** → `202 { job_id }`; a queued/running job for the session is returned instead of a new one. Unknown session `404`; newcomer or aborted session `409 invalid_transition`. The job runs in-process; poll `GET /api/jobs/:job_id` or watch SSE.
+- **Job** (`RUNTIME_DIR/jobs/<job_id>.json`): `status` `queued → running → done | failed | discarded`; `input_revs` = `{ event_ids, exchanges: {id: rev}, entries: {entry_id: current_revision_id}, confirmation_ids }` taken when it starts; `revision_ids` = revisions it created (empty when nothing changed); `error.code` ∈ `module_error`, `invalid_output`, `dangling_reference`, `revision_conflict`, `interrupted`, `internal` (messages never carry content); `discard_reason` e.g. `exchange_changed:<id>`, `event_deleted:<id>`, `entry_changed:<id>`, `confirmations_changed`. Records added during a run do not discard it.
+- **Module input** = the session's stored events and exchanges, every stored revision (`prior`), and the session's confirmations in WS3 `ExpertConfirmation` shape (`revision_id` = WS6 ID). `gap_answers` not passed yet.
+- **Revision file** `knowledge/entries/<entry_id>/rev-<n>.md`: WS6 frontmatter (`key: <JSON>` per line) + `<!-- ws6:module-frontmatter "<json>" -->` (the module's own frontmatter, kept verbatim) + the module body. `GET …/revisions/:revision_id` returns `{ revision, status, markdown }` where `markdown` is the module Markdown byte-for-byte. Image links are relative (`../../images/<asset_id>/<file>`).
+- **Numbering/dedupe:** WS6 assigns `revision_no` = latest + 1 and `parent_revision_id` = current; a module value that disagrees fails the job (`revision_conflict`). Content equal (sha256) to the entry's **latest** revision → no revision.
+- **Status** is never edited in a revision file: `entries/<entry_id>/status.ndjson` holds `StatusTransition`s; `current.json.status` mirrors the current revision. `GET /api/knowledge/entries/:id` → `KnowledgeEntry & { revisions: [{ revision_id, revision_no, status, created_at_utc }] }`.
+- **`knowledge/workflow.md`**: linkage frontmatter (`produced_by`, `session_id`, `job_id`, `generated_at_utc`, `links: [{ position, entry_id, revision_no, revision_id | null, title }]`) + the module's workflow Markdown. Links are the ordered `entries/<id>/rev-<n>.md` links in that Markdown. Reflects the latest synthesis run.
+- **`GET /api/sessions/:sid/gaps`** → `GapsView { session_id, job_id, produced_by, gaps: Gap[], updated_at_utc }` (empty list before the first run). `Gap` is WS5's shape; `gap_id` is not path-safe (`gap-missing_reason-…`), so it is a plain string.
+- **`GET /api/sessions/:sid/draft`** (expert) → `SessionDraftView { session_id, job_id, produced_by, revision_ids, reviewed: [{entry_id, revision_id}], teach_back, flagged_for_reconfirmation, updated_at_utc }`. `revision_ids` = WS5 `teach_back_reviewed` (mapped to WS6 IDs) or, for the stub, every linked revision — send exactly these as `reviewed_revision_ids`. Newcomer → `404` until S3.
+- **Confirmation checks** (under the knowledge lock, in order): key replay (same body → `200` same records, completing any interrupted write; other body → `409 conflict_immutable`) → each revision exists (`404`) → each is its entry's current revision (`409 stale_revision`) → all from one session (`400 reason: revision_sessions`) → response exchange stored in that session (`400 exchange_not_found`), on-record (`exchange_off_record`), with a non-blank answer line (`exchange_no_answer`) → `step_ids_reviewed` ⊆ reviewed entries (`step_not_reviewed`; default all) → WS5 `nextStatus` (`409 invalid_transition`). One `Confirmation` per revision (`knowledge/confirmations/<cnf-id>.json`, `source` = the exchange's source); the plan is recorded in `RUNTIME_DIR/idempotency/confirmations/` before the files. Status: WS5 `nextStatus` (`confirmed` → confirmed; `unresolved` → unresolved; `corrected` → draft stays draft, confirmed drops to unresolved). The next synthesis run uses the confirmation to produce rev-(n+1).
+- **`GET /api/workmap[?include=draft]`** → `WorkMapView { include, produced_by, session_id, job_id, generated_at_utc, steps, excluded }`. Step: `{ position, entry_id, revision_id, revision_no, status, is_current, source, title, evidence: [{event_id, asset_id, original_url, highlighted_url, region}], exchanges: [{exchange_id, question, answer_lines}], content, broken_links }`. `content` = WS5 `WorkMapStep` (verbatim quotes, tagged synthesis, guardrails) for WS5 revisions, else `null`. Default shows confirmed + current + WS5 `isTeachable` (fixtures allowed, labelled by `source`); `include=draft` everything except revoked. A missing revision, event, asset/image file, exchange or unresolved image link is listed in `broken_links`; the step stays.
+- **SSE** (on the originating session): `synthesis.started|done|failed|discarded {job_id, revision_ids?}`, `revision.created {entry_id, revision_id}`, `draft.updated {revision_ids}`, `gaps.updated {}`, `confirmation.stored {confirmation_ids, revision_ids}`. No `session.updated` on confirmation (the session does not change).
 
 ### 5.8 Newcomer: case view, session, learner draft, evaluation, commit, assessment
 
@@ -433,3 +451,16 @@ Full rationale: [`specs/001-ws6-foundation-contracts/research.md`](../specs/001-
 | D13 (S1) | Identical retries are answered `200` even after off-record/abort; only new content is refused | a lost ack must never turn into a client-side failure; nothing new is stored |
 | D14 (S1) | Event `asset_id` is required (was "recommended") | an event without a stored asset would dangle (no-dangling-references rule) |
 | D15 (S1) | Late content writes to `ended` sessions are accepted; `aborted` sessions refuse them | WS2-Q7 lean; late answers must still persist |
+| D16 (S2) | Revision file = WS6 frontmatter + module frontmatter kept verbatim in one HTML comment + module body | one frontmatter block for Markdown viewers; module Markdown round-trips for WS5 `load_content` (WS5-Q1) |
+| D17 (S2) | Status lives in `status.ndjson` + `current.json`, never in the immutable file | answers WS5-Q3 |
+| D18 (S2) | `KnowledgeRevision` + optional `session_id`, `content_sha256`, `change_reason`; `Confirmation` + optional `session_id`, `entry_id` | same-session check, SSE routing, dedupe, WS5 `change_reason` |
+| D19 (S2) | WS6 owns numbering; module numbering that disagrees fails the job; dedupe against the latest revision only | a workflow link must always point at a stored file |
+| D20 (S2) | Job snapshot = event IDs, exchange revs, every entry's current revision, session confirmation IDs; verify under session → knowledge lock | prompt rule; one lock order everywhere |
+| D21 (S2) | Workflow linkage = ordered `entries/<id>/rev-<n>.md` links in the module's workflow Markdown, stored as `workflow.md` frontmatter | module-agnostic (stub and WS5) |
+| D22 (S2) | Draft `revision_ids` = WS5 `teach_back_reviewed` (else every linked revision) | WS3 confirms exactly what was read back |
+| D23 (S2) | Module input adds `confirmations` (WS5 request); `gap_answers` not yet | corrections need it; no WS3 producer for gap answers |
+| D24 (S2) | Confirmation error mapping (§5.12); idempotency plan written before the files | prompt asked 400/409; crash-safe replay |
+| D25 (S2) | Optional `step_ids_reviewed` in the WS6 form, default = all reviewed entries | WS5 ties a gesture-less correction to a single reviewed entry |
+| D26 (S2) | Work Map default = confirmed ∧ current ∧ WS5 `isTeachable` (fixtures allowed, labelled); broken links never exclude | prompt + WS5 eligibility; Work Map is a view, not teaching |
+| D27 (S2) | `confirmation.stored` instead of the prompt's `knowledge.confirmed` | D9 naming |
+| D28 (S2) | WS5 Sprint 2 merged into the S2 branch (human decision); lanes implemented sequentially | WS5 was not on `voice`; lanes share the store and lock order |
