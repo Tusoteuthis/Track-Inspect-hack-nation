@@ -75,6 +75,18 @@ describe("createWs6TutorEvaluator", () => {
     expect(documented.version).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
+  it("gives the judge the learner's marked region as text (no case id), and says so when none is marked", async () => {
+    const region = { x: 0.1, y: 0.2, width: 0.3, height: 0.2, coordinate_space: "original_frame_normalized" as const, frame_width_px: 1600, frame_height_px: 900 };
+    const { evaluator, judge } = make();
+    await evaluator.evaluate({ draft: { ...draft, visual_context: [{ asset_id: "frm-001", region }] }, case_view: caseView, knowledge: pinnedRevs });
+    expect(judge.inputs[0].draft.visual_context).toContain("marked a region");
+    expect(judge.inputs[0].draft.visual_context).not.toContain(caseView.case_id);
+
+    const second = make();
+    await second.evaluator.evaluate({ draft, case_view: caseView, knowledge: pinnedRevs });
+    expect(second.judge.inputs[0].draft.visual_context).toBeNull();
+  });
+
   it("maps WS5 revisions back to WS6 revision ids in citations and evidence", async () => {
     const r = await make().evaluator.evaluate({ draft, case_view: caseView, knowledge: pinnedRevs });
     expect(r.outcome).toBe("intervene");

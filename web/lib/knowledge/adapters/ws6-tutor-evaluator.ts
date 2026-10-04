@@ -12,6 +12,7 @@ import type { KnowledgeCandidate } from "../eligibility";
 import { evaluate } from "../evaluate";
 import { TUTOR_EVALUATOR, type EvidencePointer, type Judge } from "../evaluation-types";
 import { createAnthropicJudge } from "../judge-anthropic";
+import { describeScreenContext, fromWs6VisualContext, type Ws6VisualContext } from "../observation";
 import type { KnowledgeEntryContent } from "../schema";
 import type { Ws6KnowledgeRevision } from "./ws6-synthesis-module";
 
@@ -21,7 +22,7 @@ export type Ws6LearnerDraft = {
   draft_rev: number;
   decision: string;
   reason: string;
-  visual_context: { asset_id: string; region: unknown }[];
+  visual_context: Ws6VisualContext[];
   updated_at_utc: string;
   source: "live" | "stub" | "fixture";
 };
@@ -106,9 +107,16 @@ export function createWs6TutorEvaluator(options: Ws6TutorEvaluatorOptions): Ws6T
         return id;
       };
 
+      // What the learner marked on screen, as position text (Sprint 4 observation contract).
+      const screen = fromWs6VisualContext(draft, case_view.case_id);
       const r = await evaluate(
         {
-          draft: { draft_rev: draft.draft_rev, decision: draft.decision, reason: draft.reason, visual_context: null },
+          draft: {
+            draft_rev: draft.draft_rev,
+            decision: draft.decision,
+            reason: draft.reason,
+            visual_context: screen ? describeScreenContext(screen) : null,
+          },
           case_view: {
             case_id: case_view.case_id,
             title: case_view.title,
