@@ -11,6 +11,7 @@ Each `sprint-N-*.md` file is a **self-contained prompt**. Start a fresh coding a
 | 2 | `sprint-2-live-interview.md` | topic queue, dedup, ambiguity, pause-aware asking, timing report | ~2–3 h | ~30 min live voice |
 | 3 | `sprint-3-debrief-confirmation.md` | coverage, debrief, revisioned teach-back, correction, confirmation | ~3–4 h | ~45 min live voice |
 | 4 | `sprint-4-trust-completion.md` | off-record, completion, demo evidence, WS5/WS6/WS7 handoff docs | ~1.5–2 h | ~20 min live voice |
+| 5 | `sprint-5-strategy-alignment.md` | bounded questioning per `notes/voice-agent-strategy-handoff.md`: app-enforced budgets, expert controls, orientation, bounded debrief/teach-back | ~3–4 h | ~30 min live voice |
 
 ## Worktree setup (several agents work in this repo in parallel)
 
@@ -23,6 +24,7 @@ Every sprint agent works in **its own git worktree**, never in the shared main c
 | 2 | `worktree-ws03-sprint-2` | `.claude/worktrees/ws03-sprint-2` | 3102 |
 | 3 | `worktree-ws03-sprint-3` | `.claude/worktrees/ws03-sprint-3` | 3103 |
 | 4 | `worktree-ws03-sprint-4` | `.claude/worktrees/ws03-sprint-4` | 3104 |
+| 5 | `worktree-ws03-sprint-5` | `.claude/worktrees/ws03-sprint-5` | 3105 |
 
 **Start each agent inside its worktree (recommended).** This keeps the agent's whole session out of the shared checkout:
 

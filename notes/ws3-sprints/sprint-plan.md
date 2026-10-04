@@ -87,6 +87,14 @@ Each sprint = one spec-kit feature (`/speckit-specify → plan → tasks → imp
 - `notes/ws3-sprints/docs/voice-interface.md` for WS5 tutor reuse.
 - **Done when:** off-record segment absent from all persisted files; exported demo evidence shows required counts.
 
+### Sprint 5 — Strategy alignment: bounded questioning & expert control (agent ~3–4h, human ~30 min)
+- Aligns the agent with `notes/voice-agent-strategy-handoff.md`, following the user decisions D1–D11 recorded in `sprint-5-strategy-alignment.md`:
+  - a fixed 5-question live cap and ≤ 1 follow-up per topic, both enforced in `begin_question`
+  - 'just listen' / 'skip that' / 'next'
+  - an orientation step of ≤ 2 questions
+  - a debrief of 3 questions and a teach-back with 1 correction pass
+  - a conditional question bank in the prompt, and §15 rehearsal probes
+
 ## Totals
 - **Agent wall-clock:** ~10–14h across sprints (lanes parallel within a sprint; sprints sequential because each de-risks the next).
 - **Human time:** ~2.5h total — mostly 4 live voice gates + contract sign-offs. The live gates are the real critical path; agents cannot judge conversational feel or real pause behavior.
