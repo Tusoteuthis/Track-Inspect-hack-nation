@@ -1,9 +1,12 @@
-// WS3 v0 data contracts. Field names are snake_case to match the partner briefs
+// WS3 data contracts (session records ws3.v1; pointing events unchanged at ws3.v0). Field names are snake_case to match the partner briefs
 // (WS2/WS5/WS6) and the JSON written to disk. `null` always means "unknown or not
 // applicable"; values are never guessed. Human-readable summary:
 // notes/ws3-sprints/docs/contracts-v0.md
 
-export const SCHEMA_VERSION = "ws3.v0";
+/** Version of the session records WS3 writes (snapshot, completion). */
+export const SCHEMA_VERSION = "ws3.v1";
+/** Version of the WS2 → WS3 PointingEvent contract (unchanged since Sprint 0). */
+export const EVENT_SCHEMA_VERSION = "ws3.v0";
 
 export type Source = "live" | "fixture";
 export type RecordState = "on_record" | "off_record";
@@ -12,7 +15,7 @@ export type MappingStatus = "resolved" | "ambiguous" | "unresolved";
 export type Phase = "live" | "debrief" | "teach_back";
 /** Phase of the whole session; `confirmed` / `incomplete` are terminal. */
 export type SessionPhase = Phase | "confirmed" | "incomplete";
-export type PhaseTrigger = "agent_tool" | "console" | "confirmation" | "session_end";
+export type PhaseTrigger = "agent_tool" | "console" | "confirmation" | "session_end" | "strike" | "resume";
 export type ExchangeKind =
   | "explain"
   | "reasoning"
@@ -68,7 +71,7 @@ export type SignalInterval = { start: number; end: number; unit: string };
 
 /** One pointing gesture (WS2 → WS3). */
 export type PointingEvent = {
-  schema_version: typeof SCHEMA_VERSION;
+  schema_version: typeof EVENT_SCHEMA_VERSION;
   session_id: string;
   event_id: string;
   source: Source;
@@ -193,15 +196,74 @@ export type ExpertConfirmation = {
   at_utc: string;
 };
 
+/** How the session ended on the client: the Stop button, a dropped connection, or an error. */
+export type EndCause = "stop" | "disconnect" | "error";
+
+/**
+ * Derived at session end from the stored records only (completion.json). `completed` only
+ * with an explicit, still-valid confirmation of the latest revision; never otherwise.
+ */
 export type SessionCompletion = {
+  schema_version: typeof SCHEMA_VERSION;
   session_id: string;
+  conversation_ids: string[];
+  started_at_utc: string;
   ended_at_utc: string;
   end_reason: EndReason;
+  end_cause: EndCause | null;
+  final_phase: SessionPhase;
   confirmed_revision_id: string | null;
+  latest_revision_id: string | null;
+  /** Final coverage grid (missing cells included). */
   coverage: CoverageItem[];
   unresolved_open_question_ids: string[];
-  excluded: { off_record_segments: number; excluded_exchange_ids: string[] };
-  counts: { live_questions: number; live_guardrail_questions: number; debrief_questions: number };
+  /** Debrief agenda items not resolved (open, asked, partial). */
+  open_gap_ids: string[];
+  /** Plain statements of what was not finished; empty only for a completed session. */
+  unfinished: string[];
+  excluded: {
+    off_record_segments: number;
+    segments: { from_utc: string; to_utc: string | null }[];
+    /** Exchanges whose expert words were struck at the expert's request. */
+    excluded_exchange_ids: string[];
+  } & OffRecordExcluded;
+  counts: {
+    live_questions: number;
+    live_guardrail_questions: number;
+    debrief_questions: number;
+    teach_backs: number;
+    confirmations: number;
+    strikes: number;
+  };
+};
+
+/** Counts of what was dropped while off the record. Counts only, never content. */
+export type OffRecordExcluded = {
+  transcript_lines: number;
+  events: number;
+  timing_marks: number;
+  refused_tool_calls: number;
+};
+
+/** Removal of the expert's last answer at their request ("forget what I just said"). */
+export type Strike = {
+  strike_id: string;
+  exchange_id: string;
+  at_utc: string;
+  trigger: "agent_tool" | "console";
+  removed_line_count: number;
+  /** Revisions that relied on the struck words; their derived text is redacted and they need re-confirmation. */
+  superseded_revision_ids: string[];
+  /** Confirmations that no longer count. */
+  invalidated_confirmation_ids: string[];
+};
+
+export type ElevenLabsDeletionStatus = "deleted" | "not_found" | "failed";
+/** Result of deleting this session's own ElevenLabs conversations (conversations.delete). */
+export type ElevenLabsDeletionReport = {
+  session_id: string;
+  at_utc: string;
+  results: { conversation_id: string; status: ElevenLabsDeletionStatus; detail: string | null }[];
 };
 
 export type TimingMark = {
@@ -214,11 +276,15 @@ export type TimingMark = {
   at_perf_ms: number;
 };
 
+export type RecordStateTrigger = "session_start" | "agent_tool" | "console" | "expert_phrase" | "capture_event" | "resume";
+
+/** One stretch of on- or off-record time. Each change closes the current segment and opens the next. */
 export type RecordingSegment = {
   segment_id: string;
   state: RecordState;
   started_at_utc: string;
   ended_at_utc: string | null;
+  trigger: RecordStateTrigger;
 };
 
 /**
@@ -311,9 +377,13 @@ export type UnlinkedQuestion = { line_id: string; text: string; at_utc: string }
 export type SessionSnapshot = {
   schema_version: typeof SCHEMA_VERSION;
   session_id: string;
+  /** Current (latest) ElevenLabs conversation. */
   conversation_id: string | null;
+  /** Every ElevenLabs conversation of this session, in order (a resume adds one). */
+  conversation_ids: string[];
   started_at_utc: string;
   ended_at_utc: string | null;
+  end_cause: EndCause | null;
   events: PointingEvent[];
   exchanges: ExpertExchange[];
   active_exchange_id: string | null;
@@ -335,6 +405,11 @@ export type SessionSnapshot = {
   /** Append-only; never edited. */
   revisions: DraftRevision[];
   confirmations: ExpertConfirmation[];
+  /** First segment is on_record from the session start; the last one is the current state. */
+  recording_segments: RecordingSegment[];
+  off_record_excluded: OffRecordExcluded;
+  strikes: Strike[];
+  elevenlabs_deletions: ElevenLabsDeletionReport[];
 };
 
 // --- validation of external input ------------------------------------------
@@ -401,7 +476,7 @@ export function validatePointingEvent(input: unknown): ValidationResult<Pointing
   if (!isRecord(input)) return { ok: false, errors: ["pointing event must be an object"] };
   const errors: string[] = [];
 
-  if (input.schema_version !== SCHEMA_VERSION) errors.push(`schema_version must be "${SCHEMA_VERSION}"`);
+  if (input.schema_version !== EVENT_SCHEMA_VERSION) errors.push(`schema_version must be "${EVENT_SCHEMA_VERSION}"`);
   for (const key of ["session_id", "event_id", "frame_id", "image_ref", "highlighted_image_ref"] as const) {
     if (!isNonEmptyString(input[key])) errors.push(`${key} must be a non-empty string`);
   }
@@ -475,7 +550,12 @@ export const COVERAGE_DIMENSIONS: readonly CoverageDimension[] = [
 const COVERAGE_STATUSES: readonly CoverageStatus[] = ["missing", "partial", "covered"];
 const COVERAGE_STATUS_PARAMS: readonly CoverageStatusParam[] = ["partial", "covered", "unknown_escalate"];
 const SESSION_PHASES: readonly SessionPhase[] = ["live", "debrief", "teach_back", "confirmed", "incomplete"];
-const PHASE_TRIGGERS: readonly PhaseTrigger[] = ["agent_tool", "console", "confirmation", "session_end"];
+const PHASE_TRIGGERS: readonly PhaseTrigger[] = ["agent_tool", "console", "confirmation", "session_end", "strike", "resume"];
+const END_CAUSES: readonly EndCause[] = ["stop", "disconnect", "error"];
+const END_REASONS: readonly EndReason[] = ["completed", "incomplete", "aborted"];
+const RECORD_TRIGGERS: readonly RecordStateTrigger[] = ["session_start", "agent_tool", "console", "expert_phrase", "capture_event", "resume"];
+const DELETION_STATUSES: readonly ElevenLabsDeletionStatus[] = ["deleted", "not_found", "failed"];
+const EXCLUDED_KEYS: readonly (keyof OffRecordExcluded)[] = ["transcript_lines", "events", "timing_marks", "refused_tool_calls"];
 const STEP_KINDS: readonly StepKind[] = ["step", "decision", "guardrail", "exception"];
 const CONFIRMATION_STATUSES: readonly ConfirmationStatus[] = ["confirmed", "corrected", "unresolved"];
 const DEBRIEF_STATES: readonly DebriefItemState[] = ["open", "asked", "partial", "resolved", "unknown"];
@@ -628,6 +708,17 @@ export function validateConfirmRevisionParams(input: unknown): ValidationResult<
       step_ids_reviewed: ids && ids.length ? ids : null,
     },
   };
+}
+
+export type SetRecordStateParams = { state: RecordState };
+
+/** `set_record_state` from the LLM; also accepts "off"/"on". */
+export function validateSetRecordStateParams(input: unknown): ValidationResult<SetRecordStateParams> {
+  if (!isRecord(input)) return { ok: false, errors: ["params must be an object"] };
+  const raw = typeof input.state === "string" ? input.state.trim().toLowerCase().replace(/[\s-]+/g, "_") : "";
+  const state = raw === "off" ? "off_record" : raw === "on" ? "on_record" : raw;
+  if (!oneOf(RECORD_STATES, state)) return { ok: false, errors: [`state must be one of ${RECORD_STATES.join(", ")}`] };
+  return { ok: true, value: { state } };
 }
 
 function checkAnswerLine(line: unknown, path: string, errors: string[]): void {
@@ -865,6 +956,11 @@ export function validateSessionSnapshot(input: unknown): ValidationResult<Sessio
   if (input.schema_version !== SCHEMA_VERSION) errors.push(`schema_version must be "${SCHEMA_VERSION}"`);
   if (!isValidSessionId(input.session_id)) errors.push("session_id must match ^[a-z0-9-]{1,64}$");
   if (!isNullableString(input.conversation_id)) errors.push("conversation_id must be a non-empty string or null");
+  if (!isStringList(input.conversation_ids)) errors.push("conversation_ids must be an array of strings");
+  else if (typeof input.conversation_id === "string" && !input.conversation_ids.includes(input.conversation_id)) {
+    errors.push("conversation_id must be one of conversation_ids");
+  }
+  if (input.end_cause !== null && !oneOf(END_CAUSES, input.end_cause)) errors.push(`end_cause must be one of ${END_CAUSES.join(", ")} or null`);
   if (!isTimestamp(input.started_at_utc)) errors.push("started_at_utc must be an ISO-8601 timestamp");
   if (input.ended_at_utc !== null && !isTimestamp(input.ended_at_utc)) {
     errors.push("ended_at_utc must be an ISO-8601 timestamp or null");
@@ -937,6 +1033,7 @@ export function validateSessionSnapshot(input: unknown): ValidationResult<Sessio
   }
 
   checkPhaseRecords(input, eventIds, exchangeIds, exchanges, errors);
+  checkTrustRecords(input, events, exchanges, timing, errors);
 
   return errors.length ? { ok: false, errors } : { ok: true, value: input as SessionSnapshot };
 }
@@ -1014,4 +1111,132 @@ function checkPhaseRecords(
     if (x.gap_id !== null && !gapIds.has(x.gap_id)) errors.push(`exchanges[${i}].gap_id ${x.gap_id} is not on the agenda`);
     if (x.revision_id !== null && !revIds.has(x.revision_id)) errors.push(`exchanges[${i}].revision_id ${x.revision_id} is unknown`);
   });
+}
+
+function validateSegment(input: unknown): ValidationResult<RecordingSegment> {
+  if (!isRecord(input)) return { ok: false, errors: ["segment must be an object"] };
+  const errors: string[] = [];
+  if (!isNonEmptyString(input.segment_id)) errors.push("segment_id must be a non-empty string");
+  if (!oneOf(RECORD_STATES, input.state)) errors.push(`state must be one of ${RECORD_STATES.join(", ")}`);
+  if (!isTimestamp(input.started_at_utc)) errors.push("started_at_utc must be an ISO-8601 timestamp");
+  if (input.ended_at_utc !== null && !isTimestamp(input.ended_at_utc)) errors.push("ended_at_utc must be an ISO-8601 timestamp or null");
+  if (!oneOf(RECORD_TRIGGERS, input.trigger)) errors.push(`trigger must be one of ${RECORD_TRIGGERS.join(", ")}`);
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as RecordingSegment };
+}
+
+function validateStrike(input: unknown): ValidationResult<Strike> {
+  if (!isRecord(input)) return { ok: false, errors: ["strike must be an object"] };
+  const errors: string[] = [];
+  for (const key of ["strike_id", "exchange_id"] as const) if (!isNonEmptyString(input[key])) errors.push(`${key} must be a non-empty string`);
+  if (!isTimestamp(input.at_utc)) errors.push("at_utc must be an ISO-8601 timestamp");
+  if (!oneOf(["agent_tool", "console"] as const, input.trigger)) errors.push("trigger must be agent_tool or console");
+  if (!(Number.isInteger(input.removed_line_count) && (input.removed_line_count as number) >= 0)) errors.push("removed_line_count must be an integer ≥ 0");
+  for (const key of ["superseded_revision_ids", "invalidated_confirmation_ids"] as const) {
+    if (!Array.isArray(input[key]) || !(input[key] as unknown[]).every(isNonEmptyString)) errors.push(`${key} must be an array of strings`);
+  }
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as Strike };
+}
+
+export function validateDeletionReport(input: unknown): ValidationResult<ElevenLabsDeletionReport> {
+  if (!isRecord(input)) return { ok: false, errors: ["deletion report must be an object"] };
+  const errors: string[] = [];
+  if (!isNonEmptyString(input.session_id)) errors.push("session_id must be a non-empty string");
+  if (!isTimestamp(input.at_utc)) errors.push("at_utc must be an ISO-8601 timestamp");
+  if (!Array.isArray(input.results)) errors.push("results must be an array");
+  else {
+    input.results.forEach((r, i) => {
+      if (!isRecord(r) || !isNonEmptyString(r.conversation_id) || !oneOf(DELETION_STATUSES, r.status) || !(r.detail === null || typeof r.detail === "string")) {
+        errors.push(`results[${i}] must have conversation_id, status (${DELETION_STATUSES.join("|")}) and detail`);
+      }
+    });
+  }
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as ElevenLabsDeletionReport };
+}
+
+/** Off-record intervals [start, end) in epoch ms; an open segment runs to +∞. */
+export function offRecordIntervals(segments: RecordingSegment[]): { start: number; end: number }[] {
+  return segments
+    .filter(s => s.state === "off_record")
+    .map(s => ({ start: Date.parse(s.started_at_utc), end: s.ended_at_utc === null ? Infinity : Date.parse(s.ended_at_utc) }));
+}
+
+export const isInsideOffRecord = (intervals: { start: number; end: number }[], at_utc: string): boolean => {
+  const t = Date.parse(at_utc);
+  return intervals.some(i => t >= i.start && t < i.end);
+};
+
+/**
+ * Sprint 4 records, and the server-side guard against off-record leaks: no off-record event
+ * or exchange, and no transcript line, answer line, preamble line or timing mark inside an
+ * off-record segment. Off-record content is dropped in memory; this only catches bugs.
+ */
+function checkTrustRecords(
+  input: Record<string, unknown>,
+  events: PointingEvent[],
+  exchanges: ExpertExchange[],
+  timing: TimingMark[],
+  errors: string[]
+): void {
+  const segments = checkList(input.recording_segments, "recording_segments", validateSegment, errors);
+  if (Array.isArray(input.recording_segments) && segments.length === 0 && input.recording_segments.length === 0) {
+    errors.push("recording_segments must contain at least the initial segment");
+  }
+  segments.forEach((seg, i) => {
+    if (i < segments.length - 1 && seg.ended_at_utc === null) errors.push(`recording_segments[${i}] must be closed (a later segment exists)`);
+    if (i > 0 && seg.state === segments[i - 1].state) errors.push(`recording_segments[${i}] must change the state of the previous segment`);
+  });
+  const excluded = input.off_record_excluded;
+  if (!isRecord(excluded)) errors.push("off_record_excluded must be an object");
+  else for (const key of EXCLUDED_KEYS) if (!(Number.isInteger(excluded[key]) && (excluded[key] as number) >= 0)) errors.push(`off_record_excluded.${key} must be an integer ≥ 0`);
+
+  const strikes = checkList(input.strikes, "strikes", validateStrike, errors);
+  const exchangeIds = new Set(exchanges.map(x => x.exchange_id));
+  const revisionIds = new Set(Array.isArray(input.revisions) ? input.revisions.map(r => (isRecord(r) ? r.revision_id : null)) : []);
+  const confirmationIds = new Set(Array.isArray(input.confirmations) ? input.confirmations.map(c => (isRecord(c) ? c.confirmation_id : null)) : []);
+  strikes.forEach((st, i) => {
+    const x = exchanges.find(e => e.exchange_id === st.exchange_id);
+    if (!exchangeIds.has(st.exchange_id)) errors.push(`strikes[${i}].exchange_id ${st.exchange_id} is unknown`);
+    else if (x && x.answer_lines.length) errors.push(`strikes[${i}]: struck exchange ${st.exchange_id} still has answer lines`);
+    for (const r of st.superseded_revision_ids) if (!revisionIds.has(r)) errors.push(`strikes[${i}] superseded revision ${r} is unknown`);
+    for (const c of st.invalidated_confirmation_ids) if (!confirmationIds.has(c)) errors.push(`strikes[${i}] invalidated confirmation ${c} is unknown`);
+  });
+  checkList(input.elevenlabs_deletions, "elevenlabs_deletions", validateDeletionReport, errors);
+
+  events.forEach((e, i) => {
+    if (e.record_state !== "on_record") errors.push(`events[${i}] is off the record and must not be stored`);
+  });
+  exchanges.forEach((x, i) => {
+    if (x.record_state !== "on_record") errors.push(`exchanges[${i}] is off the record and must not be stored`);
+  });
+  const intervals = offRecordIntervals(segments);
+  if (!intervals.length) return;
+  const leak = (path: string, at: unknown) => {
+    if (typeof at === "string" && isInsideOffRecord(intervals, at)) errors.push(`${path} lies inside an off-record segment and must not be stored`);
+  };
+  if (Array.isArray(input.transcript)) input.transcript.forEach((t, i) => leak(`transcript[${i}]`, isRecord(t) ? t.at_utc : null));
+  if (Array.isArray(input.preamble)) input.preamble.forEach((l, i) => leak(`preamble[${i}]`, isRecord(l) ? l.at_utc : null));
+  exchanges.forEach((x, i) => x.answer_lines.forEach((l, j) => leak(`exchanges[${i}].answer_lines[${j}]`, l.at_utc)));
+  timing.forEach((m, i) => leak(`timing[${i}]`, m.at_utc));
+}
+
+/** Checks a derived completion record, including that "completed" always has a confirmed revision. */
+export function validateSessionCompletion(input: unknown): ValidationResult<SessionCompletion> {
+  if (!isRecord(input)) return { ok: false, errors: ["completion must be an object"] };
+  const errors: string[] = [];
+  if (input.schema_version !== SCHEMA_VERSION) errors.push(`schema_version must be "${SCHEMA_VERSION}"`);
+  if (!isValidSessionId(input.session_id)) errors.push("session_id must match ^[a-z0-9-]{1,64}$");
+  if (!isTimestamp(input.ended_at_utc)) errors.push("ended_at_utc must be an ISO-8601 timestamp");
+  if (!oneOf(END_REASONS, input.end_reason)) errors.push(`end_reason must be one of ${END_REASONS.join(", ")}`);
+  if (!oneOf(SESSION_PHASES, input.final_phase)) errors.push(`final_phase must be one of ${SESSION_PHASES.join(", ")}`);
+  if (!isNullableString(input.confirmed_revision_id)) errors.push("confirmed_revision_id must be a non-empty string or null");
+  if (!Array.isArray(input.unfinished) || !input.unfinished.every(isNonEmptyString)) errors.push("unfinished must be an array of strings");
+  const completed = input.end_reason === "completed";
+  if (completed && (input.confirmed_revision_id === null || input.final_phase !== "confirmed")) {
+    errors.push("a completed session needs a confirmed revision and final_phase confirmed");
+  }
+  if (!completed && input.confirmed_revision_id !== null && input.final_phase !== "confirmed") {
+    errors.push("confirmed_revision_id must be null unless the session ended confirmed");
+  }
+  if (!completed && Array.isArray(input.unfinished) && input.unfinished.length === 0) errors.push("an unfinished session must say what was not finished");
+  return errors.length ? { ok: false, errors } : { ok: true, value: input as SessionCompletion };
 }

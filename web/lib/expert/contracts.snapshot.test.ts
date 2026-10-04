@@ -16,6 +16,8 @@ import {
   validateExpertExchange,
   validateSessionSnapshot,
   validateTimingMark,
+  validateSessionCompletion,
+  validateSetRecordStateParams,
 } from "./contracts";
 import { DEFAULT_INTERVIEW_CONFIG } from "./interview-config";
 
@@ -86,8 +88,10 @@ function snapshot(): SessionSnapshot {
     schema_version: SCHEMA_VERSION,
     session_id: "ses-20261004-010000-abcd",
     conversation_id: null,
+    conversation_ids: [],
     started_at_utc: "2026-10-04T01:00:00.000Z",
     ended_at_utc: null,
+    end_cause: null,
     events: [{ ...evt001, session_id: "ses-20261004-010000-abcd" }],
     exchanges: [exchange()],
     active_exchange_id: "ex-001",
@@ -107,6 +111,12 @@ function snapshot(): SessionSnapshot {
     debrief_agenda: [],
     revisions: [],
     confirmations: [],
+    recording_segments: [
+      { segment_id: "seg-001", state: "on_record", started_at_utc: "2026-10-04T01:00:00.000Z", ended_at_utc: null, trigger: "session_start" },
+    ],
+    off_record_excluded: { transcript_lines: 0, events: 0, timing_marks: 0, refused_tool_calls: 0 },
+    strikes: [],
+    elevenlabs_deletions: [],
   };
 }
 
@@ -343,5 +353,68 @@ describe("Sprint 3 snapshot records", () => {
     s.exchanges = [{ ...exchange(), gap_id: "gap-x", revision_id: "rev-7" }];
     const e = errors(validateSessionSnapshot(s)).join(" | ");
     for (const re of [/phase must/, /evt-404/, /ex-404/, /parent_revision_id/, /rev-9/, /gap-x/, /rev-7/]) expect(e).toMatch(re);
+  });
+});
+
+describe("Sprint 4: off-record guard, strikes, completion", () => {
+  const off = (from: string, to: string | null) => {
+    const s = snapshot();
+    s.recording_segments = [
+      { segment_id: "seg-001", state: "on_record", started_at_utc: "2026-10-04T01:00:00.000Z", ended_at_utc: from, trigger: "session_start" },
+      { segment_id: "seg-002", state: "off_record", started_at_utc: from, ended_at_utc: to, trigger: "agent_tool" },
+      ...(to ? [{ segment_id: "seg-003", state: "on_record" as const, started_at_utc: to, ended_at_utc: null, trigger: "agent_tool" as const }] : []),
+    ];
+    return s;
+  };
+
+  it("accepts a snapshot whose content lies outside the off-record segment", () => {
+    expect(errors(validateSessionSnapshot(off("2026-10-04T01:00:20.000Z", "2026-10-04T01:00:30.000Z")))).toEqual([]);
+  });
+
+  it("refuses any line, answer line or timing mark inside an off-record segment (open or closed)", () => {
+    const closed = errors(validateSessionSnapshot(off("2026-10-04T01:00:00.400Z", "2026-10-04T01:00:15.000Z"))).join(" | ");
+    for (const re of [/transcript\[0\]/, /answer_lines\[0\]/, /timing\[0\]/]) expect(closed).toMatch(re);
+    expect(errors(validateSessionSnapshot(off("2026-10-04T01:00:09.000Z", null))).join(" | ")).toMatch(/answer_lines\[0\]/);
+  });
+
+  it("refuses off-record events and exchanges outright", () => {
+    const s = snapshot();
+    s.events = [{ ...s.events[0], record_state: "off_record" }];
+    s.exchanges = [{ ...exchange(), record_state: "off_record" }];
+    const e = errors(validateSessionSnapshot(s)).join(" | ");
+    expect(e).toMatch(/events\[0\] is off the record/);
+    expect(e).toMatch(/exchanges\[0\] is off the record/);
+  });
+
+  it("requires alternating, closed segments and a struck exchange without words", () => {
+    const s = snapshot();
+    s.recording_segments = [
+      { segment_id: "seg-001", state: "on_record", started_at_utc: "2026-10-04T01:00:00.000Z", ended_at_utc: null, trigger: "session_start" },
+      { segment_id: "seg-002", state: "on_record", started_at_utc: "2026-10-04T01:00:01.000Z", ended_at_utc: null, trigger: "console" },
+    ];
+    s.strikes = [{ strike_id: "str-001", exchange_id: "ex-001", at_utc: "2026-10-04T01:00:12.000Z", trigger: "agent_tool", removed_line_count: 1, superseded_revision_ids: ["rev-9"], invalidated_confirmation_ids: [] }];
+    const e = errors(validateSessionSnapshot(s)).join(" | ");
+    for (const re of [/must be closed/, /must change the state/, /still has answer lines/, /rev-9/]) expect(e).toMatch(re);
+  });
+
+  it("validates set_record_state params, accepting on/off shorthands", () => {
+    expect(validateSetRecordStateParams({ state: "off" })).toEqual({ ok: true, value: { state: "off_record" } });
+    expect(validateSetRecordStateParams({ state: "on_record" })).toEqual({ ok: true, value: { state: "on_record" } });
+    expect(validateSetRecordStateParams({ state: "maybe" }).ok).toBe(false);
+  });
+
+  it("a completion can never be completed without a confirmed revision", () => {
+    const base = {
+      schema_version: SCHEMA_VERSION,
+      session_id: "ses-20261004-010000-abcd",
+      ended_at_utc: "2026-10-04T01:20:00.000Z",
+      end_reason: "completed",
+      final_phase: "teach_back",
+      confirmed_revision_id: null,
+      unfinished: [],
+    };
+    expect(errors(validateSessionCompletion(base)).join(" | ")).toMatch(/completed session needs a confirmed revision/);
+    expect(errors(validateSessionCompletion({ ...base, end_reason: "incomplete" })).join(" | ")).toMatch(/must say what was not finished/);
+    expect(errors(validateSessionCompletion({ ...base, end_reason: "incomplete", unfinished: ["teach-back not confirmed"], confirmed_revision_id: "rev-1" })).join(" | ")).toMatch(/must be null/);
   });
 });

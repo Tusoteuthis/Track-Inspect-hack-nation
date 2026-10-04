@@ -61,8 +61,10 @@ export function initialSession(
     schema_version: SCHEMA_VERSION,
     session_id,
     conversation_id: null,
+    conversation_ids: [],
     started_at_utc,
     ended_at_utc: null,
+    end_cause: null,
     events: [],
     exchanges: [],
     active_exchange_id: null,
@@ -80,6 +82,10 @@ export function initialSession(
     debrief_agenda: [],
     revisions: [],
     confirmations: [],
+    recording_segments: [{ segment_id: "seg-001", state: "on_record", started_at_utc, ended_at_utc: null, trigger: "session_start" }],
+    off_record_excluded: { transcript_lines: 0, events: 0, timing_marks: 0, refused_tool_calls: 0 },
+    strikes: [],
+    elevenlabs_deletions: [],
     last_tool_result: null,
     agent_speaking: false,
     last_answer_at: null,
@@ -89,7 +95,13 @@ export function initialSession(
 export function reduceSession(state: SessionState, action: SessionAction): SessionState {
   switch (action.type) {
     case "connected":
-      return { ...state, conversation_id: action.conversation_id };
+      return {
+        ...state,
+        conversation_id: action.conversation_id,
+        conversation_ids: state.conversation_ids.includes(action.conversation_id)
+          ? state.conversation_ids
+          : [...state.conversation_ids, action.conversation_id],
+      };
 
     case "event_received": {
       // Arrivals never touch exchanges: an answer in progress keeps its event.
