@@ -83,15 +83,17 @@ protocol TargetDescriptionService: Sendable {
     var onTranscript: (([TranscriptLine]) -> Void)? { get set }
     var onMuted: ((Bool) -> Void)? { get set }
     func start(agentID: String) async throws
+    /// Starts with a backend-issued ElevenLabs conversation token.
+    func start(conversationToken: String) async throws
     func stop() async
     func setMuted(_ muted: Bool) async throws
     func updateContext(_ text: String) async throws
-    /// Text the agent should answer, unlike the silent background of `updateContext`.
-    func sendText(_ text: String) async throws
 }
 
 extension VoiceService {
-    func sendText(_ text: String) async throws { try await updateContext(text) }
+    func start(conversationToken: String) async throws {
+        throw AppFailure(message: "This voice service cannot use a backend conversation token.")
+    }
 }
 
 struct AppFailure: LocalizedError {

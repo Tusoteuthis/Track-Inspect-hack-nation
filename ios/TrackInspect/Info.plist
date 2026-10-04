@@ -19,6 +19,10 @@
 <key>TeamID</key><string>$(DEVELOPMENT_TEAM)</string>
 <key>DAMEnabled</key><true/>
 </dict>
+<key>Backend</key><dict>
+<key>Host</key><string>$(BACKEND_HOST)</string>
+<key>AccessToken</key><string>$(BACKEND_ACCESS_TOKEN)</string>
+</dict>
 <key>Passiv</key><dict>
 <key>GatewayHost</key><string>$(PASSIV_GATEWAY_HOST)</string>
 <key>APIKey</key><string>$(PASSIV_API_KEY)</string>

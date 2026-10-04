@@ -15,11 +15,19 @@ import ElevenLabs
     func start(agentID: String) async throws {
         let id = agentID.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !id.isEmpty else { throw AppFailure(message: "Enter a public ElevenLabs agent ID in Settings.") }
+        try await begin { try await ElevenLabs.startConversation(agentId: id) }
+    }
+
+    func start(conversationToken: String) async throws {
+        try await begin { try await ElevenLabs.startConversation(conversationToken: conversationToken) }
+    }
+
+    private func begin(_ connect: () async throws -> Conversation) async throws {
         guard await AVAudioApplication.requestRecordPermission() else {
             throw AppFailure(message: "Microphone access denied. Enable it in iOS Settings.")
         }
         try Task.checkCancellation()
-        let session = try await ElevenLabs.startConversation(agentId: id)
+        let session = try await connect()
         if Task.isCancelled {
             await session.endConversation()
             throw CancellationError()
@@ -30,7 +38,9 @@ import ElevenLabs
             case .idle: self?.onStatus?("Idle")
             case .connecting: self?.onStatus?("Connecting")
             case .active: self?.onStatus?("Connected")
-            case .ended: self?.onStatus?("Ended")
+            case .ended(reason: .userEnded): self?.onStatus?("Ended")
+            // The SDK does not pass on why; an immediate drop is typically exhausted account credits.
+            case .ended: self?.onStatus?("Error: ElevenLabs closed the call. Check that the account has credits and the agent is available.")
             case .error(let error): self?.onStatus?("Error: \(error)")
             }
         }.store(in: &subscriptions)
@@ -58,10 +68,5 @@ import ElevenLabs
     func updateContext(_ text: String) async throws {
         guard let conversation, conversation.state.isActive else { return }
         try await conversation.updateContext(text)
-    }
-
-    func sendText(_ text: String) async throws {
-        guard let conversation, conversation.state.isActive else { return }
-        try await conversation.sendMessage(text)
     }
 }
