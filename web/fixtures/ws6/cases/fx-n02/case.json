@@ -1,0 +1,9 @@
+{
+  "case_id": "fx-n02",
+  "title": "FIXTURE unseen newcomer case 2",
+  "trace_asset": "trace.png",
+  "shown_to_expert": false,
+  "source": "fixture",
+  "visible_context": ["FIXTURE visible context: placeholder trace, not a real sensor recording."],
+  "decision_options": null
+}

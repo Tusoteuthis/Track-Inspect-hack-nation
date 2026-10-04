@@ -26,12 +26,14 @@ describe("getConfig", () => {
     vi.stubEnv("KNOWLEDGE_DIR", "/abs/knowledge");
     vi.stubEnv("RUNTIME_DIR", "rel/runtime");
     vi.stubEnv("EVALUATOR_DIR", "/abs/eval");
+    vi.stubEnv("CASES_DIR", "/abs/cases");
     vi.stubEnv("ASSET_MAX_BYTES", undefined);
     resetConfig();
     expect(getConfig()).toEqual({
       knowledgeDir: "/abs/knowledge",
       runtimeDir: path.resolve(process.cwd(), "rel/runtime"),
       evaluatorDir: "/abs/eval",
+      casesDir: "/abs/cases",
       assetMaxBytes: 15 * 1024 * 1024,
     });
   });
