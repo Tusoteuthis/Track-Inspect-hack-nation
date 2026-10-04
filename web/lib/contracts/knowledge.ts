@@ -62,6 +62,10 @@ export const ConfirmationSchema = z.object({
   at_utc: UtcSchema,
   step_ids_reviewed: z.array(IdSchema).optional(),
   source: SourceSchema,
+  /** S2: the expert session the reviewed revision and the response exchange belong to. */
+  session_id: IdSchema.optional(),
+  /** S2: entry of the reviewed revision. */
+  entry_id: IdSchema.optional(),
 });
 export type Confirmation = z.output<typeof ConfirmationSchema>;
 
