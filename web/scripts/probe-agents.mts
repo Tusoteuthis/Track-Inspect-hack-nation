@@ -7,6 +7,7 @@
  *   npm run probe                          # all agents
  *   npm run probe -- expert                # one agent
  *   npm run probe -- expert --runs 5       # each case 5×, with a pass-count summary
+ *   npm run probe -- expert --runs 5 --case two-events,teach-back-shape   # only these cases
  *
  * Two case shapes:
  *   { name, user: string[] }                          print-only (a neutral agent turn between lines)
@@ -72,7 +73,9 @@ const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! })
 const args = process.argv.slice(2);
 const runsIdx = args.indexOf("--runs");
 const runs = runsIdx >= 0 ? Math.max(1, Number(args[runsIdx + 1]) || 1) : 1;
-const only = args.find((a, i) => !a.startsWith("--") && i !== runsIdx + 1);
+const caseIdx = args.indexOf("--case");
+const caseFilter = caseIdx >= 0 ? new Set(args[caseIdx + 1]?.split(",")) : null;
+const only = args.find((a, i) => !a.startsWith("--") && i !== runsIdx + 1 && i !== caseIdx + 1);
 
 const summary: { agent: string; name: string; passed: number | null; runs: number }[] = [];
 
@@ -88,6 +91,7 @@ for (const [agent, spec] of Object.entries(PROBES)) {
   console.log(`\n═══ ${agent} (${cfg.name}) ═══`);
 
   for (const c of spec.cases) {
+    if (caseFilter && !caseFilter.has(c.name)) continue;
     const history = buildHistory(c, first);
     // runs of one case go in parallel
     const results = await Promise.all(

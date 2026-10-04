@@ -58,7 +58,7 @@
   {
     "type": "client",
     "name": "record_coverage",
-    "description": "Call silently right after the expert has answered one of your questions, before you say anything else. Records which aspects their answer covered. Never call it before they answered.",
+    "description": "Call silently right after the expert has answered one of your questions, before you say anything else. Records which aspects their answer covered. Never call it before they answered. It is silent bookkeeping: never say that you are recording anything.",
     "parameters": {
       "type": "object",
       "properties": {
