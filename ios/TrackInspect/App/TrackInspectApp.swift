@@ -3,8 +3,10 @@ import SwiftUI
 @main struct TrackInspectApp: App {
     @State private var model = InspectionViewModel(
         video: MetaVideoService(),
+        phoneVideo: PhoneVideoService(),
         analyzer: LocalAnalysisService(),
-        voice: ElevenLabsVoiceService()
+        voice: ElevenLabsVoiceService(),
+        describer: PassivVisionService()
     )
     @Environment(\.scenePhase) private var scenePhase
 

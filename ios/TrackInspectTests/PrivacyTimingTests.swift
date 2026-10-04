@@ -161,11 +161,31 @@ import XCTest
         await model.stopAll()
     }
 
+    func testStartingVoiceRestartsStreamingGlassesVideoAfterRouteSettles() async throws {
+        let video = LifecycleVideo()
+        let voice = LifecycleVoice()
+        var timing = SessionTiming()
+        timing.routeSettle = .milliseconds(10)
+        let model = makeModel(video: video, voice: voice, timing: timing)
+        model.startVideo()
+        try await eventually { !model.isVideoBusy }
+        model.startVoice(agentID: "agent")
+        try await eventually { video.startCalls == 2 && !model.isVideoBusy }
+        XCTAssertGreaterThan(video.stopCalls, 0)
+        XCTAssertEqual(voice.startCalls, 1)
+        XCTAssertTrue(model.isVideoRunning)
+        XCTAssertTrue(model.isVoiceRunning)
+        XCTAssertNil(model.error)
+        await model.stopAll()
+    }
+
     func testBundleIdentityAndCallbackConfiguration() {
-        XCTAssertEqual(Bundle.main.bundleIdentifier, "ai.track-inspect.app")
+        XCTAssertEqual(Bundle.main.bundleIdentifier, "ai.trackinspect.app")
         let dat = Bundle.main.object(forInfoDictionaryKey: "MWDAT") as? [String: Any]
         XCTAssertEqual(dat?["AppLinkURLScheme"] as? String, "trackinspect://")
-        XCTAssertNil(Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes"))
+        // The glasses link needs the accessory modes; capture modes must stay absent.
+        let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
+        XCTAssertEqual(Set(modes), ["bluetooth-central", "bluetooth-peripheral", "external-accessory"])
     }
 
     private func makeModel(video: LifecycleVideo = LifecycleVideo(), voice: LifecycleVoice = LifecycleVoice(), clock: TestClock = TestClock(), timing: SessionTiming = SessionTiming()) -> InspectionViewModel {

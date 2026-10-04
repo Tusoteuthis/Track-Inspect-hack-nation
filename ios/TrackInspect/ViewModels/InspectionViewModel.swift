@@ -2,13 +2,85 @@ import SwiftUI
 import AVFoundation
 import Observation
 
+/// The latest frame in which a pointing finger and its target were found. Memory only.
+struct PointingCapture {
+    let image: UIImage
+    let pointing: Pointing
+    let target: PointingTarget
+    let capturedAt: Date
+    /// Cloud description of this exact frame, once it has arrived.
+    var description: String? = nil
+}
+
 @MainActor @Observable final class InspectionViewModel {
     var preview: UIImage?
+    private(set) var pointingCapture: PointingCapture?
     var analysis: AnalysisResult?
     var transcript: [TranscriptLine] = []
     var videoStatus = "Not streaming"
     var voiceStatus = "Idle"
     var error: String?
+    private(set) var isPairing = false
+    private(set) var isUnpairing = false
+    private(set) var isUnpairPending = false
+    private(set) var unpairMessage: String?
+    private(set) var glassesRegistration: GlassesRegistrationStatus?
+    private var glassesLink: GlassesConnectionStatus = .checking
+    private var keepsPhoneAudio = false
+    private var lastVideoFrame: TimeInterval?
+    private var connectionCheckedAt: TimeInterval = 0
+
+    var glassesConnection: GlassesConnectionStatus {
+        guard isForeground else { return .paused }
+        if glassesLink == .connected, videoSource == .glasses, isVideoRunning, let lastVideoFrame,
+           max(connectionCheckedAt, lastVideoFrame) - lastVideoFrame < timing.frameTimeout {
+            return .streaming
+        }
+        return glassesLink
+    }
+
+    func refreshGlassesConnection() {
+        guard isForeground else { return }
+        glassesLink = video.connectionStatus()
+        connectionCheckedAt = now()
+        if glassesLink == .notRegistered {
+            glassesRegistration = nil
+            if isUnpairPending { completeUnpair() }
+        }
+    }
+
+    private func completeUnpair() {
+        isUnpairPending = false
+        glassesRegistration = nil
+        glassesLink = .notRegistered
+        unpairMessage = "TrackInspect is unpaired. You can pair again below."
+    }
+
+    func unpair() async {
+        guard !isPairing, !isUnpairing, isForeground else { return }
+        isUnpairing = true
+        isUnpairPending = true
+        unpairMessage = "Stopping capture and removing TrackInspect's access…"
+        error = nil
+        shareFindings = false
+        defer { isUnpairing = false }
+        await stopAll()
+        do {
+            try Task.checkCancellation()
+            guard isForeground else { throw CancellationError() }
+            if try await video.unregister() {
+                completeUnpair()
+            } else if isUnpairPending {
+                unpairMessage = "Finish removing TrackInspect's access in Meta AI, then return here."
+                refreshGlassesConnection()
+            }
+        } catch {
+            isUnpairPending = false
+            unpairMessage = error is CancellationError
+                ? "Unpairing was not confirmed. You can try again."
+                : error.localizedDescription
+        }
+    }
     private(set) var isVideoRunning = false
     private(set) var isVoiceRunning = false
     private(set) var isVideoBusy = false
@@ -23,11 +95,32 @@ import Observation
             if !shareFindings { contextTask?.cancel() }
         }
     }
+    /// Upload the annotated pointing screenshot to Passiv and send its description to the voice agent.
+    /// On by default at the owner's request; only effective in builds that carry a Passiv key.
+    var describeTargets = true {
+        didSet {
+            if !describeTargets { cancelDescription() }
+        }
+    }
+    var canDescribeTargets: Bool { describer != nil }
+    private(set) var isDescribingTarget = false
     private(set) var analyzedFrames = 0
 
+    /// Source of the current or most recent run; fixed while a run is active.
+    private(set) var videoSource = VideoSource.glasses
     private let video: any VideoService
+    private let phoneVideo: (any FrameSource)?
+    private var activeVideo: any FrameSource {
+        videoSource == .phone ? phoneVideo ?? video : video
+    }
     private let analyzer: any AnalysisService
     private let voice: any VoiceService
+    private let describer: (any TargetDescriptionService)?
+    @ObservationIgnored private var describeTask: Task<Void, Never>?
+    private var describeGeneration = UUID()
+    private var lastDescription = -TimeInterval.infinity
+    private var pointingStreak = 0
+    private var lastTip: CGPoint?
     private let timing: SessionTiming
     private let now: @MainActor () -> TimeInterval
     @ObservationIgnored private var videoTask: Task<Void, Never>?
@@ -46,18 +139,23 @@ import Observation
     private var analysisGeneration = UUID()
     private var pendingPhoto: UIImage?
 
-    init(video: any VideoService, analyzer: any AnalysisService, voice: any VoiceService,
+    init(video: any VideoService, phoneVideo: (any FrameSource)? = nil,
+         analyzer: any AnalysisService, voice: any VoiceService,
+         describer: (any TargetDescriptionService)? = nil,
          timing: SessionTiming = SessionTiming(),
          now: @escaping @MainActor () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
         self.video = video
+        self.phoneVideo = phoneVideo
         self.analyzer = analyzer
         self.voice = voice
+        self.describer = describer
         self.timing = timing
         self.now = now
         routeTask = Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: AVAudioSession.routeChangeNotification) {
                 guard !Task.isCancelled else { return }
                 self?.refreshRoute()
+                self?.holdPhoneAudioIfNeeded()
             }
         }
     }
@@ -65,15 +163,34 @@ import Observation
     // MARK: - Registration and lifecycle
 
     func pair() async {
+        guard !isPairing, !isUnpairing, !isUnpairPending else { return }
+        unpairMessage = nil
+        isPairing = true
+        error = nil
+        defer { isPairing = false }
         do {
-            try await video.register()
-            videoStatus = "Complete pairing in Meta AI, then start video."
-        } catch { self.error = error.localizedDescription }
+            glassesRegistration = try await video.register()
+        } catch {
+            glassesRegistration = nil
+            if !(error is CancellationError) { self.error = error.localizedDescription }
+        }
     }
 
     func handle(url: URL) async {
-        do { try await video.handle(url: url) }
-        catch { self.error = error.localizedDescription }
+        do {
+            if let status = try await video.handle(url: url) {
+                glassesRegistration = status
+                error = nil
+            }
+            refreshGlassesConnection()
+        } catch {
+            if isUnpairPending {
+                isUnpairPending = false
+                unpairMessage = "Meta could not confirm unpairing. You can try again."
+            }
+            glassesRegistration = nil
+            self.error = error.localizedDescription
+        }
     }
 
     /// Invalidate both pipelines synchronously before the scene leaves the foreground.
@@ -81,8 +198,13 @@ import Observation
         isForeground = active
         if !active {
             shareFindings = false
+            cancelDescription()
+            pointingCapture = nil
             _ = beginStopVideo()
             _ = beginStopVoice()
+        } else {
+            // Configures the Meta SDK early so the glasses link is up before Start video.
+            refreshGlassesConnection()
         }
     }
 
@@ -96,25 +218,40 @@ import Observation
 
     // MARK: - Video
 
-    func startVideo() {
-        guard isForeground, !isVideoRunning, !isVideoBusy, !isVideoStopping else { return }
+    func startVideo(source: VideoSource = .glasses) {
+        guard isForeground, !isUnpairing, !isUnpairPending,
+              !isVideoRunning, !isVideoBusy, !isVideoStopping else { return }
+        guard source == .glasses || phoneVideo != nil else {
+            error = "The iPhone camera is not available in this build."
+            return
+        }
+        videoSource = source
+        if source == .glasses, isVoiceRunning {
+            keepsPhoneAudio = true
+            holdPhoneAudioIfNeeded()
+        }
+        let video = activeVideo
+        video.beforeStream = source == .glasses ? { [weak self] in await self?.routeVoiceToGlasses() } : nil
         error = nil
         cancelAnalysis()
         preview = nil
+        pointingCapture = nil
+        cancelDescription()
         isVideoRunning = true
         isVideoBusy = true
-        videoStatus = "Starting glasses…"
+        videoStatus = source == .phone ? "Starting iPhone camera…" : "Starting glasses…"
         lastFrame = now()
+        lastVideoFrame = nil
         lastAnalysis = -.infinity
         let generation = UUID()
         videoGeneration = generation
-        bindVideo(generation: generation)
+        bindVideo(video, generation: generation)
         videoTask = Task { [weak self] in
             guard let self else { return }
             defer { self.isVideoBusy = false }
             do {
                 try Task.checkCancellation()
-                try await self.video.start()
+                try await video.start()
                 try Task.checkCancellation()
                 guard self.videoGeneration == generation else { return }
                 self.lastFrame = self.now()
@@ -123,7 +260,10 @@ import Observation
                         do { try await Task.sleep(for: interval) } catch { return }
                         guard let self, self.videoGeneration == generation, self.isVideoRunning else { return }
                         if self.now() - self.lastFrame >= self.timing.frameTimeout {
-                            self.error = "No video frames for \(Int(self.timing.frameTimeout)) seconds. Check glasses connection and stop competing camera/audio apps."
+                            let hint = source == .phone
+                                ? "Close other apps using the camera and restart video."
+                                : "Check glasses connection and stop competing camera/audio apps."
+                            self.error = "No video frames for \(Int(self.timing.frameTimeout)) seconds. \(hint)"
                             _ = self.beginStopVideo()
                             return
                         }
@@ -144,8 +284,10 @@ import Observation
         if let videoStopTask { return videoStopTask }
         videoGeneration = UUID()
         isVideoRunning = false
+        lastVideoFrame = nil
         isVideoStopping = true
         videoStatus = "Stopping video…"
+        let video = activeVideo
         video.onFrame = nil
         video.onStatus = nil
         video.onFailure = nil
@@ -168,11 +310,12 @@ import Observation
         return task
     }
 
-    private func bindVideo(generation: UUID) {
+    private func bindVideo(_ video: any FrameSource, generation: UUID) {
         video.onFrame = { [weak self] image in
             guard let self, self.videoGeneration == generation, self.isVideoRunning, self.isForeground else { return }
             self.lastFrame = self.now()
-            self.videoStatus = "Live · Meta Ray-Ban"
+            self.lastVideoFrame = self.lastFrame
+            self.videoStatus = self.videoSource == .phone ? "Live · iPhone camera" : "Live · Meta Ray-Ban"
             self.receive(image)
         }
         video.onStatus = { [weak self] status in
@@ -189,7 +332,8 @@ import Observation
     // MARK: - Voice
 
     func startVoice(agentID: String) {
-        guard isForeground, !isVoiceRunning, !isVoiceBusy, !isVoiceStopping else { return }
+        guard isForeground, !isUnpairing, !isUnpairPending,
+              !isVoiceRunning, !isVoiceBusy, !isVoiceStopping else { return }
         error = nil
         isVoiceRunning = true
         isVoiceBusy = true
@@ -199,15 +343,30 @@ import Observation
         let generation = UUID()
         voiceGeneration = generation
         bindVoice(generation: generation)
+        // The glasses end a running camera session when hands-free audio comes up,
+        // so the stream is restarted once the voice route has settled.
+        let resumeGlasses = isVideoRunning && !isVideoBusy && videoSource == .glasses
+        let videoStop = resumeGlasses ? beginStopVideo() : nil
         voiceTask = Task { [weak self] in
             guard let self else { return }
             defer { self.isVoiceBusy = false }
             do {
+                await videoStop?.value
                 try Task.checkCancellation()
                 try await self.voice.start(agentID: agentID)
                 try Task.checkCancellation()
                 guard self.voiceGeneration == generation else { return }
                 self.refreshRoute()
+                if resumeGlasses {
+                    self.videoStatus = "Restarting glasses video…"
+                    self.isVoiceBusy = false
+                    self.keepsPhoneAudio = true
+                    self.holdPhoneAudioIfNeeded()
+                    try await Task.sleep(for: self.timing.routeSettle)
+                    guard self.voiceGeneration == generation else { return }
+                    self.refreshRoute()
+                    self.startVideo(source: .glasses)
+                }
             } catch {
                 guard self.voiceGeneration == generation else { return }
                 if !(error is CancellationError) { self.error = error.localizedDescription }
@@ -222,6 +381,7 @@ import Observation
         if let voiceStopTask { return voiceStopTask }
         voiceGeneration = UUID()
         isVoiceRunning = false
+        keepsPhoneAudio = false
         isVoiceStopping = true
         isMuted = true
         voiceStatus = "Ending voice…"
@@ -277,8 +437,43 @@ import Observation
         }
     }
 
+    /// The glasses microphone delivers silence while their camera streams, so voice
+    /// stays on the iPhone for as long as glasses video and the agent run together.
+    private func holdPhoneAudioIfNeeded() {
+        guard keepsPhoneAudio, isVoiceRunning else { return }
+        let session = AVAudioSession.sharedInstance()
+        guard session.currentRoute.inputs.contains(where: { $0.portType == .bluetoothHFP }),
+              let mic = session.availableInputs?.first(where: { $0.portType == .builtInMic }) else { return }
+        try? session.setPreferredInput(mic)
+        try? session.overrideOutputAudioPort(.speaker)
+        refreshRoute()
+    }
+
+    /// Meta's order for glasses microphone plus camera: attach the stream, bring up the
+    /// hands-free route, let it settle, then start the stream. Falls back to iPhone audio.
+    private func routeVoiceToGlasses() async {
+        guard isVoiceRunning else { return }
+        let session = AVAudioSession.sharedInstance()
+        guard let glasses = session.availableInputs?.first(where: { $0.portType == .bluetoothHFP }) else {
+            MetaVideoService.trace("audio: no hands-free input, staying on iPhone")
+            return
+        }
+        keepsPhoneAudio = false
+        try? session.setPreferredInput(glasses)
+        try? session.overrideOutputAudioPort(.none)
+        try? await Task.sleep(for: timing.routeSettle)
+        let active = session.currentRoute.inputs.contains { $0.portType == .bluetoothHFP }
+        MetaVideoService.trace("audio: hands-free route before stream active=\(active)")
+        if !active {
+            keepsPhoneAudio = true
+            holdPhoneAudioIfNeeded()
+        }
+        refreshRoute()
+    }
+
     func preferPhoneAudio(_ phone: Bool) {
         guard isVoiceRunning, !isVoiceBusy else { return }
+        keepsPhoneAudio = phone
         do {
             let session = AVAudioSession.sharedInstance()
             let input = session.availableInputs?.first {
@@ -296,6 +491,8 @@ import Observation
     func analyzePhoto(_ image: UIImage) {
         guard isForeground, !isVideoRunning, !isVideoBusy, !isVideoStopping else { return }
         cancelAnalysis()
+        pointingCapture = nil
+        cancelDescription()
         preview = image
         lastAnalysis = -.infinity
         videoStatus = "Test photo · not live"
@@ -322,6 +519,32 @@ import Observation
                 guard let self, !Task.isCancelled, self.analysisGeneration == generation, self.isForeground else { return }
                 self.analysis = result
                 self.analyzedFrames += 1
+                // A held finger, not a hand passing through or tapping: the tip must stay put across frames.
+                if let tip = result.pointing?.tip {
+                    let held = self.lastTip.map { hypot($0.x - tip.x, $0.y - tip.y) < 0.1 } ?? false
+                    self.pointingStreak = held ? self.pointingStreak + 1 : 1
+                    self.lastTip = tip
+                } else {
+                    self.pointingStreak = 0
+                    self.lastTip = nil
+                }
+                let dwell = self.isVideoRunning ? self.timing.pointingDwellFrames : 1
+                if let pointing = result.pointing, let target = result.target,
+                   let snapshot = result.snapshot, let image = UIImage(data: snapshot) {
+                    let capture = PointingCapture(image: image, pointing: pointing, target: target,
+                                                  capturedAt: result.capturedAt)
+                    if self.describeTargets, self.describer != nil {
+                        if self.pointingStreak >= dwell {
+                            self.describeIfDue(capture, snapshot: snapshot, newGesture: self.pointingStreak == dwell)
+                        }
+                        // The panel keeps a described frame; otherwise it follows the latest pointing frame.
+                        if self.describeTask == nil, self.pointingCapture?.description == nil {
+                            self.pointingCapture = capture
+                        }
+                    } else {
+                        self.pointingCapture = capture
+                    }
+                }
                 self.sendContextIfAllowed(result)
             } catch {
                 guard let self, self.analysisGeneration == generation, !Task.isCancelled else { return }
@@ -356,6 +579,47 @@ import Observation
         }
     }
 
+    private func describeIfDue(_ capture: PointingCapture, snapshot: Data, newGesture: Bool) {
+        guard let describer, isForeground, describeTask == nil,
+              now() - lastDescription >= (newGesture ? timing.describeMinimum : timing.describeInterval) else { return }
+        lastDescription = now()
+        pointingCapture = capture
+        isDescribingTarget = true
+        let generation = describeGeneration
+        describeTask = Task { [weak self] in
+            defer {
+                if let self, self.describeGeneration == generation {
+                    self.describeTask = nil
+                    self.isDescribingTarget = false
+                }
+            }
+            do {
+                let text = try await describer.describe(snapshot: snapshot, hint: capture.target.label?.label)
+                guard let self, !Task.isCancelled, self.describeGeneration == generation, self.describeTargets else { return }
+                guard !text.uppercased().hasPrefix("NONE") else {
+                    self.pointingCapture?.description = "Not a deliberate point. Nothing was sent to the agent."
+                    return
+                }
+                self.pointingCapture?.description = text
+                guard self.isVoiceRunning, !self.isVoiceBusy else { return }
+                try await self.voice.sendText("I am pointing at this (described by the camera's vision model, unverified): \(text) Briefly acknowledge what I am pointing at.")
+            } catch {
+                guard let self, !Task.isCancelled, self.describeGeneration == generation else { return }
+                self.error = "Could not describe the pointing target: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    private func cancelDescription() {
+        describeGeneration = UUID()
+        describeTask?.cancel()
+        describeTask = nil
+        isDescribingTarget = false
+        lastDescription = -.infinity
+        pointingStreak = 0
+        lastTip = nil
+    }
+
     private func cancelAnalysis() {
         analysisGeneration = UUID()
         analysisTask?.cancel()
@@ -377,5 +641,6 @@ import Observation
         voiceTask?.cancel()
         analysisTask?.cancel()
         contextTask?.cancel()
+        describeTask?.cancel()
     }
 }

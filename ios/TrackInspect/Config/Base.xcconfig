@@ -1,3 +1,7 @@
 MWDAT_APP_ID =
 MWDAT_CLIENT_TOKEN =
+// Passiv gateway (LiteLLM, OpenAI-compatible). Host only: "//" starts a comment in xcconfig.
+PASSIV_GATEWAY_HOST = gateway.mezzanin.eu
+PASSIV_MODEL = claude-sonnet
+PASSIV_API_KEY =
 #include? "Secrets.xcconfig"

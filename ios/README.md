@@ -2,7 +2,7 @@
 
 Native iPhone/iPad prototype for Meta Ray-Ban video, local visual analysis, and an ElevenLabs voice assistant.
 
-**iOS bundle identifier: `ai.track-inspect.app`**. This is the app identity, not an assumed backend URL. Meta callback remains `trackinspect://`.
+**iOS bundle identifier: `ai.trackinspect.app`**. This is the app identity, not an assumed backend URL. Meta callback remains `trackinspect://`.
 
 **Stack:** Swift 6 strict concurrency, SwiftUI + Observation, protocol-based services, async/await, XcodeGen, Swift Package Manager. Follows the native architecture of `stoz3n-ios-chat` and the DAT 0.7 session/camera pattern from `savevision-ios`. No Matrix/chat server is needed for this workflow; no unrelated template credentials or code were copied.
 
@@ -10,8 +10,12 @@ Native iPhone/iPad prototype for Meta Ray-Ban video, local visual analysis, and 
 
 - Pair through Meta AI and handle the `trackinspect://` return link.
 - Receive DAT camera frames at low resolution / 24 fps, with a live phone preview.
+- Or choose **iPhone** under Settings → Video source to use the phone's back camera instead of glasses (no Meta setup needed; not yet validated on a device, see `specs/009-phone-video/`).
 - Analyze sampled frames locally using Apple's built-in Vision image-classification model. One inference at a time, at most ~1.3 analyses/second; incoming frames are skipped while inference is busy.
 - Optionally load a bundled **image classification** Core ML model named `InspectionClassifier` instead.
+- Detect a pointing index finger in each analysed frame with Apple's on-device Vision hand-pose model: direction within the image and a fingertip marker on the preview. A geometric heuristic, not yet tried on a real hand (see `specs/010-finger-pointing/`).
+- Report the pointing target: the nearest standout object along the finger (Vision saliency) is boxed and its region classified locally; a "Pointing target" panel shows the frame with the finger and box painted on, with a share button. Held in memory only. Saliency does not run on the simulator, so this is untested on real images.
+- By default (switch in the Local vision panel) upload that annotated screenshot to the Passiv LLM gateway for a short description, shown in the panel and sent to the voice agent as a text message during a call. Needs `PASSIV_API_KEY` in `Secrets.xcconfig`. This is the only image that can leave the device.
 - Start an ElevenLabs public-agent conversation using the official Swift SDK (LiveKit microphone capture, agent audio playback, interruption handling, transcripts and mute).
 - Request iPhone or Bluetooth HFP audio and display the actual system route.
 - Opt in to sending textual visual summaries to the agent, at most once every five seconds. Images are never sent to ElevenLabs.
@@ -28,11 +32,31 @@ Feature planning uses **Spec Kit**. Start with [the constitution](.specify/memor
 
 Workflow: `/speckit.specify` → `/speckit.clarify` (as needed) → `/speckit.plan` → `/speckit.tasks` → `/speckit.analyze` → `/speckit.implement`. Commands are defined in `.claude/commands/`; local helper scripts live in `.specify/scripts/bash/`. See [quickstart](specs/001-glasses-inspection/quickstart.md) for non-Git operation and bootstrap details.
 
+## Explicit Meta modes — 0.1.0 (7)
+
+Both DAM and legacy-camera builds are available; **legacy (without DAM) build 7 is installed**. Settings shows the installed mode. **67 tests passed.** Important correction: DAT 0.7 reads `MWDAT.DAMEnabled`; the old nested `startupOptions.usesDam` flag was ignored. This is not yet a confirmed connectivity fix. See [build choices and artifacts](docs/META-BUILD-MODES.md).
+
+## Unpair TrackInspect — 0.1.0 (6)
+
+Settings → **Unpair TrackInspect** offers a confirmation before stopping video/voice and removing this app's Meta authorization. It does not unpair the glasses from Bluetooth or Meta AI. Pending removal is distinguished from confirmed completion; afterward use Pair again. **Build 6 installed/launched; 57 unit + 8 UI tests passed.** No removal was performed automatically. Actual connection recovery remains unverified. See [feature evidence](specs/006-unpair-glasses/tasks.md).
+
+## Live glasses status — 0.1.0 (5)
+
+Settings → Glasses now displays the actual Meta link status, distinct from registration: disconnected, connecting, connected or streaming, with setup/pending/unavailable states. Refreshes once per second while Settings is active; never starts capture. Streaming requires fresh video frames. **Build 5 installed and launched on the iPhone 16 Pro Max; 51 unit + 7 UI tests passed.** Physical glasses transitions still require user validation. See [feature evidence](specs/005-glasses-connection-state/tasks.md).
+
+## Registration fix — 0.1.0 (4)
+
+Meta's “registration error 0” means **already registered**. Repeated pairing now succeeds idempotently, with separate registration feedback and actionable messages for real failures. **Build 4 was installed and launched on the iPhone 16 Pro Max; all 53 automated tests passed.** See [registration fix details](docs/REGISTRATION-FIX.md). Registration alone does not establish live camera/voice support.
+
+## App icon
+
+A custom violet rail/viewfinder icon now matches the charcoal interface. [Preview and build details](docs/APP-ICON.md). The icon-enabled signed build retains the existing **0.1.0 (3)** version and is packaged separately at `build/0.1.0-3-icon/`; the icon is included in the installed build 5.
+
 ## Latest interface update
 
 **0.1.0 (2)** adds a Linear-inspired charcoal/violet workspace with compact navigation, bordered panels and matching setup screens. See [screenshots and validation](docs/LINEAR-STYLE.md) and [Spec Kit feature 002](specs/002-linear-style/plan.md).
 
-Signed artifacts: `build/0.1.0-2/TrackInspect.app` and `build/0.1.0-2/TrackInspect-0.1.0-2-development.ipa`. The update is ready; installation on the original iPhone is pending reconnection. All 30 unit tests and seven UI tests passed, including repeated UI validation on iPhone SE.
+Signed artifacts: `build/0.1.0-2/TrackInspect.app` and `build/0.1.0-2/TrackInspect-0.1.0-2-development.ipa`. This interface is included in the installed build 5. All 30 unit tests and seven UI tests passed, including repeated UI validation on iPhone SE.
 
 ## First development build
 
@@ -59,7 +83,7 @@ Choose the `TrackInspect` scheme. The app builds without credentials for photo/l
 cp TrackInspect/Config/Secrets.example.xcconfig TrackInspect/Config/Secrets.xcconfig
 ```
 
-Fill in your signing team, Meta app ID and client token. These are intentionally blank; do not reuse the templates' identities. Register **`ai.track-inspect.app`** with Meta and Apple. The bundle identifier is set in `project.yml`; regenerate the project after changing it.
+Fill in your signing team, Meta app ID and client token. These are intentionally blank; do not reuse the templates' identities. Register **`ai.trackinspect.app`** with Meta and Apple. The bundle identifier is set in `project.yml`; regenerate the project after changing it.
 
 ```sh
 xcodebuild -project TrackInspect.xcodeproj -scheme TrackInspect \
@@ -74,7 +98,7 @@ The generated Xcode project and SPM lockfile are included. `project.yml` is cano
 
 ## Meta setup / real glasses
 
-1. Create a Meta Wearables DAT app for bundle **`ai.track-inspect.app`** and your Apple team.
+1. Create a Meta Wearables DAT app for bundle **`ai.trackinspect.app`** and your Apple team.
 2. Configure the app link/redirect `trackinspect://` and camera capability, and enable the required developer/testing access in Meta's tooling.
 3. Enter the Meta configuration in the gitignored xcconfig, then build to a physical iPhone.
 4. Pair supported glasses in Meta AI. In TrackInspect → Settings → **Pair glasses in Meta AI**, approve access and return.

@@ -2,8 +2,23 @@ import SwiftUI
 
 struct InspectionSettingsView: View {
     @Binding var agentID: String
+    var videoSource: Binding<VideoSource> = .constant(.glasses)
+    var registrationStatus: GlassesRegistrationStatus? = nil
+    var isPairing = false
+    var connectionStatus: GlassesConnectionStatus = .checking
+    var refreshConnection: () -> Void = {}
+    var isUnpairing = false
+    var isUnpairPending = false
+    var unpairMessage: String? = nil
+    var onUnpair: () -> Void = {}
     var onPair: () -> Void
+    @State private var confirmUnpair = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
+
+    private var visibleConnection: GlassesConnectionStatus {
+        scenePhase == .active ? connectionStatus : .paused
+    }
 
     var body: some View {
         NavigationStack {
@@ -17,14 +32,56 @@ struct InspectionSettingsView: View {
                             .font(.subheadline).foregroundStyle(InspectionTheme.secondary)
                     }.padding(.bottom, 4)
 
+                    section("Video source", symbol: "video") {
+                        HStack(spacing: 10) {
+                            ForEach(VideoSource.allCases) { source in
+                                Button {
+                                    videoSource.wrappedValue = source
+                                } label: {
+                                    Label(source.title, systemImage: videoSource.wrappedValue == source ? "checkmark.circle.fill" : "circle")
+                                }
+                                .buttonStyle(InspectionButtonStyle(fullWidth: true))
+                                .accessibilityIdentifier("videoSource_\(source.rawValue)")
+                                .accessibilityAddTraits(videoSource.wrappedValue == source ? [.isSelected] : [])
+                            }
+                        }
+                        Text("Choose where live video comes from. The iPhone option uses the back camera and needs no glasses or Meta setup. Changing the source stops a running stream.")
+                            .font(.caption).foregroundStyle(InspectionTheme.secondary)
+                    }
+
                     section("Glasses", symbol: "eyeglasses") {
                         Text("Meta Ray-Ban").font(.subheadline.weight(.medium))
-                        Text("Pair through Meta AI to bring your point of view into TrackInspect.")
+                        Text("Connection mode: \(Self.installedMetaMode)")
+                            .font(.caption).foregroundStyle(InspectionTheme.secondary)
+                            .accessibilityIdentifier("metaConnectionMode")
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label(visibleConnection.title, systemImage: visibleConnection.symbol)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(InspectionTheme.text)
+                                .accessibilityIdentifier("glassesConnectionStatus")
+                            Text(visibleConnection.detail)
+                                .font(.caption).foregroundStyle(InspectionTheme.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading).padding(12)
+                        .background(InspectionTheme.recessed, in: RoundedRectangle(cornerRadius: 8))
+                        Text(registrationStatus?.message ?? "Pair through Meta AI to bring your point of view into TrackInspect.")
                             .font(.caption).foregroundStyle(InspectionTheme.secondary)
                         Button("Pair glasses in Meta AI", systemImage: "arrow.up.forward.app") {
                             dismiss()
                             onPair()
                         }.buttonStyle(InspectionButtonStyle(fullWidth: true))
+                            .disabled(isPairing || isUnpairing || isUnpairPending)
+                        Button("Unpair TrackInspect", systemImage: "link.badge.plus", role: .destructive) {
+                            confirmUnpair = true
+                        }
+                        .buttonStyle(InspectionButtonStyle(fullWidth: true))
+                        .disabled(isPairing || isUnpairing)
+                        .accessibilityIdentifier("unpairGlasses")
+                        if let unpairMessage {
+                            Text(unpairMessage).font(.caption).foregroundStyle(InspectionTheme.secondary)
+                                .accessibilityIdentifier("unpairStatus")
+                        }
                         InspectionRule()
                         Text("Requires your Meta app credentials and camera permission. Register trackinspect:// as the return link in the Meta developer portal.")
                             .font(.caption).foregroundStyle(InspectionTheme.secondary)
@@ -32,6 +89,18 @@ struct InspectionSettingsView: View {
 
                     section("Voice agent", symbol: "waveform") {
                         Text("ElevenLabs").font(.subheadline.weight(.medium))
+                        HStack(spacing: 10) {
+                            ForEach(AgentPreset.allCases) { preset in
+                                Button {
+                                    agentID = preset.agentID
+                                } label: {
+                                    Label(preset.title, systemImage: agentID == preset.agentID ? "checkmark.circle.fill" : "circle")
+                                }
+                                .buttonStyle(InspectionButtonStyle(fullWidth: true))
+                                .accessibilityIdentifier("agentPreset_\(preset.rawValue)")
+                                .accessibilityAddTraits(agentID == preset.agentID ? [.isSelected] : [])
+                            }
+                        }
                         Text("Public agent ID").font(.caption).foregroundStyle(InspectionTheme.secondary)
                         TextField(text: $agentID, prompt: Text("Enter your agent ID").foregroundStyle(InspectionTheme.secondary)) {
                             Text("Public agent ID")
@@ -79,6 +148,19 @@ struct InspectionSettingsView: View {
                 }
                 .frame(maxWidth: 720).padding(20).frame(maxWidth: .infinity)
             }
+            .alert("Unpair TrackInspect?", isPresented: $confirmUnpair) {
+                Button("Cancel", role: .cancel) {}
+                Button("Unpair", role: .destructive) { onUnpair() }
+            } message: {
+                Text("This stops video and voice and removes TrackInspect's Meta authorization. Your glasses stay paired with your iPhone and Meta AI. You can register TrackInspect again afterward.")
+            }
+            .task(id: scenePhase) {
+                guard scenePhase == .active else { return }
+                while !Task.isCancelled {
+                    refreshConnection()
+                    do { try await Task.sleep(for: .seconds(1)) } catch { return }
+                }
+            }
             .scrollDismissesKeyboard(.interactively)
             .foregroundStyle(InspectionTheme.text)
             .background(InspectionTheme.background)
@@ -92,6 +174,12 @@ struct InspectionSettingsView: View {
                 }
             }
         }
+    }
+
+    static var installedMetaMode: String {
+        let config = Bundle.main.object(forInfoDictionaryKey: "MWDAT") as? [String: Any]
+        guard let usesDam = config?["DAMEnabled"] as? Bool else { return "Not specified" }
+        return usesDam ? "DAM" : "Legacy camera (without DAM)"
     }
 
     private func section<Content: View>(_ title: LocalizedStringKey, symbol: String,
