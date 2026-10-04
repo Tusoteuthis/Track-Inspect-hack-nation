@@ -94,3 +94,24 @@ Please confirm how each one is represented: a field, an event or an acknowledgem
 - A teach-back confirmation is shown only for the revision whose `revision_id` it names. A confirmation of the parent revision appears only as history.
 - Changes are marked by a presentation-only diff of `current` against `previous`. If WS6 prefers to send an explicit change list, it can replace the diff in the mapping layer.
 - **Question for WS3/WS5:** what should a `ReviewMark` trigger? WS7 treats it as a note for the spoken review; an acknowledgement only means "received".
+
+## 7. Sprint 3 additions (4 October 2026)
+
+All of these are additive:
+- **`SessionView.rev?`** increases with every acknowledged change. The companion ignores a session update with a lower `rev`, so WS6 should carry `Session.rev`.
+- **`CaseSummary`** has the fields `{case_id, title, asset, source}`. It is the learner-safe case listing from the WS4 manifest.
+- **`CompanionEvent`** is the UI view of a WS3 `PointingEvent`. Its asset is the event's own frame (`frame_id`, `image_ref`, `region.frame_*_px`), which means a region can never be drawn on another picture.
+- **`SourceUpdate`** gains two variants:
+  - `{type:"pointing_event", event: PointingEvent}`. Pointing events are only displayed and are never forwarded to the agent.
+  - `{type:"connection", state}`. When the state goes from reconnecting to connected, the UI re-reads `getSession` and `getRecentEvents`.
+- **New `DataSource` methods:**
+
+| Method | WS6 mapping |
+|---|---|
+| `listCases()` | Case list from the WS4 manifest. **No endpoint yet.** |
+| `startSession(caseId)` | `POST /api/sessions {role:"expert"}`, then `POST /lifecycle {action:"start"}` |
+| `requestPause(sid, paused)` | **Not in WS6 yet** (WS7-Q2). Fixture only. |
+| `requestStop(sid)` | `POST /lifecycle {action:"end"}` |
+| `getRecentEvents(sid)` | `GET /api/sessions/:sid/events` (proposed), used to resync |
+
+- **Pending rule for the controls:** each control (off-record, pause, stop) stays `*_pending` until an authoritative `SessionView` reaches its target. That view may arrive as the `Ack` value or as a `session` push, whichever comes first. A failed `Ack` keeps the previous state and shows the error. Once the session is `ended`, all pending requests are cleared.
