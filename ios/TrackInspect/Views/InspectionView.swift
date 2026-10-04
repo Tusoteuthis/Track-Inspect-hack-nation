@@ -4,7 +4,7 @@ import PhotosUI
 struct InspectionView: View {
     @Bindable var model: InspectionViewModel
     @Bindable var mentra: MentraGlassesService
-    @AppStorage("elevenLabsAgentID") private var agentID = ""
+    @AppStorage("elevenLabsAgentID") private var agentID = AgentPreset.expert.agentID
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var showSettings = false
     @State private var confirmVoice = false

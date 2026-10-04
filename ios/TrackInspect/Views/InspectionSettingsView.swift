@@ -100,6 +100,18 @@ struct InspectionSettingsView: View {
 
                     section("Voice agent", symbol: "waveform") {
                         Text("ElevenLabs").font(.subheadline.weight(.medium))
+                        HStack(spacing: 10) {
+                            ForEach(AgentPreset.allCases) { preset in
+                                Button {
+                                    agentID = preset.agentID
+                                } label: {
+                                    Label(preset.title, systemImage: agentID == preset.agentID ? "checkmark.circle.fill" : "circle")
+                                }
+                                .buttonStyle(InspectionButtonStyle(fullWidth: true))
+                                .accessibilityIdentifier("agentPreset_\(preset.rawValue)")
+                                .accessibilityAddTraits(agentID == preset.agentID ? [.isSelected] : [])
+                            }
+                        }
                         Text("Public agent ID").font(.caption).foregroundStyle(InspectionTheme.secondary)
                         TextField(text: $agentID, prompt: Text("Enter your agent ID").foregroundStyle(InspectionTheme.secondary)) {
                             Text("Public agent ID")
