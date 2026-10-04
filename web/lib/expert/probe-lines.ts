@@ -27,7 +27,13 @@ export const PROBE_ANSWERS = {
   live1: "That spike is usually from the wheel set passing a gap.",
   live2: "If both channels show it at the same moment I stop and call the measurement team.",
   debrief1: "That drift is the sensor warming up, I ignore it in the first ten minutes.",
+  correction: "No, that's wrong, it's only when both channels show it at the same moment and it repeats on the next sleeper.",
 };
+
+export const PROBE_TEACH_BACK_SPOKEN =
+  "Here is how I would apply it. First, scan the upper channel for a narrow spike; it is usually the wheel set passing a gap. If both channels show it at the same moment, stop and call the measurement team. On the lower channel, ignore a slow drift in the first ten minutes, because that is the sensor warming up. Is that right, or would you change anything?";
+export const PROBE_CORRECTED_STEP =
+  "Stop and call the measurement team only when both channels show the spike at the same moment and it repeats on the next sleeper.";
 
 export function probeSystemLines() {
   const d = driver(PROBE_SESSION_ID);
@@ -67,11 +73,33 @@ export function probeSystemLines() {
       ],
     },
   });
+  const teachBack = phaseBlock(d.state)!;
+
+  // correction branch: what propose_draft returns after the expert corrects the guardrail
+  d.agent(PROBE_TEACH_BACK_SPOKEN);
+  d.expert(PROBE_ANSWERS.correction);
+  const correction = d.lastExchangeId();
+  d.act({ type: "revision_confirmed", params: { revision_id: "rev-1", status: "corrected" } });
+  const rev1 = d.state.revisions[0];
+  const proposeRev2 = d.act({
+    type: "draft_proposed",
+    trigger: "agent_tool",
+    params: {
+      steps: rev1.steps.map(s =>
+        s.kind === "guardrail"
+          ? { kind: s.kind, text: PROBE_CORRECTED_STEP, event_ids: ["evt-001"], exchange_ids: ["ex-002", correction] }
+          : { kind: s.kind, text: s.text, event_ids: s.supporting_event_ids, exchange_ids: s.supporting_exchange_ids }
+      ),
+      change_reason: "only when both channels show it at the same moment and it repeats on the next sleeper",
+    },
+  })!;
+
   return {
+    proposeRev2,
     debrief,
     agenda,
     controlDebrief: controlDebriefStart(),
-    teachBack: phaseBlock(d.state)!,
+    teachBack,
     controlTeachBack: controlTeachBack("rev-1"),
     results,
   };

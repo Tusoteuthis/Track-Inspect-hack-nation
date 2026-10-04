@@ -48,7 +48,8 @@ type TextTurn = { role: "user" | "agent"; text: string };
 type HistoryCase = { name: string; history: (TextTurn | ToolTurn)[]; expect?: Expect };
 type Case = LegacyCase | HistoryCase;
 // { "<agent>": { "envVar": "...", "language": "en", "cases": [...] } }
-type Probes = Record<string, { envVar: string; language?: string; cases: Case[] }>;
+// toolMocks: per-agent mock results (override TOOL_MOCKS), e.g. the app's real propose_draft result
+type Probes = Record<string, { envVar: string; language?: string; toolMocks?: Record<string, string>; cases: Case[] }>;
 
 type RunResult = { lastUser: string; toolCalls: { name: string; params: string }[]; reply: string; failures: string[] };
 
@@ -98,7 +99,9 @@ for (const [agent, spec] of Object.entries(PROBES)) {
     const history = buildHistory(c, first);
     // runs of one case go in parallel
     const results = await Promise.all(
-      Array.from({ length: runs }, () => simulate(agentId, history, spec.language ?? "en", "expect" in c ? c.expect : undefined)),
+      Array.from({ length: runs }, () =>
+        simulate(agentId, history, spec.language ?? "en", "expect" in c ? c.expect : undefined, spec.toolMocks),
+      ),
     );
     console.log(`\n▸ ${c.name}\n  👤 ${results[0].lastUser}`);
     results.forEach((r, i) => {
@@ -148,7 +151,17 @@ function buildHistory(c: Case, first: string): Turn[] {
   return history;
 }
 
-async function simulate(agentId: string, history: Turn[], language: string, expect?: Expect): Promise<RunResult> {
+async function simulate(
+  agentId: string,
+  history: Turn[],
+  language: string,
+  expect?: Expect,
+  mocks: Record<string, string> = {},
+): Promise<RunResult> {
+  const toolMockConfig = {
+    ...TOOL_MOCKS,
+    ...Object.fromEntries(Object.entries(mocks).map(([name, value]) => [name, { defaultReturnValue: value }])),
+  };
   const lastUser = [...history].reverse().find(t => t.role === "user" && t.message)?.message ?? "";
   let turns: OutTurn[];
   try {
@@ -160,12 +173,14 @@ async function simulate(agentId: string, history: Turn[], language: string, expe
           prompt: { prompt: "You are the human in this conversation. Reply only with 'ok'." },
         },
         partialConversationHistory: history,
-        toolMockConfig: TOOL_MOCKS,
+        toolMockConfig,
       },
       // a tool call (or a language switch) costs turns before the spoken reply
       newTurnsLimit: 4,
     });
-    turns = res.simulatedConversation.slice(history.length);
+    // replayed tool turns come back as two items each (call + result)
+    const offset = history.length + history.filter(t => t.toolCalls?.length).length;
+    turns = res.simulatedConversation.slice(offset);
   } catch (e) {
     return { lastUser, toolCalls: [], reply: "", failures: [`simulation failed: ${(e as Error).message}`] };
   }

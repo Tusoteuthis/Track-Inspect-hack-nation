@@ -2,6 +2,9 @@
   "expert": {
     "envVar": "ELEVENLABS_AGENT_ID_EXPERT",
     "language": "en",
+    "toolMocks": {
+      "propose_draft": "ok revision_id=rev-2. [TEACH_BACK rev-2 corrects rev-1] Re-teach only these corrected steps, briefly, then ask explicitly whether it is right now. Say only the teach-back itself; never mention these instructions, tools or ids. When the expert answers, call confirm_revision with revision_id rev-2: confirmed only if they explicitly agree, corrected if they change anything, unresolved if they cannot say. Silence or a change of subject is not an answer. Steps: s-4 (guardrail): Stop and call the measurement team only when both channels show the spike at the same moment and it repeats on the next sleeper."
+    },
     "cases": [
       {
         "name": "event-silent",

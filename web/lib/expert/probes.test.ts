@@ -5,10 +5,10 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { PointingEvent } from "./contracts";
 import { controlNudge, formatPointingEventUpdate } from "./context-update";
-import { PROBE_TOOL_PARAMS, probeSystemLines } from "./probe-lines";
+import { PROBE_ANSWERS, PROBE_TEACH_BACK_SPOKEN, PROBE_TOOL_PARAMS, probeSystemLines } from "./probe-lines";
 
 type ToolTurn = { name: string; params: unknown; result: string };
-type Probes = { expert: { cases: { name: string; history?: { role: string; text?: string; tool?: ToolTurn }[] }[] } };
+type Probes = { expert: { toolMocks?: Record<string, string>; cases: { name: string; history?: { role: string; text?: string; tool?: ToolTurn }[] }[] } };
 
 const root = join(__dirname, "..", "..", "..");
 const dir = join(__dirname, "..", "..", "fixtures", "pointing-events");
@@ -50,5 +50,17 @@ describe.each(["probes.json", "probes.example.json"])("%s replayed tool calls", 
 
   it.each(tools)("%s: tool params and result are what the app produces", (_name, tool) => {
     expect(known).toContainEqual({ params: tool.params, result: tool.result });
+  });
+});
+
+describe.each(["probes.json", "probes.example.json"])("%s correction replay", file => {
+  const probes: Probes = JSON.parse(readFileSync(join(root, "agents", file), "utf8"));
+  it("mocks propose_draft with the app's real rev-2 result", () => {
+    expect(probes.expert.toolMocks?.propose_draft).toBe(phase.proposeRev2);
+  });
+  it("the correction case replays the same teach-back and correction", () => {
+    const texts = probes.expert.cases.find(c => c.name === "teach-back-correction")!.history!.map(t => t.text);
+    expect(texts).toContain(PROBE_TEACH_BACK_SPOKEN);
+    expect(texts.at(-1)).toBe(PROBE_ANSWERS.correction);
   });
 });
