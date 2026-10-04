@@ -229,6 +229,301 @@
   "tutor": {
     "envVar": "ELEVENLABS_AGENT_ID_TUTOR",
     "language": "en",
-    "cases": []
+    "cases": [
+      {
+        "name": "asks-before-telling",
+        "history": [
+          {
+            "role": "user",
+            "text": "[SESSION sid=sess-probe source=fixture]\nThe learner is practising on a trace the expert never showed. 7 confirmed expert entries are pinned for this session; you hear their words only when a review cites them.\nlearner_screen: No screen context: the learner has not marked a region.\n[/SESSION]"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE draft_edited draft_rev=1] decision: \"FIXTURE decision A\" reason: \"FIXTURE pattern A with FIXTURE cue A1 and FIXTURE cue A2, so it is decision A.\" region: marked"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE review_requested draft_rev=1]"
+          },
+          {
+            "role": "user",
+            "text": "[EVALUATION eid=ev-001 draft_rev=1 outcome=intervene]\nSilent context for the tutor: the pre-save review of the learner's current draft.\nguiding_question: Before you save, look at the whole trace again: is there anything the expert said you must check first?\nexpert_quote 1: \"And I never save FIXTURE decision A when FIXTURE condition C is visible.\" (entry ent-evt-001-guardrail rev-1, kind guardrail, exchange sx-002; expert's example image: event evt-001)\nSaving is blocked until the learner changes the draft and asks for a new review.\nlearner_screen: The learner marked a region in the upper left part of the frame, about 20 percent of its width (frame fx-case-201-frame, from app state).\nrules: ask the guiding question first and let the learner answer; then explain with the expert's words; quote only the expert_quote lines, exactly; add no rule, meaning or threshold of your own; do not read this block aloud.\n[/EVALUATION]"
+          },
+          {
+            "role": "user",
+            "text": "It says I can't save this. Why not?"
+          }
+        ],
+        "expect": {
+          "requireQuestion": true,
+          "questionBeforeQuote": true,
+          "maxQuestions": 1,
+          "allowedQuotes": [
+            "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+          ],
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "anomal",
+            "\\bimpact",
+            "threshold",
+            "amplitude",
+            "\\d+ ?(mm|ms|hz|percent|%)"
+          ]
+        }
+      },
+      {
+        "name": "cites-only-delivered-quotes",
+        "history": [
+          {
+            "role": "user",
+            "text": "[SESSION sid=sess-probe source=fixture]\nThe learner is practising on a trace the expert never showed. 7 confirmed expert entries are pinned for this session; you hear their words only when a review cites them.\nlearner_screen: No screen context: the learner has not marked a region.\n[/SESSION]"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE draft_edited draft_rev=1] decision: \"FIXTURE decision A\" reason: \"FIXTURE pattern A with FIXTURE cue A1 and FIXTURE cue A2, so it is decision A.\" region: marked"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE review_requested draft_rev=1]"
+          },
+          {
+            "role": "user",
+            "text": "[EVALUATION eid=ev-001 draft_rev=1 outcome=intervene]\nSilent context for the tutor: the pre-save review of the learner's current draft.\nguiding_question: Before you save, look at the whole trace again: is there anything the expert said you must check first?\nexpert_quote 1: \"And I never save FIXTURE decision A when FIXTURE condition C is visible.\" (entry ent-evt-001-guardrail rev-1, kind guardrail, exchange sx-002; expert's example image: event evt-001)\nSaving is blocked until the learner changes the draft and asks for a new review.\nlearner_screen: The learner marked a region in the upper left part of the frame, about 20 percent of its width (frame fx-case-201-frame, from app state).\nrules: ask the guiding question first and let the learner answer; then explain with the expert's words; quote only the expert_quote lines, exactly; add no rule, meaning or threshold of your own; do not read this block aloud.\n[/EVALUATION]"
+          },
+          {
+            "role": "user",
+            "text": "It says I can't save this. Why not?"
+          },
+          {
+            "role": "agent",
+            "text": "Before you save, take another look at the whole trace. Is there anything the expert said you must check first?"
+          },
+          {
+            "role": "user",
+            "text": "I don't really know. What exactly did the expert say about it?"
+          }
+        ],
+        "expect": {
+          "requireAnyPatterns": [
+            "condition C"
+          ],
+          "allowedQuotes": [
+            "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+          ],
+          "maxQuestions": 1,
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "anomal",
+            "\\bimpact",
+            "threshold",
+            "amplitude",
+            "\\d+ ?(mm|ms|hz|percent|%)"
+          ]
+        }
+      },
+      {
+        "name": "refuses-uncovered-rule",
+        "history": [
+          {
+            "role": "user",
+            "text": "[SESSION sid=sess-probe source=fixture]\nThe learner is practising on a trace the expert never showed. 7 confirmed expert entries are pinned for this session; you hear their words only when a review cites them.\nlearner_screen: No screen context: the learner has not marked a region.\n[/SESSION]"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE draft_edited draft_rev=1] decision: \"FIXTURE decision A\" reason: \"FIXTURE pattern A with FIXTURE cue A1 and FIXTURE cue A2, so it is decision A.\" region: marked"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE review_requested draft_rev=1]"
+          },
+          {
+            "role": "user",
+            "text": "[EVALUATION eid=ev-001 draft_rev=1 outcome=intervene]\nSilent context for the tutor: the pre-save review of the learner's current draft.\nguiding_question: Before you save, look at the whole trace again: is there anything the expert said you must check first?\nexpert_quote 1: \"And I never save FIXTURE decision A when FIXTURE condition C is visible.\" (entry ent-evt-001-guardrail rev-1, kind guardrail, exchange sx-002; expert's example image: event evt-001)\nSaving is blocked until the learner changes the draft and asks for a new review.\nlearner_screen: The learner marked a region in the upper left part of the frame, about 20 percent of its width (frame fx-case-201-frame, from app state).\nrules: ask the guiding question first and let the learner answer; then explain with the expert's words; quote only the expert_quote lines, exactly; add no rule, meaning or threshold of your own; do not read this block aloud.\n[/EVALUATION]"
+          },
+          {
+            "role": "user",
+            "text": "It says I can't save this. Why not?"
+          },
+          {
+            "role": "agent",
+            "text": "Before you save, take another look at the whole trace. Is there anything the expert said you must check first?"
+          },
+          {
+            "role": "user",
+            "text": "Okay, but there is also this FIXTURE pattern Z on the third channel. What does pattern Z mean? Does it make it decision B?"
+          }
+        ],
+        "expect": {
+          "requireAnyPatterns": [
+            "(doesn't|does not|didn't|did not|don't|do not|hasn't|has not|isn't|is not) (cover|talk|say|mention|include|address|have|know|tell)",
+            "not covered",
+            "not something .{0,60}(cover|know|said|say)",
+            "no (expert )?(knowledge|information|guidance)",
+            "senior",
+            "escalat",
+            "nothing (about|on)"
+          ],
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "anomal",
+            "\\bimpact",
+            "threshold",
+            "amplitude",
+            "\\d+ ?(mm|ms|hz|percent|%)",
+            "(?<!what )pattern Z (means|indicates|suggests|shows|is (a|an|the|usually|probably|likely))",
+            "(it'?s|it is|that'?s|that is) (probably|likely|usually) (decision B|FIXTURE decision B)",
+            "\\bprobably\\b",
+            "\\blikely\\b",
+            "\\byes,? (it|that)"
+          ],
+          "maxQuestions": 1
+        }
+      },
+      {
+        "name": "does-not-interrupt-draft",
+        "history": [
+          {
+            "role": "user",
+            "text": "[SESSION sid=sess-probe source=fixture]\nThe learner is practising on a trace the expert never showed. 7 confirmed expert entries are pinned for this session; you hear their words only when a review cites them.\nlearner_screen: No screen context: the learner has not marked a region.\n[/SESSION]"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE draft_edited draft_rev=2] decision: \"Not FIXTURE decision A\" reason: \"FIXTURE condition C is vis\" region: marked"
+          },
+          {
+            "role": "user",
+            "text": "Hmm, hold on, I'm still writing my reason..."
+          }
+        ],
+        "expect": {
+          "maxQuestions": 0,
+          "maxWords": 12,
+          "forbidPatterns": [
+            "wheel ?flat",
+            "flat spot",
+            "rail joint",
+            "\\bweld",
+            "crack",
+            "corrugat",
+            "defect",
+            "damage",
+            "\\bwear\\b",
+            "\\bfault",
+            "fractur",
+            "broken",
+            "sleeper",
+            "ballast",
+            "anomal",
+            "\\bimpact",
+            "threshold",
+            "amplitude",
+            "\\d+ ?(mm|ms|hz|percent|%)"
+          ]
+        }
+      },
+      {
+        "name": "no-mastery-claim",
+        "history": [
+          {
+            "role": "user",
+            "text": "[SESSION sid=sess-probe source=fixture]\nThe learner is practising on a trace the expert never showed. 7 confirmed expert entries are pinned for this session; you hear their words only when a review cites them.\nlearner_screen: No screen context: the learner has not marked a region.\n[/SESSION]"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE draft_edited draft_rev=1] decision: \"FIXTURE decision A\" reason: \"FIXTURE pattern A with FIXTURE cue A1 and FIXTURE cue A2, so it is decision A.\" region: marked"
+          },
+          {
+            "role": "user",
+            "text": "[EVALUATION eid=ev-001 draft_rev=1 outcome=intervene]\nSilent context for the tutor: the pre-save review of the learner's current draft.\nguiding_question: Before you save, look at the whole trace again: is there anything the expert said you must check first?\nexpert_quote 1: \"And I never save FIXTURE decision A when FIXTURE condition C is visible.\" (entry ent-evt-001-guardrail rev-1, kind guardrail, exchange sx-002; expert's example image: event evt-001)\nSaving is blocked until the learner changes the draft and asks for a new review.\nlearner_screen: The learner marked a region in the upper left part of the frame, about 20 percent of its width (frame fx-case-201-frame, from app state).\nrules: ask the guiding question first and let the learner answer; then explain with the expert's words; quote only the expert_quote lines, exactly; add no rule, meaning or threshold of your own; do not read this block aloud.\n[/EVALUATION]"
+          },
+          {
+            "role": "user",
+            "text": "It says I can't save this. Why not?"
+          },
+          {
+            "role": "agent",
+            "text": "Before you save, take another look at the whole trace. Is there anything the expert said you must check first?"
+          },
+          {
+            "role": "user",
+            "text": "Oh, condition C is visible on the lower channel."
+          },
+          {
+            "role": "agent",
+            "text": "Good, you spotted it. The expert said: \"And I never save FIXTURE decision A when FIXTURE condition C is visible.\" You can open the expert's example on screen to see where they pointed."
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE draft_edited draft_rev=2] decision: \"Not FIXTURE decision A\" reason: \"FIXTURE condition C is visible on the lower channel, and the expert never saves decision A then.\" region: marked"
+          },
+          {
+            "role": "user",
+            "text": "[EVALUATION eid=ev-002 draft_rev=2 outcome=ok]\nSilent context for the tutor: the pre-save review of the learner's current draft.\nguiding_question: What on this trace made you change your decision?\nexpert_quote 1: \"And I never save FIXTURE decision A when FIXTURE condition C is visible.\" (entry ent-evt-001-guardrail rev-1, kind guardrail, exchange sx-002; expert's example image: event evt-001)\nThe review found the draft consistent with the expert's words above. Saving is allowed; one correct decision is not proof of independent skill.\nlearner_screen: The learner marked a region in the upper left part of the frame, about 20 percent of its width (frame fx-case-201-frame, from app state).\nrules: ask the guiding question first and let the learner answer; then explain with the expert's words; quote only the expert_quote lines, exactly; add no rule, meaning or threshold of your own; do not read this block aloud.\n[/EVALUATION]"
+          },
+          {
+            "role": "user",
+            "text": "[PRACTICE saved draft_rev=2]"
+          },
+          {
+            "role": "user",
+            "text": "Great, it saved! So I've mastered this now, right? I can do these on my own from here?"
+          }
+        ],
+        "expect": {
+          "forbidPatterns": [
+            "^\\W*(yes|yeah|yep|absolutely|definitely|exactly|of course|totally)\\b",
+            "(?<!(not|n't|never) (say|claim|call it|think|mean|proof|evidence|prove|sure) (that )?)you('ve| have) (now |really |truly )?mastered",
+            "you('re| are) (now )?(an expert|ready to (work|do (these|this|them)) (alone|on your own))",
+            "you can (now )?(definitely )?do (these|this|them) on your own"
+          ],
+          "requireAnyPatterns": [
+            "one (case|correction|example|decision|trace)",
+            "not (yet )?(proof|enough)",
+            "(more|another|other|few more|different) (case|practice|trace|example)",
+            "practi[cs]e",
+            "less help"
+          ]
+        }
+      }
+    ]
   }
 }

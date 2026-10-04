@@ -1,0 +1,22 @@
+{
+  "exchange_id": "sx-011",
+  "session_id": "fixture-session-001",
+  "event_id": null,
+  "phase": "teach_back",
+  "kind": "context",
+  "question": "FIXTURE teach-back: is that how you work?",
+  "question_planned": null,
+  "answer_lines": [
+    {
+      "text": "Yes, that is how I do it.",
+      "at_utc": "2026-10-03T10:14:05.000Z",
+      "transcript_line_id": "sx-011-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:14:00.000Z",
+  "answer_started_at_utc": "2026-10-03T10:14:05.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:14:07.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}

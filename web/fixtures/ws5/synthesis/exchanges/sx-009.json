@@ -1,0 +1,22 @@
+{
+  "exchange_id": "sx-009",
+  "session_id": "fixture-session-001",
+  "event_id": null,
+  "phase": "debrief",
+  "kind": "gap",
+  "question": "FIXTURE question: how do you approach a new trace in general?",
+  "question_planned": null,
+  "answer_lines": [
+    {
+      "text": "FIXTURE: in general I take my time with a new trace.",
+      "at_utc": "2026-10-03T10:09:10.000Z",
+      "transcript_line_id": "sx-009-line-1"
+    }
+  ],
+  "asked_at_utc": "2026-10-03T10:09:05.000Z",
+  "answer_started_at_utc": "2026-10-03T10:09:10.000Z",
+  "answer_ended_at_utc": "2026-10-03T10:09:11.000Z",
+  "audio_offset_secs": null,
+  "record_state": "on_record",
+  "source": "fixture"
+}

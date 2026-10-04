@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "guardrail",
   "question": "FIXTURE question: when would you not do that?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: never save FIXTURE decision A when FIXTURE condition C is present on the second channel.",

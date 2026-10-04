@@ -1,0 +1,10 @@
+{
+  "confirmation_id": "cnf-sx-001",
+  "revision_id": "rev-1",
+  "status": "corrected",
+  "step_ids_reviewed": [
+    "ent-evt-001-step"
+  ],
+  "expert_response_exchange_id": "sx-010",
+  "at_utc": "2026-10-03T10:12:12.000Z"
+}

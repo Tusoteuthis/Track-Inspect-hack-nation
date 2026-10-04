@@ -30,6 +30,21 @@
       "displayName": "Track Inspect – Tutor",
       "envVar": "ELEVENLABS_AGENT_ID_TUTOR",
       "cloneFrom": "expert",
+      "systemPrompt": "tutor/system-prompt.md",
+      "firstMessage": "tutor/first-message.md",
+      "settings": {
+        "llm": "claude-sonnet-5",
+        "turnEagerness": "patient",
+        "speculativeTurn": false,
+        "maxDurationSeconds": 1800,
+        "expressiveMode": false,
+        "skipTurn": true,
+        "clientEventsAdd": [
+          "agent_chat_response_part",
+          "vad_score",
+          "tentative_user_transcript"
+        ]
+      },
       "docs": []
     }
   }

@@ -17,4 +17,26 @@ describe("public API", () => {
     }
     expect(knowledge.WS5_SCHEMA_VERSION).toBe("ws5.v0");
   });
+
+  it("exports the sprint-2 functions", () => {
+    for (const name of [
+      "synthesize",
+      "renderWorkflowMarkdown",
+      "findGaps",
+      "buildTeachBack",
+      "buildWorkMap",
+      "createWs6SynthesisModule",
+    ] as const) {
+      expect(typeof knowledge[name]).toBe("function");
+    }
+    expect(typeof knowledge.ws3Synthesis.buildDraft).toBe("function");
+    expect(knowledge.SYNTHESIS_MODULE.module).toBe("ws5-synthesis");
+  });
+
+  it("exports the sprint-3 functions", () => {
+    for (const name of ["evaluate", "guardVerdict", "assertLearnerCaseView", "createAnthropicJudge", "buildTimeline", "createWs6TutorEvaluator"] as const) {
+      expect(typeof knowledge[name]).toBe("function");
+    }
+    expect(knowledge.TUTOR_EVALUATOR.id).toBe("ws5-tutor");
+  });
 });

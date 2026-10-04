@@ -1,0 +1,24 @@
+{
+  "source": "fixture",
+  "draft_id": "d05-relies-on-unresolved",
+  "class": "relies_on_unresolved_entry",
+  "label": {
+    "outcome": "uncertain",
+    "uncertain_requires": "escalation_or_missing_context",
+    "never_cite": ["ent-revoked-a", "ent-unresolved-b", "ent-offrecord-e", "ent-draft-start", "ent-invalid-quote"]
+  },
+  "case_view": {
+    "case_id": "fx-case-105",
+    "title": "FIXTURE practice trace 105",
+    "visible_context": [
+      "Region B on the second channel looks different from region A"
+    ],
+    "source": "fixture"
+  },
+  "draft": {
+    "draft_rev": 1,
+    "decision": "FIXTURE decision B",
+    "reason": "Region B looks different, which means FIXTURE decision B.",
+    "visual_context": "region B on the second channel"
+  }
+}

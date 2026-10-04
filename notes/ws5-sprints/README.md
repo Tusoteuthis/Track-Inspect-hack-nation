@@ -1,5 +1,7 @@
 # WS5 sprint prompts: paste-ready agent instructions
 
+> **Current state and pick-up guide: [STATUS.md](STATUS.md)** (Sprints 1–4 done on `worktree-ws05-sprint-4`; gates, key and merge pending).
+
 Everything for WS5 (knowledge & newcomer tutor) lives in this folder. The source brief stays at [`../05-knowledge-newcomer-tutor.md`](../05-knowledge-newcomer-tutor.md) next to the other workstream briefs.
 
 **Starting an agent? Read [`HOW-TO-START-AN-AGENT.md`](HOW-TO-START-AN-AGENT.md) first.** It has the kickoff message, the context files, and how to keep the agent in its own worktree.
@@ -9,14 +11,14 @@ Everything for WS5 (knowledge & newcomer tutor) lives in this folder. The source
 | [`HOW-TO-START-AN-AGENT.md`](HOW-TO-START-AN-AGENT.md) | Human guide: pre-flight checks, kickoff message, reading order, isolation checks, merge and cleanup |
 | [`sprint-plan.md`](sprint-plan.md) | Why the work is split, decisions, sprint table, sync points with WS3/WS4/WS6/WS7, open decisions |
 | `sprint-N-*.md` | One **self-contained prompt** per sprint. Create the sprint's worktree, start a fresh coding agent **inside it**, and paste the whole file (or the short kickoff from the guide) as its first message. Sprint-specific instructions come first; the shared WS5 context (A1–A8) follows and is identical in every file. |
-| `handoff-sprint-N.md` | Written by each sprint's agent (Sprint 1: present) |
-| `docs/knowledge-schema-v0.md` | Written by Sprint 1: the schema doc for partner workstreams |
+| `handoff-sprint-N.md` | Written by each sprint's agent (Sprints 1–2: present) |
+| `docs/knowledge-schema-v0.md` | Written by Sprint 1, extended by Sprint 2 (§8 synthesis + swapping the stubs): the schema doc for partner workstreams |
 
 | Order | File | Delivers | Agent time | Human gate |
 |---|---|---|---|---|
 | 1 ✅ done | `sprint-1-knowledge-schema.md` | Entry schema + Markdown, invariants, status rules, eligibility/pinning, retrieval, fixtures, schema doc | ~1.5–2 h | ~15 min: read the schema, share it with WS3/WS6/WS7 |
-| 2 | `sprint-2-synthesis-workmap.md` | Synthesis, revisions on correction, genuine gaps, teach-back, Work Map content, WS3/WS6 adapters | ~2–3 h | ~20 min: workflow reads as a process, gaps are real |
-| 3 | `sprint-3-tutor-evaluation.md` | Guarded tutor evaluator, intervention with verbatim citations, anti-cheating tests, timeline | ~3–4 h | ~25 min: wrong draft caught, uncovered case escalated |
+| 2 ✅ done | `sprint-2-synthesis-workmap.md` | Synthesis, revisions on correction, genuine gaps, teach-back, Work Map content, WS3/WS6 adapters | ~2–3 h | ~20 min: workflow reads as a process, gaps are real |
+| 3 🟡 built, LLM harness pending key | `sprint-3-tutor-evaluation.md` | Guarded tutor evaluator, intervention with verbatim citations, anti-cheating tests, timeline | ~3–4 h | ~25 min: wrong draft caught, uncovered case escalated |
 | 4 | `sprint-4-voice-assessment.md` | Tutor voice agent + probes, screen-context contract, assessment, trust propagation, end-to-end | ~3 h | ~30 min live: full newcomer run |
 
 ## Worktrees, branches, ports

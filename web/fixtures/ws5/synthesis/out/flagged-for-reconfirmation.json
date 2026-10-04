@@ -1,0 +1,12 @@
+[
+  {
+    "entry_id": "ent-evt-001-exception",
+    "revision_id": "rev-1",
+    "reason": "shares evt-001 with ent-evt-001-step, corrected in sx-010"
+  },
+  {
+    "entry_id": "ent-evt-001-guardrail",
+    "revision_id": "rev-1",
+    "reason": "shares evt-001, sx-002 with ent-evt-001-step, corrected in sx-010"
+  }
+]

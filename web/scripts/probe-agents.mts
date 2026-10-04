@@ -31,6 +31,12 @@ type Expect = {
   kind?: string | string[]; // kind param, one of these
   forbidPatterns?: string[]; // case-insensitive regexes; checked on the spoken reply and the tool's question param
   maxQuestions?: number; // max "?" in the spoken reply and max calls of toolCalled
+  // Tutor checks (WS5 Sprint 4); an empty reply passes them unless a question or pattern is required.
+  requireQuestion?: boolean; // the spoken reply contains a "?"
+  questionBeforeQuote?: boolean; // the first "?" comes before the first quoted span (asks before telling)
+  allowedQuotes?: string[]; // every quoted span of ≥ 3 words must be part of one of these (case-insensitive)
+  requireAnyPatterns?: string[]; // case-insensitive regexes; at least one must match the spoken reply
+  maxWords?: number; // max words in the spoken reply
 };
 type LegacyCase = { name: string; user: string[] };
 type HistoryCase = { name: string; history: { role: "user" | "agent"; text: string }[]; expect?: Expect };
@@ -194,9 +200,43 @@ function check(
     }
   }
 
+  const quotes = quotedSpans(reply);
+  if (expect.requireQuestion && !reply.includes("?")) failures.push("no question asked");
+  if (expect.questionBeforeQuote && quotes.length) {
+    const q = reply.indexOf("?");
+    const firstQuote = Math.min(...[reply.indexOf('"'), reply.indexOf("\u201C")].filter(i => i >= 0));
+    if (q < 0 || q > firstQuote) failures.push("quoted the expert before asking");
+  }
+  if (expect.allowedQuotes) {
+    const allowed = expect.allowedQuotes.map(normalizeQuote);
+    for (const span of quotes) {
+      if (!allowed.some(a => a.includes(normalizeQuote(span)))) failures.push(`quote not delivered: "${span}"`);
+    }
+  }
+  if (expect.requireAnyPatterns?.length && !expect.requireAnyPatterns.some(p => new RegExp(p, "i").test(reply))) {
+    failures.push(`none of /${expect.requireAnyPatterns.join("/, /")}/ matched`);
+  }
+  if (expect.maxWords !== undefined) {
+    const words = reply.split(/\s+/).filter(Boolean).length;
+    if (words > expect.maxWords) failures.push(`${words} words > ${expect.maxWords}`);
+  }
+
   if (expect.maxQuestions !== undefined) {
     if (questionCount > expect.maxQuestions) failures.push(`${questionCount} questions spoken > ${expect.maxQuestions}`);
     if (calls.length > expect.maxQuestions) failures.push(`${calls.length} ${expect.toolCalled} calls > ${expect.maxQuestions}`);
   }
   return failures;
+}
+
+// Quoted spans of at least three words, in straight or curly double quotes.
+function quotedSpans(text: string): string[] {
+  return [...text.matchAll(/"([^"]+)"|\u201C([^\u201D]+)\u201D/g)]
+    .map(m => (m[1] ?? m[2]).trim())
+    .filter(span => span.split(/\s+/).length >= 3);
+}
+
+// Letters and digits only: simulated transcripts split words at stream-chunk boundaries ("F IXTURE"),
+// so spacing and punctuation are ignored, but the exact sequence of words is still required.
+function normalizeQuote(s: string): string {
+  return s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 }

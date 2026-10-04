@@ -5,6 +5,7 @@
   "phase": "debrief",
   "kind": "gap",
   "question": "FIXTURE question: what do you do when you can't tell?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: when I can't tell region A apart, I escalate to a senior engineer instead of saving a decision.",

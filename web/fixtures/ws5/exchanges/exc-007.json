@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "context",
   "question": "FIXTURE question: where do you start?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: first I look at the upper channel.",

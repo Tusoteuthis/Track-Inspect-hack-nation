@@ -5,6 +5,7 @@
   "phase": "teach_back",
   "kind": "exception",
   "question": "FIXTURE teach-back: did I get decision A right?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: correction, FIXTURE decision A needs FIXTURE cue B and FIXTURE cue D.",

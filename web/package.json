@@ -13,9 +13,11 @@
     "tts-roundtrip": "tsx scripts/tts-roundtrip.mts",
     "test": "vitest run",
     "spike:ws3": "tsx scripts/ws3-capability-spike.mts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "eval:ws5": "tsx fixtures/ws5/drafts/run-eval.mts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@elevenlabs/elevenlabs-js": "^2.70.0",
     "@elevenlabs/react": "^1.16.0",
     "next": "^16.1.6",

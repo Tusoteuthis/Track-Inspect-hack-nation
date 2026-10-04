@@ -61,7 +61,7 @@ S1 → S2 → S3 → S4 run sequentially (each merges into `voice` before the ne
 
 ## Open decisions
 
-- **D1, evaluation mechanism (before S3):** a server-side LLM with structured output (recommended) vs the ElevenLabs agent judging vs rules on a structured decision. Includes which provider/key is available.
+- **D1, evaluation mechanism — DECIDED 2026-10-04 (human):** option (a), a server-side Anthropic LLM judge (`claude-opus-5-5`, structured JSON output via `@anthropic-ai/sdk`) wrapped in deterministic input/output guards. Key: `ANTHROPIC_API_KEY` in `web/.env`.
 - **Time budget** per sprint (hackathon schedule).
 - **Exact newcomer task and save boundary** (WS4 + expert). S3 stays generic until then.
 - **Field names** for WS2/WS3 handoffs: agree when S1 publishes the schema.

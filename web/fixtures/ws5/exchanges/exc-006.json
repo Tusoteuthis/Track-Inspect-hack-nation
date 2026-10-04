@@ -5,6 +5,7 @@
   "phase": "live",
   "kind": "explain",
   "question": "FIXTURE question: and this region?",
+  "question_planned": null,
   "answer_lines": [
     {
       "text": "FIXTURE: region B looks different, I am not sure yet what it means.",

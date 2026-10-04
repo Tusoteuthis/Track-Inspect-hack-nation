@@ -1,0 +1,144 @@
+WS5 end-to-end: expert quote → unseen case → caught before save → corrected save → assessment
+Labels: REAL = WS5 module · FIXTURE = input data · STAND-IN = unmerged partner piece mirrored locally · LIVE = external call
+Timestamps are a scripted clock starting 2026-10-04T12:00:00Z (reproducible output).
+
+── 1. [FIXTURE] Expert session (WS3 fixture exchanges and pointing events; placeholder wording)
+   exchange sx-002 (event evt-001, on_record), answer lines:
+     "Because FIXTURE cue A1 is present."
+     "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+   off-record exchanges in the session: sx-007; off-record events: evt-005
+
+── 2. [REAL] Synthesis (run 1: live + debrief; run 2: the expert's teach-back correction sx-010)
+   run 1 → 7 draft revisions; run 2 → ent-evt-001-step@rev-2
+   ent-evt-001-guardrail rev-1: expert words "And I never save FIXTURE decision A when FIXTURE condition C is visible." (exchange sx-002)
+   flagged for re-confirmation by synthesis: ent-evt-001-exception, ent-evt-001-guardrail
+
+── 3. [FIXTURE + STAND-IN] Teach-back confirmed by the expert (exchange sx-011, confirmation cnf-sx-002); WS6 binding mirrored
+   teach-back reviewed: ent-evt-001-step@rev-2, ent-evt-002-step@rev-1, ent-evt-004-step@rev-1, ent-evt-001-exception@rev-1, ent-evt-001-guardrail@rev-1, ent-evt-002-guardrail@rev-1, ent-evt-002-escalation@rev-1
+
+── 4. [REAL] Pin eligible knowledge for the newcomer session (selectEligible)
+   pinned: ent-evt-001-step@rev-2, ent-evt-002-step@rev-1, ent-evt-004-step@rev-1, ent-evt-001-exception@rev-1, ent-evt-001-guardrail@rev-1, ent-evt-002-guardrail@rev-1, ent-evt-002-escalation@rev-1
+   excluded: ent-evt-001-step@rev-1 (not_confirmed)
+
+── 5. [FIXTURE] Unseen case fx-case-201 (shown_to_expert=false); learner-visible context only
+   - FIXTURE pattern A in a region on the upper channel
+   - FIXTURE cue A1 is visible
+   - FIXTURE cue A2 is visible
+   - FIXTURE condition C is visible on the lower channel
+
+── 6. [FIXTURE] Learner draft rev 1
+   decision: "FIXTURE decision A"  reason: "FIXTURE pattern A with FIXTURE cue A1 and FIXTURE cue A2, so it is decision A."
+   [REAL observation] The learner marked a region in the upper left part of the frame, about 20 percent of its width (frame fx-case-201-frame, from app state). The learner's screen, no region marked (frame frm-e2e-1, from shared screen).
+
+── 7. [REAL guards + STAND-IN judge] Pre-save review of rev 1 (judge: stand-in:scripted (no ANTHROPIC_API_KEY))
+   outcome: intervene
+   cited: ent-evt-001-guardrail@rev-1 exchange sx-002 "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+   expert example: event evt-001 → ../../../../../../public/fixtures/trace-a-evt-001-highlight.svg
+   feedback_text:
+     Before you save, look at the whole trace again: is there anything the expert said you must check first?
+     
+     The expert gave a rule that applies to what is visible here.
+     
+     Guardrail — the expert said: "And I never save FIXTURE decision A when FIXTURE condition C is visible." (ent-evt-001-guardrail rev-1, exchange sx-002)
+     See the expert's example: event evt-001, ../../../../../../public/fixtures/trace-a-evt-001-highlight.svg
+
+── 8. [STAND-IN (WS6 commit guard)] Learner presses Save on rev 1
+   blocked: commit_blocked (blocked_by_outcome)
+
+── 9. [REAL] Tutor context block for the voice agent (sendContextualUpdate, silent)
+   contextId: ws5-evaluation-ev-e2e-1
+   [EVALUATION eid=ev-e2e-1 draft_rev=1 outcome=intervene]
+   Silent context for the tutor: the pre-save review of the learner's current draft.
+   guiding_question: Before you save, look at the whole trace again: is there anything the expert said you must check first?
+   expert_quote 1: "And I never save FIXTURE decision A when FIXTURE condition C is visible." (entry ent-evt-001-guardrail rev-1, kind guardrail, exchange sx-002; expert's example image: event evt-001)
+   Saving is blocked until the learner changes the draft and asks for a new review.
+   learner_screen: The learner marked a region in the upper left part of the frame, about 20 percent of its width (frame fx-case-201-frame, from app state).
+   rules: ask the guiding question first and let the learner answer; then explain with the expert's words; quote only the expert_quote lines, exactly; add no rule, meaning or threshold of your own; do not read this block aloud.
+   [/EVALUATION]
+
+── 10. [LIVE (ElevenLabs tutor agent, text simulation)] What the tutor says
+   learner: "It says I can't save this. Why not?"
+   tutor:   Before we go further, take another look at the whole  trace, not just the region you marked. Is there anything in  it that might match a condition the expert warned about  checking first?
+   learner: "I'm not sure. What exactly did the expert say?"
+   tutor:   The expert said, quote, "And I never save FIXTURE decision A when F IXTURE condition C is visible, " end quote.  You can also open the expert's example on screen to see ex actly where they pointed for this one.
+
+── 11. [FIXTURE] Learner draft rev 2
+   decision: "Not FIXTURE decision A"  reason: "FIXTURE condition C is visible on the lower channel, and the expert never saves decision A then."
+   [REAL observation] The learner marked a region in the upper left part of the frame, about 20 percent of its width (frame fx-case-201-frame, from app state). The learner's screen, no region marked (frame frm-e2e-2, from shared screen).
+
+── 12. [REAL guards + STAND-IN judge] Pre-save review of rev 2 (judge: stand-in:scripted (no ANTHROPIC_API_KEY))
+   outcome: ok
+   cited: ent-evt-001-guardrail@rev-1 exchange sx-002 "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+   expert example: event evt-001 → ../../../../../../public/fixtures/trace-a-evt-001-highlight.svg
+   feedback_text:
+     What on this trace made you change your decision?
+     
+     Your reason now follows what the expert said.
+     
+     Guardrail — the expert said: "And I never save FIXTURE decision A when FIXTURE condition C is visible." (ent-evt-001-guardrail rev-1, exchange sx-002)
+     See the expert's example: event evt-001, ../../../../../../public/fixtures/trace-a-evt-001-highlight.svg
+
+── 13. [STAND-IN (WS6 commit guard)] Learner presses Save on rev 2
+   committed: cm-e2e-1 (draft rev 2, evaluation ev-e2e-2)
+
+── 14. [REAL] Learning assessment (buildAssessment + renderAssessmentMarkdown)
+   timeline: proposed(rev 1) → evaluated(rev 1, caught_before_save) → guidance_delivered(rev 1) → revised(rev 2) → evaluated(rev 2) → committed(rev 2)
+   written: fixtures/ws5/e2e/output/assessment-sess-e2e-newcomer.md
+   # Learning assessment · session `sess-e2e-newcomer`
+   
+   > **Source:** FIXTURE · help level: standard · 2026-10-04T12:01:18.000Z
+   
+   ## What happened
+   
+   ### Decision 1: Correct after help
+   
+   - First draft (rev 1): "FIXTURE decision A" (learner's words)
+   - Intervention on rev 1 (caught before save, guidance delivered 2026-10-04T12:00:37.000Z); cited `ent-evt-001-guardrail`
+   - Saved rev 2 ("Not FIXTURE decision A") at 2026-10-04T12:01:17.000Z (commit `cm-e2e-1`, evaluation `ev-e2e-2`)
+   
+   ## What needed help
+   
+   - guardrail `ent-evt-001-guardrail` · rev-1: the expert said "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+   
+   ## What to practise next
+   
+   - guardrail `ent-evt-001-guardrail` · rev-1: the expert said "And I never save FIXTURE decision A when FIXTURE condition C is visible."
+     Needed a coached correction in decision 1 (evaluation ev-e2e-1). Practise on another unseen case where this applies, with reduced help, before relying on it alone.
+   
+   ## Applied without coaching
+   
+   _None recorded._
+   
+   ## Transfer
+   
+   _Not tested._
+   
+   ## Limitations
+   
+   - One coached correction is not proof of independent mastery.
+   - “Correct” means the tutor's evaluator found the saved decision consistent with the confirmed expert knowledge pinned for this session. No answer key was used, and the expert did not check this case.
+   - Observed: 1 decision(s) in one session. This is a record of what happened, not a validated learning benchmark.
+   - Transfer was not tested: no second, distinct case with reduced help was done.
+   - Built from FIXTURE data: not a real learner session.
+   
+
+── 15. [STAND-IN (WS6 revoke route) + REAL] Expert revokes the cited guardrail; propagation
+   pinned session check: knowledge_changed → ent-evt-001-guardrail@rev-1 (revoked)
+   dependents flagged: ent-evt-001-exception (shares_event via evt-001), ent-evt-001-step (shares_exchange via sx-002)
+   tutor context block for ev-e2e-1: refused (ent-evt-001-guardrail@rev-1 is not teachable now (revoked: expert withdrew it (demo)))
+   sent to the tutor instead:
+   [KNOWLEDGE_CHANGED sid=sess-e2e-newcomer]
+   The expert withdrew or changed: ent-evt-001-guardrail rev-1. Do not use or repeat anything you were told from these entries.
+   Any earlier review that cited them no longer counts; the learner needs a new review before saving.
+   [/KNOWLEDGE_CHANGED]
+   re-review of the wrong draft with re-pinned knowledge: outcome uncertain (scripted by the stand-in judge; only the citations are checked here); cites ent-evt-002-guardrail; revoked entry cited: false
+
+── 16. [SUMMARY] ID chain from the expert's words to the learner's feedback
+   expert words   sx-002 "And I never save FIXTURE decision A when FIXTURE condition C is visible." (event evt-001, on_record, FIXTURE)
+   → knowledge    ent-evt-001-guardrail@rev-1, confirmed via cnf-sx-002 / sx-011, pinned for sess-e2e-newcomer
+   → unseen case  fx-case-201 (never shown to the expert), draft rev 1 "FIXTURE decision A"
+   → evaluation   ev-e2e-1 outcome intervene, cites ent-evt-001-guardrail exchange sx-002 (judge: stand-in:scripted (no ANTHROPIC_API_KEY))
+   → save         rev 1 blocked (commit_blocked (blocked_by_outcome))
+   → tutor block  ws5-evaluation-ev-e2e-1 (expert_quote 1 = the same words)
+   → correction   rev 2 "Not FIXTURE decision A" → ev-e2e-2 outcome ok → commit cm-e2e-1
+   → assessment   correct_after_help; practise next: ent-evt-001-guardrail; limitation: "One coached correction is not proof of independent mastery."
