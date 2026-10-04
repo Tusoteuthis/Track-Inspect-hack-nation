@@ -1,18 +1,18 @@
 .screen { display: grid; gap: var(--space-4); }
 .screen h1 { margin: 0; font-size: var(--font-xxl); }
-.spoken { margin: 0; padding: var(--space-3) var(--space-4); border: 2px solid var(--focus); border-radius: var(--radius); font-weight: 600; }
-.announce { margin: 0; min-height: 1.5em; font-weight: 700; }
+.spoken { margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--focus); border-radius: var(--radius); font-weight: 600; }
+.announce { margin: 0; min-height: 1.5em; font-weight: 600; }
 .announce:empty { display: none; }
-.announce:not(:empty) { padding: var(--space-2) var(--space-4); border-left: 6px solid var(--warn); background: var(--panel); }
+.announce:not(:empty) { padding: var(--space-2) var(--space-4); border-left: 2px solid var(--warn); background: var(--panel); }
 .hint { color: var(--muted); font-size: var(--font-sm); margin: 0; }
 
-.header { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius); }
+.header { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 .header p { margin: 0; }
 .revisionLine { font-size: var(--font-lg); }
 .revisionLabel { font-size: var(--font-xl); }
-.changed[data-changed="yes"] { font-weight: 700; color: var(--warn); }
+.changed[data-changed="yes"] { font-weight: 600; color: var(--warn); }
 .reason { font-style: normal; }
-.confirmation { font-weight: 700; }
+.confirmation { font-weight: 600; }
 .confirmation[data-confirmation="confirmed"] { color: var(--accent); }
 
 .layout { display: grid; grid-template-columns: minmax(18rem, 26rem) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
@@ -21,36 +21,61 @@
 .listColumn h2 { margin: 0; font-size: var(--font-lg); }
 .removed h3 { margin: 0; font-size: var(--font-base); }
 
-.changes { padding: var(--space-3) var(--space-4); border: 2px solid var(--warn); border-radius: var(--radius); }
+.changes { padding: var(--space-3) var(--space-4); border: 1px solid var(--warn); border-radius: var(--radius); }
 .changes h3 { margin: 0 0 var(--space-2); font-size: var(--font-lg); }
 .changes dl { margin: 0; display: grid; gap: var(--space-2); }
-.change dt { font-weight: 700; }
+.change dt { font-weight: 600; }
 .change dd { margin: 0; }
 .change del { color: var(--muted); }
-.change ins { text-decoration: none; font-weight: 600; border-bottom: 3px solid var(--warn); }
+.change ins { text-decoration: none; font-weight: 600; border-bottom: 2px solid var(--warn); }
 
-.marks { display: grid; gap: var(--space-2); padding-top: var(--space-3); border-top: 2px solid var(--line); }
+.marks { display: grid; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--line); }
 .marks h3 { margin: 0; font-size: var(--font-lg); }
 .markRow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
-.markRow button, .playbackControls button { padding: var(--space-2) var(--space-4); border: 2px solid var(--text); border-radius: var(--radius); background: var(--panel); cursor: pointer; }
+.markRow button, .playbackControls button { padding: var(--space-2) var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--panel); cursor: pointer; }
 .markRow button:disabled, .playbackControls button:disabled { cursor: not-allowed; opacity: 0.6; }
 .pending { font-weight: 600; }
 .acknowledged { color: var(--accent); font-weight: 600; }
-.failed { color: var(--danger); font-weight: 700; }
+.failed { color: var(--danger); font-weight: 600; }
 
-.panel { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius); }
+.panel { display: grid; gap: var(--space-2); padding: var(--space-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
 .panel h2 { margin: 0; font-size: var(--font-xl); }
 .questions { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
-.questions li { display: grid; gap: var(--space-1); padding-left: var(--space-3); border-left: 4px solid var(--line); }
+.questions li { display: grid; gap: var(--space-1); padding-left: var(--space-3); border-left: 2px solid var(--line); }
 .questions li[data-answered="no"] { border-left-color: var(--warn); }
 .question { margin: 0; font-size: var(--font-lg); }
-.answerState { font-weight: 700; font-size: var(--font-sm); text-transform: uppercase; letter-spacing: 0.05em; }
+.answerState { font-weight: 600; font-size: var(--font-sm); text-transform: uppercase; letter-spacing: 0.05em; }
 .answered { color: var(--accent); }
 .unanswered { color: var(--warn); }
 
-.playback { display: grid; gap: var(--space-2); padding: var(--space-4); border: 2px dashed var(--fixture-text); background: var(--fixture-bg); color: var(--fixture-text); border-radius: var(--radius); }
+.playback { display: grid; gap: var(--space-2); padding: var(--space-4); border: 1px dashed var(--fixture-text); background: var(--fixture-bg); color: var(--fixture-text); border-radius: var(--radius); }
 .playback h2 { margin: 0; font-size: var(--font-lg); }
 .playback p { margin: 0; }
 .playback .hint { color: inherit; }
 .playbackControls { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
 .playbackControls button { color: var(--text); }
+
+.markRow button, .playbackControls button { padding: var(--space-1) var(--space-3); font-size: var(--font-sm); font-weight: 500; }
+.markRow button:not(:disabled):hover, .playbackControls button:not(:disabled):hover { background: var(--hover); }
+.spoken { border-color: color-mix(in srgb, var(--brand) 60%, transparent); background: color-mix(in srgb, var(--brand) 8%, var(--panel)); }
+
+/* App-style card: large radius, header row with a hairline divider. */
+.panel, .header, .changes, .playback { border-radius: var(--radius-lg); }
+.panel > h2:first-child {
+  margin: 0 calc(-1 * var(--space-4));
+  padding: 0 var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+/* App-style buttons: dark filled secondary, violet primary. */
+.markRow button, .playbackControls button {
+  min-height: 2.5rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.screen h1 { font-size: var(--font-xxl); }
+.spoken { border-radius: var(--radius-lg); color: var(--brand-soft); }
+.acknowledged { color: var(--brand-soft); }

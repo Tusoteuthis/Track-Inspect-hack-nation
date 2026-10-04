@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <main className="page">
       <header>
-        <h1>Track Inspect</h1>
+        <h1>NSPCT</h1>
         <p className="muted">ElevenLabs voice agent</p>
       </header>
 

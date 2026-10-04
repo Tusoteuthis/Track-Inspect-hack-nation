@@ -18,6 +18,8 @@ export type EvidenceViewerProps = {
   /** Initial mode; focus is only possible for a drawable region. */
   mode?: "focus" | "full";
   caption?: string;
+  /** Replaces the default explanation for given render states (e.g. the companion's clarify note). */
+  notice?: Partial<Record<RegionRenderState, string>>;
 };
 
 // Explanations for every case where no confident highlight may be drawn.
@@ -49,7 +51,7 @@ function trapTab(container: HTMLElement, e: { shiftKey: boolean; preventDefault:
 
 const drawable = (state: RegionRenderState) => state === "resolved" || state === "ambiguous";
 
-export function EvidenceViewer({ asset, region, mode = "full", caption }: EvidenceViewerProps) {
+export function EvidenceViewer({ asset, region, mode = "full", caption, notice }: EvidenceViewerProps) {
   const [requestedMode, setRequestedMode] = useState(mode);
   const [imageFailed, setImageFailed] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -60,6 +62,7 @@ export function EvidenceViewer({ asset, region, mode = "full", caption }: Eviden
   const canFocus = drawable(state);
   const activeMode = canFocus ? requestedMode : "full";
   const viewport = activeMode === "focus" && region ? focusViewport(region) : FULL_VIEWPORT;
+  const noticeText = notice?.[state] ?? NOTICE[state];
 
   const openInspect = () => dialogRef.current?.showModal();
   const closeInspect = () => dialogRef.current?.close();
@@ -107,10 +110,10 @@ export function EvidenceViewer({ asset, region, mode = "full", caption }: Eviden
         <p className={`${styles.notice} ${styles.error}`} role="alert">
           Image could not be loaded
         </p>
-      ) : NOTICE[state] ? (
+      ) : noticeText ? (
         <p className={styles.notice} data-notice={state}>
           <span aria-hidden="true">{state === "ambiguous" ? "◌ " : "⊘ "}</span>
-          {NOTICE[state]}
+          {noticeText}
         </p>
       ) : null}
 

@@ -191,6 +191,37 @@ describe("reviewMachine transition table", () => {
   }
 });
 
+describe("reviewMachine KNOWLEDGE_REVOKED (Sprint 4)", () => {
+  const cited = evaluation({
+    outcome: "intervene",
+    citations: [{ entry_id: "e-1", revision_id: "r", quote: null, evidence: null }],
+  });
+  const revoke = (entry_id: string): ReviewEvent => ({ type: "KNOWLEDGE_REVOKED", entry_id });
+
+  it("invalidates a review whose evaluation cited the revoked entry", () => {
+    for (const status of ["guidance_needed", "review_complete", "save_failed", "saving"] as const) {
+      const after = reviewMachine(at(status, { evaluation: cited }), revoke("e-1"));
+      expect(after.status).toBe("editing_unreviewed");
+      expect(after.evaluation).toBeNull();
+      expect(after.draft_revision).toBe(1);
+    }
+  });
+
+  it("keeps a review that did not cite the revoked entry", () => {
+    const before = at("review_complete", { evaluation: cited });
+    expect(reviewMachine(before, revoke("other"))).toBe(before);
+  });
+
+  it("drops a pending review: it may rely on the revoked entry", () => {
+    expect(reviewMachine(at("review_pending"), revoke("e-1")).status).toBe("editing_unreviewed");
+  });
+
+  it("never changes a saved decision", () => {
+    const before = at("saved", { evaluation: cited });
+    expect(reviewMachine(before, revoke("e-1"))).toBe(before);
+  });
+});
+
 describe("reviewMachine rules", () => {
   it("starts unreviewed at draft revision 1 with the case knowledge revision", () => {
     const s = initialReviewState(KREV);

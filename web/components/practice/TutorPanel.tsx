@@ -8,9 +8,8 @@ import { useEffect, useRef, useState } from "react";
 import { VoiceSession } from "@/components/voice/VoiceSession";
 import { practiceContext, type PracticeContextEvent } from "@/lib/practice/contextMessages";
 import type { PracticeEventBus } from "@/lib/practice/practiceEvents";
+import { agentState, type AgentState } from "@/lib/ui/agentState";
 import styles from "./practice.module.css";
-
-export type AgentState = "listening" | "speaking" | "waiting" | "disconnected";
 
 const AGENT_COPY: Record<AgentState, { icon: string; text: string }> = {
   listening: { icon: "◉", text: "Tutor is listening" },
@@ -18,12 +17,6 @@ const AGENT_COPY: Record<AgentState, { icon: string; text: string }> = {
   waiting: { icon: "⏳", text: "Waiting for the tutor to connect…" },
   disconnected: { icon: "○", text: "Tutor not connected" },
 };
-
-export function agentState(status: string, isSpeaking: boolean): AgentState {
-  if (status === "connected") return isSpeaking ? "speaking" : "listening";
-  if (status === "connecting") return "waiting";
-  return "disconnected";
-}
 
 export function TutorPanel({ bus }: { bus: PracticeEventBus }) {
   return (

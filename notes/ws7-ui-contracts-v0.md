@@ -94,3 +94,48 @@ Please confirm how each one is represented: a field, an event or an acknowledgem
 - A teach-back confirmation is shown only for the revision whose `revision_id` it names. A confirmation of the parent revision appears only as history.
 - Changes are marked by a presentation-only diff of `current` against `previous`. If WS6 prefers to send an explicit change list, it can replace the diff in the mapping layer.
 - **Question for WS3/WS5:** what should a `ReviewMark` trigger? WS7 treats it as a note for the spoken review; an acknowledgement only means "received".
+
+## 7. Sprint 3 additions (4 October 2026)
+
+All of these are additive:
+- **`SessionView.rev?`** increases with every acknowledged change. The companion ignores a session update with a lower `rev`, so WS6 should carry `Session.rev`.
+- **`CaseSummary`** has the fields `{case_id, title, asset, source}`. It is the learner-safe case listing from the WS4 manifest.
+- **`CompanionEvent`** is the UI view of a WS3 `PointingEvent`. Its asset is the event's own frame (`frame_id`, `image_ref`, `region.frame_*_px`), which means a region can never be drawn on another picture.
+- **`SourceUpdate`** gains two variants:
+  - `{type:"pointing_event", event: PointingEvent}`. Pointing events are only displayed and are never forwarded to the agent.
+  - `{type:"connection", state}`. When the state goes from reconnecting to connected, the UI re-reads `getSession` and `getRecentEvents`.
+- **New `DataSource` methods:**
+
+| Method | WS6 mapping |
+|---|---|
+| `listCases()` | Case list from the WS4 manifest. **No endpoint yet.** |
+| `startSession(caseId)` | `POST /api/sessions {role:"expert"}`, then `POST /lifecycle {action:"start"}` |
+| `requestPause(sid, paused)` | **Not in WS6 yet** (WS7-Q2). Fixture only. |
+| `requestStop(sid)` | `POST /lifecycle {action:"end"}` |
+| `getRecentEvents(sid)` | `GET /api/sessions/:sid/events` (proposed), used to resync |
+
+- **Pending rule for the controls:** each control (off-record, pause, stop) stays `*_pending` until an authoritative `SessionView` reaches its target. That view may arrive as the `Ack` value or as a `session` push, whichever comes first. A failed `Ack` keeps the previous state and shows the error. Once the session is `ended`, all pending requests are cleared.
+
+## 8. Sprint 4 additions (4 October 2026)
+
+All of these are additive:
+- **`DataOrigin`** gains `"stub"` (WS7-Q7). Stub output shows a "STUB OUTPUT" banner, so it is never presented as live.
+- **`AssessmentItem.interventions?: string[]`** and **`AssessmentView.limitations?: string[]`**. The summary never lists an item with interventions under "done independently". There is no overall score.
+- **`SourceUpdate`** gains `{type:"knowledge", entry_id, revision_id, status}` (WS6 `entry.revoked`). It is broadcast to every session. `/practice` drops citations of revoked entries and invalidates a review that cited one.
+- **New `DataSource` methods:**
+
+| Method | WS6 mapping |
+|---|---|
+| `revokeEntry(entryId, revisionId)` | `POST /api/knowledge/entries/:id/revoke {reason}` (WS6 S4, not implemented yet) |
+| `deleteEvidence(sid, eventId)` | `DELETE /api/sessions/:sid/events/:eid` (WS6 S4, not implemented yet). Revoked entries arrive as `entry.revoked`. |
+
+- **`apiSource`** (`web/lib/data/apiSource.ts`) implements every method against WS6 api-v0. The mapping rules and every mismatch are listed in `notes/ws7-sprints/handoff-sprint-4.md`.
+
+## 9. Monitor video additions (4 October 2026, spec `specs/006-ws7-monitor-video/spec.md`)
+
+All additive; still-image cases are unchanged.
+- **`CaseSummary.media?: CaseMedia`** — `{kind:"video", url, poster_url, duration_ms, width_px, height_px, chapters[], holds[]}`. `asset` stays required (for a video case it is the poster frame). `MediaHold = {hold_id, at_ms, frame_url, frame_width_px, frame_height_px}`: a still captured from the video at `at_ms`. Holds carry **no label**: the monitor never names what is shown; the expert supplies the interpretation.
+- **Media time** (`media_time_ms`, `at_ms`) is a position in the case video. It is neither `session_time_ms` (recording time) nor `signal_interval` (the trace's horizontal axis), even where the video draws its own "time [s]" axis. Never substitute one for another.
+- **`CompanionEvent.media_time_ms?` / `hold_id?`** (optional), set when pointing happened during a monitor hold. The WS3 **`PointingEvent` is unchanged** (WS3 owns it; WS6 mirrors it with a compile-time drift check). Fixture hold events carry the two fields as a WS7-local extension (`HoldPointingEvent` in `web/lib/monitor/holdEvidence.ts`); WS6 ingestion would strip them. If live pointing during holds is wanted, WS3 should add them to its contract first.
+- **Monitor ⇄ companion link** (`web/lib/monitor/monitorChannel.ts`, `BroadcastChannel("nspct-monitor")`, same browser only): the monitor sends `monitor_state` (status `start|playing|paused|held|ended|error`, media time, hold n of N, auto-hold) and `bye`; the companion sends `session_state` (`recording|off_record|paused|none`); either sends `hello` to resync. Invalid messages are dropped.
+- **Fixture mode:** for a video case the timed pointing replay is off; a monitor hold triggers one simulated pointing event on that hold's still frame (`web/fixtures/ui/video-holds.json`, never part of the learner case listing). Live mode is unchanged: pointing comes from WS2/WS3 only.

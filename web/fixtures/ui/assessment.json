@@ -1,9 +1,46 @@
 {
   "session_id": "fixture-newcomer-session-001",
-  "independent": [],
-  "assisted": [],
-  "unresolved": [],
-  "practice_next": [],
-  "evidence_used": [],
+  "independent": [
+    {
+      "description": "Fixture: placeholder decision recorded without any hint.",
+      "citations": [],
+      "interventions": []
+    }
+  ],
+  "assisted": [
+    {
+      "description": "Fixture: placeholder decision corrected before saving, after tutor guidance.",
+      "interventions": [
+        "Fixture: the tutor asked the learner to compare their reasoning with the cited expert example."
+      ],
+      "citations": [
+        {
+          "entry_id": "fixture-entry-003",
+          "revision_id": "fixture-rev-2",
+          "quote": { "exchange_id": "fixture-exchange-003", "text": "Expert guardrail wording (fixture): placeholder words." },
+          "evidence": null
+        }
+      ]
+    }
+  ],
+  "unresolved": [
+    {
+      "description": "Fixture: placeholder question the learner could not settle; it should be escalated.",
+      "interventions": [],
+      "citations": []
+    }
+  ],
+  "practice_next": ["Fixture: placeholder skill to practise on another unseen trace."],
+  "evidence_used": [
+    {
+      "entry_id": "fixture-entry-003",
+      "revision_id": "fixture-rev-2",
+      "quote": null,
+      "evidence": null
+    }
+  ],
+  "limitations": [
+    "Fixture: one coached case shows useful assistance, not independent mastery."
+  ],
   "source": "fixture"
 }

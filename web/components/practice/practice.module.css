@@ -17,7 +17,7 @@
   gap: var(--space-3);
   padding: var(--space-4);
   background: var(--panel);
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   min-width: 0;
 }
@@ -27,13 +27,14 @@
 .row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; list-style: none; margin: 0; padding: 0; }
 .row button, .citations button, .dialogBar button {
   padding: var(--space-2) var(--space-4);
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
   cursor: pointer;
 }
 .row button:disabled { opacity: 0.5; cursor: not-allowed; }
-.row .primary { border-color: var(--text); background: var(--text); color: var(--bg); font-weight: 700; }
+.row .primary { border-color: var(--brand); background: var(--brand); color: var(--on-brand); font-weight: 500; }
+.row .primary:not(:disabled):hover { background: var(--brand-hover); border-color: var(--brand-hover); }
 .row .primary:disabled { background: var(--panel); color: var(--muted); border-style: dashed; }
 
 .hint { margin: 0; color: var(--muted); font-size: var(--font-sm); }
@@ -46,29 +47,29 @@
   align-items: center;
   margin: 0;
   padding: var(--space-2) var(--space-3);
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   font-weight: 600;
 }
 .statusIcon { font-size: var(--font-lg); width: 1.5rem; text-align: center; }
 .status[data-tone="pending"] { border-style: dashed; }
-.status[data-tone="warn"] { border-color: var(--warn); color: var(--warn); border-width: 3px; }
-.status[data-tone="ok"] { border-color: var(--accent); color: var(--accent); border-width: 3px; }
-.status[data-tone="danger"] { border-color: var(--danger); color: var(--danger); border-width: 3px; }
+.status[data-tone="warn"] { border-color: var(--warn); color: var(--warn); border-width: 2px; }
+.status[data-tone="ok"] { border-color: var(--accent); color: var(--accent); border-width: 2px; }
+.status[data-tone="danger"] { border-color: var(--danger); color: var(--danger); border-width: 2px; }
 
 .draft {
   display: grid;
   gap: var(--space-2);
   padding: var(--space-4);
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
 }
-.draft legend { font-weight: 700; font-size: var(--font-lg); padding: 0 var(--space-2); }
+.draft legend { font-weight: 600; font-size: var(--font-lg); padding: 0 var(--space-2); }
 .draft label { font-weight: 600; }
 .draft input, .draft select, .draft textarea {
   padding: var(--space-2);
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--bg);
 }
@@ -81,19 +82,19 @@
 .sourceTag {
   font-style: normal;
   font-size: var(--font-sm);
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0 var(--space-1);
   border: 1px solid var(--line);
   border-radius: 4px;
 }
-.question { margin: 0; font-weight: 700; }
+.question { margin: 0; font-weight: 600; }
 .citations { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
 .citations li { display: grid; gap: var(--space-1); }
 .citeQuote { color: var(--muted); }
-.expertQuote { margin: 0; padding: var(--space-3) var(--space-4); border-left: 6px solid var(--text); background: var(--bg); }
-.expertQuote figcaption { font-size: var(--font-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.expertQuote { margin: 0; padding: var(--space-3) var(--space-4); border-left: 2px solid var(--brand); background: var(--bg); border-radius: 0 var(--radius) var(--radius) 0; }
+.expertQuote figcaption { font-size: var(--font-sm); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
 .expertQuote blockquote { margin: var(--space-2) 0 0; font-size: var(--font-lg); }
 
 .dialog {
@@ -101,7 +102,7 @@
   max-height: 92vh;
   overflow: auto;
   padding: 0;
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--panel);
   color: var(--text);
@@ -117,7 +118,7 @@
 .markerFrame {
   position: relative;
   width: 100%;
-  border: 2px dashed var(--text);
+  border: 1px dashed var(--line-strong);
   border-radius: var(--radius);
   overflow: hidden;
   cursor: crosshair;
@@ -139,14 +140,14 @@
   background: var(--region-halo);
   color: var(--region);
   font-size: var(--font-sm);
-  font-weight: 700;
+  font-weight: 600;
   padding: 0 var(--space-1);
   white-space: nowrap;
 }
 
 .fixtureControls {
   padding: var(--space-2) var(--space-3);
-  border: 2px dashed var(--fixture-text);
+  border: 1px dashed var(--fixture-text);
   border-radius: var(--radius);
   background: var(--fixture-bg);
   color: var(--fixture-text);
@@ -154,3 +155,42 @@
 .fixtureControls summary { cursor: pointer; font-weight: 600; }
 .fixtureControls .row { margin-top: var(--space-2); }
 .dialogEvidence { width: min(100%, 44rem); justify-self: center; }
+
+.row button, .citations button, .dialogBar button { padding: var(--space-1) var(--space-3); font-size: var(--font-sm); font-weight: 500; }
+.row button:not(:disabled):not(.primary):hover,
+.citations button:hover,
+.dialogBar button:hover { background: var(--hover); border-color: var(--line-strong); }
+.dialog { border-radius: var(--radius-lg); box-shadow: 0 24px 64px rgb(0 0 0 / 0.45); }
+
+/* App-style card: large radius, header row with a hairline divider. */
+.panel, .draft, .dialog { border-radius: var(--radius-lg); }
+.panel > h2:first-child {
+  margin: 0 calc(-1 * var(--space-4));
+  padding: 0 var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+/* App-style buttons: dark filled secondary, violet primary. */
+.row button:not(.primary), .citations button, .dialogBar button {
+  min-height: 2.5rem;
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+.row .primary {
+  min-height: 2.75rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+
+/* App-style pills: filled chip, icon + text; status colour stays on border/text. */
+.sourceTag { background: var(--panel-2); border-radius: var(--radius-pill); }
+
+.row .primary:disabled { box-shadow: none; }
+.status { background: var(--panel-2); }
+.status[data-tone="ok"] { border-color: color-mix(in srgb, var(--brand-soft) 60%, transparent); color: var(--brand-soft); }
+.header h1 { font-size: var(--font-xxl); }
+.header p { color: var(--muted); }

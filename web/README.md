@@ -1,4 +1,4 @@
-# Track Inspect — web app and shared backend (WS6)
+# NSPCT — web app and shared backend (WS6)
 
 One Next.js process serves the web UI (WS7) and the shared backend API (WS6) that the iPhone app (WS2), the voice agent (WS3) and the knowledge/tutor modules (WS5) plug into. Data lives on the local filesystem, live updates use SSE, and the modules run in-process. There is no database, queue or cloud dependency.
 
@@ -165,4 +165,39 @@ lib/knowledge/       WS5 modules (synthesis, eligibility, tutor evaluation) host
 proxy.ts             the access boundary for /api/*
 scripts/             replay-capture, e2e-integration, WS3 agent tooling
 fixtures/ws6/        labelled fixtures (source: "fixture")
+```
+
+## 9. Screens and data sources (WS7)
+
+WS7 screens: `/expert`, `/expert/display`, `/review`, `/map`, `/practice`, `/summary`. Demo path and fallbacks are in `notes/ws7-demo-navigation.md`. Integration status and the gap list are in `notes/ws6-ws7-integration-plan.md`.
+
+`/expert/display` is the demo monitor the expert reads through the glasses. For a video case it is the inspection player (auto-holds for pointing, clicker keys, linked to `/expert` over a same-browser BroadcastChannel); see `specs/006-ws7-monitor-video/spec.md` and contracts §9 in `notes/ws7-ui-contracts-v0.md`.
+
+Each screen picks its data source in `components/shell/useScreenSource.ts`:
+- `lib/data/apiSource.ts` calls the WS6 routes in this app.
+- `lib/data/fixtureSource.ts` uses fixture data, which is the default.
+
+Fixture and stub data always show a banner.
+
+| Variable | Notes |
+|---|---|
+| `NEXT_PUBLIC_WS7_LIVE_SCREENS` | Comma list of `expert,review,map,practice,summary`, or `all`. Unset means every screen uses fixtures. |
+| `NEXT_PUBLIC_WS6_BASE_URL` | Default `""` (same origin). Leave it empty in this merged app. |
+
+`NEXT_PUBLIC_*` values are inlined at build time, so rebuild or restart after changing them.
+
+| Screen | Can it go live on WS6? |
+|---|---|
+| `/expert`, `/expert/display` | Partly. Session, start, off-record, stop and pointing events have WS6 routes; the case list (`listCases`, incl. video `media`) and pause do not yet. Keep it on fixtures until WS6 serves cases. |
+| `/review` | No WS6 review view or review-mark route yet. |
+| `/map` | Yes: `GET /api/workmap?include=draft` + SSE. Revoke and delete need WS6 S4. |
+| `/practice`, `/summary` | Need WS6 S3 (cases, learner draft, evaluations, commit, assessment). |
+
+Fixture URL settings (fixture screens only): `?fixture_latency=<ms>`, `?fixture_replay_ms=<ms>` and `?fixture_fail=review|commit|offrecord|pause|stop|revoke|delete`.
+
+WS7 verification:
+```bash
+npm run typecheck && npx vitest run
+npx playwright test   # starts its own dev server on PW_PORT (default 3100)
+npm run build && grep -rliE 'expected[_ ]?(decision|answer)|acceptable[_ ]?explanation|common[_ ]?wrong|scoring|answer[_ ]?key|rubric' .next/static   # must be empty
 ```

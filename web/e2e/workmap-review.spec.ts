@@ -41,9 +41,9 @@ test("Work Map: navigate by keyboard only and open items", async ({ page }) => {
 
   // Tab out of the list (one tab stop) into the detail: choose the second piece of evidence.
   await page.keyboard.press("Tab");
-  await expect(detail.getByRole("button", { name: "Evidence 1" })).toBeFocused();
+  await expect(detail.getByRole("button", { name: "Evidence 1", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(detail.getByRole("button", { name: "Evidence 2" })).toBeFocused();
+  await expect(detail.getByRole("button", { name: "Evidence 2", exact: true })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(detail.getByRole("img", { name: "Captured trace evidence" })).toHaveAttribute("src", "/fixtures/ui/trace-b.svg");
   await page.screenshot({ path: "test-results/s1-map-detail.png", fullPage: true });

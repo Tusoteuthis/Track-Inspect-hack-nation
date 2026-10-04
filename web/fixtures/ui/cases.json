@@ -1,0 +1,50 @@
+{
+  "source": "fixture",
+  "cases": [
+    {
+      "case_id": "fixture-case-video-001",
+      "title": "Wheel sensor pass · Sys1/Sys2",
+      "asset": {
+        "asset_id": "fixture-asset-wheel-sensor-poster",
+        "original_url": "/fixtures/video/wheel-sensor-pass-poster.jpg",
+        "highlighted_url": null,
+        "frame_id": "fixture-frame-wheel-sensor-poster",
+        "width_px": 832,
+        "height_px": 464
+      },
+      "media": {
+        "kind": "video",
+        "url": "/fixtures/video/wheel-sensor-pass.mp4",
+        "poster_url": "/fixtures/video/wheel-sensor-pass-poster.jpg",
+        "duration_ms": 22773,
+        "width_px": 832,
+        "height_px": 464,
+        "chapters": [
+          { "chapter_id": "approach", "label": "Train approach", "start_ms": 0, "end_ms": 8608 },
+          { "chapter_id": "sensor", "label": "Sensor principle", "start_ms": 8608, "end_ms": 11295 },
+          { "chapter_id": "trace", "label": "Signal trace", "start_ms": 11295, "end_ms": 22773 }
+        ],
+        "holds": [
+          { "hold_id": "hold-1", "at_ms": 10600, "frame_url": "/fixtures/video/hold-1.jpg", "frame_width_px": 832, "frame_height_px": 464 },
+          { "hold_id": "hold-2", "at_ms": 12400, "frame_url": "/fixtures/video/hold-2.jpg", "frame_width_px": 832, "frame_height_px": 464 },
+          { "hold_id": "hold-3", "at_ms": 15000, "frame_url": "/fixtures/video/hold-3.jpg", "frame_width_px": 832, "frame_height_px": 464 },
+          { "hold_id": "hold-4", "at_ms": 18000, "frame_url": "/fixtures/video/hold-4.jpg", "frame_width_px": 832, "frame_height_px": 464 }
+        ]
+      },
+      "source": "fixture"
+    },
+    {
+      "case_id": "fixture-case-expert-001",
+      "title": "Trace A: two-channel sensor recording",
+      "asset": {
+        "asset_id": "fixture-asset-trace-a-full",
+        "original_url": "/fixtures/trace-a-full.svg",
+        "highlighted_url": null,
+        "frame_id": "fixture-frame-trace-a-full",
+        "width_px": 1600,
+        "height_px": 900
+      },
+      "source": "fixture"
+    }
+  ]
+}

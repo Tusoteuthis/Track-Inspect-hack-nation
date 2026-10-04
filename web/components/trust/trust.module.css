@@ -1,0 +1,18 @@
+.trust { display: grid; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--line); }
+.trust h3 { margin: 0; font-size: var(--font-lg); }
+.hint { margin: 0; color: var(--muted); font-size: var(--font-sm); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.row button { padding: var(--space-2) var(--space-4); border: 1px solid var(--danger); border-radius: var(--radius); background: var(--panel); color: var(--text); cursor: pointer; }
+.row button:disabled { cursor: not-allowed; opacity: 0.6; }
+/* Armed: filled + text change, not colour alone. */
+.armed { background: var(--danger) !important; color: var(--panel) !important; font-weight: 600; }
+.pending { font-weight: 600; }
+.done { margin: 0; color: var(--accent); font-weight: 600; }
+.failed { flex-basis: 100%; margin: 0; color: var(--danger); font-weight: 600; }
+
+.row button { padding: var(--space-1) var(--space-3); font-size: var(--font-sm); font-weight: 500; border-color: color-mix(in srgb, var(--danger) 55%, transparent); color: var(--danger); }
+.row button:not(:disabled):not(.armed):hover { background: color-mix(in srgb, var(--danger) 8%, var(--panel)); }
+.armed { color: #fff !important; }
+
+.row button { min-height: 2.5rem; border-radius: var(--radius); background: var(--panel-2); font-weight: 600; }
+.done { color: var(--brand-soft); }
