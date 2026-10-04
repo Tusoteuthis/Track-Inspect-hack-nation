@@ -95,11 +95,18 @@ const ws5Provider: SynthesisProvider = {
           prior: input.prior.filter((r): r is KnowledgeRevision & Ws6KnowledgeRevision => r.produced_by.source !== "stub"),
           confirmations: input.confirmations,
         });
+        // WS3 events carry no asset_id, so WS5 leaves it null; WS6 knows it from the stored event.
+        const assetOf = new Map(input.events.flatMap(e => (e.asset_id ? [[e.event_id, e.asset_id] as const] : [])));
         return {
           revisions: out.revisions.map(r => ({
             entry_id: r.entry_id,
             markdown: r.markdown,
-            evidence: r.evidence,
+            evidence: {
+              ...r.evidence,
+              asset_ids: [
+                ...new Set([...r.evidence.asset_ids, ...r.evidence.event_ids.flatMap(id => (assetOf.has(id) ? [assetOf.get(id)!] : []))]),
+              ].sort(),
+            },
             produced_by: r.produced_by,
             change_reason: r.change_reason,
             revision_no: r.revision_no,

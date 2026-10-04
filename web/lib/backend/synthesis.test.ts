@@ -117,6 +117,7 @@ describe("real WS5 synthesis", () => {
       expect(markdown.startsWith('---\nschema_version: "ws5.v0"')).toBe(true);
       expect(await unresolvedLocalLinks(r.entry_id, markdown)).toEqual([]);
       expect(r.produced_by).toMatchObject({ module: "ws5-synthesis", source: "fixture" });
+      expect(r.evidence.asset_ids.length).toBe(r.evidence.event_ids.length);
     }
     const draft = await getSessionDraft(sid);
     expect(draft.teach_back).toEqual(expect.any(String));
